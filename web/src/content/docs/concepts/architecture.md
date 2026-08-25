@@ -3,27 +3,18 @@ title: Architecture
 description: Masters, workers, gateway — and the one trait everything hangs off.
 ---
 
-```
-┌──────────────────────── mammoth cluster ─────────────────────────┐
-│                                                                   │
-│   masters (3, Raft consensus)          the index — HA by default  │
-│   ┌───────┐  ┌───────┐  ┌───────┐                                 │
-│   │leader │  │follow │  │follow │      namespace, block map,      │
-│   └───┬───┘  └───────┘  └───────┘      leases, scheduler          │
-│       │                                                            │
-│       │ heartbeats (3s) + block digests                            │
-│       ▼                                                            │
-│   workers (N)                          the shelves + the muscle    │
-│   ┌───────┐  ┌───────┐  ┌───────┐                                 │
-│   │blocks │  │blocks │  │blocks │      block storage,             │
-│   │tasks  │  │tasks  │  │tasks  │      task execution, shuffle    │
-│   └───────┘  └───────┘  └───────┘                                 │
-│       ▲                                                            │
-│       │ data (never touches the master)                            │
-│   ┌───┴────────────────────────────────────┐                      │
-│   │ gateway  ·  S3 :9000  ·  Web UI :8080  │                      │
-│   └────────────────────────────────────────┘                      │
-└───────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    clients["clients<br/>CLI · SDK · any S3 tool"]
+    gw["gateway<br/>S3 :9000 · Web UI :8080"]
+    masters["masters ×3 · Raft — the index<br/>1 leader, 2 followers<br/>namespace · block map<br/>leases · scheduler<br/>HA by default"]
+    workers["workers ×N — the shelves,<br/>and the muscle<br/>block storage<br/>task execution · shuffle"]
+
+    clients --> gw
+    gw -->|"metadata only"| masters
+    masters -->|"block placement"| workers
+    gw ==>|"data — never touches the master"| workers
+    workers -.->|"heartbeats every 3s<br/>+ block digests"| masters
 ```
 
 One binary: `mammoth serve --role master|worker|gateway|all`.

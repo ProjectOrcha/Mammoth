@@ -12,18 +12,11 @@ you can put a file in, get it back out, and ask where every block landed.
 
 ## The two paths a write can take
 
-```
-        write(path, bytes)
-               │
-       is it under 1 MiB?
-         ┌─────┴─────┐
-       yes           no
-         │            │
-    INLINE IT     SPLIT INTO BLOCKS
-         │            │
-  bytes live in   each 128 MB chunk written
-  the .mmeta      to 3 workers, rack-aware
-  no blocks       block IDs recorded in .mmeta
+```mermaid
+flowchart TB
+    w["write(path, bytes)"] --> q{"under 1 MiB?"}
+    q -->|"yes"| inline["INLINE IT<br/>bytes live in the .mmeta<br/>no blocks at all"]
+    q -->|"no"| split["SPLIT INTO BLOCKS<br/>each 128 MB chunk written to 3 workers,<br/>rack-aware · block IDs recorded in the .mmeta"]
 ```
 
 **Inlining is Mammoth's answer to the small-file problem.** In Hadoop, one

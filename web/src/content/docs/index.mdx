@@ -13,14 +13,40 @@ hero:
     - text: Hadoop in 10 minutes
       link: /Mammoth/intro/hadoop-primer/
       variant: minimal
+    - text: Source
+      link: https://github.com/ProjectOrcha/Mammoth
+      variant: minimal
+      icon: github
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
+<p class="mm-eyebrow">Open source · MIT or Apache-2.0 · Pre-release</p>
+
+Mammoth stores very large files across many machines, keeps redundant copies so
+machine death is survivable, and tells you exactly where every byte landed.
+That is HDFS's job. Mammoth does it as **one Rust binary** and **one TOML file**,
+and it speaks the **S3 API** — so Spark, DuckDB, Polars, Trino and ClickHouse
+work against it unchanged.
+
+<p class="mm-eyebrow">Install via terminal</p>
+
+```bash
+git clone https://github.com/ProjectOrcha/Mammoth
+cd Mammoth && cargo build --release -p mammoth-cli
+./target/release/mammoth quickstart
+```
+
+The first release has not been cut yet, so building from source is the only path
+that works today. Packages, `brew`, and the `curl | sh` one-liner land with
+`v0.1.0` — see [Install](/Mammoth/intro/install/).
+
+## What you get
+
 <CardGrid stagger>
   <Card title="One binary" icon="rocket">
     `mammoth serve --role master|worker|gateway|all`. One TOML file. No XML, no
-    ZooKeeper, no JournalNodes, no ZKFC.
+    ZooKeeper, no JournalNodes, no ZKFC — HA is built-in Raft.
   </Card>
   <Card title="Speaks S3" icon="cloud-download">
     Spark, DuckDB, Polars, Trino, ClickHouse, Iceberg and Delta Lake work on day
@@ -28,10 +54,74 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
   </Card>
   <Card title="You can see your data" icon="chart">
     `mammoth viz` and the distribution page show you where every block actually
-    landed — not a table of numbers.
+    landed — heatmaps, rack topology, skew and live flow, not a table of numbers.
   </Card>
   <Card title="No GC pauses" icon="approve-check">
     Lock-free metadata reads over an immutable namespace behind `ArcSwap`.
     Readers never block. Ever.
+  </Card>
+  <Card title="Small files stay small" icon="document">
+    Files under 1 MiB are inlined into their metadata. A million tiny files no
+    longer costs a million block-map entries.
+  </Card>
+  <Card title="Errors that teach" icon="warning">
+    Every failure names the cause, the fix, and the command that applies it —
+    then links to the page that explains why.
+  </Card>
+</CardGrid>
+
+## The shape of a cluster
+
+<figure class="mermaid-figure not-content"><pre class="mermaid">{`flowchart TB
+    clients["clients<br/>CLI · SDK · any S3 tool"]
+    gw["gateway<br/>S3 :9000 · Web UI :8080"]
+    masters["masters ×3 · Raft — the index<br/>1 leader, 2 followers<br/>namespace · block map<br/>leases · scheduler<br/>HA by default"]
+    workers["workers ×N — the shelves,<br/>and the muscle<br/>block storage<br/>task execution · shuffle"]
+
+    clients --> gw
+    gw -->|"metadata only"| masters
+    masters -->|"block placement"| workers
+    gw ==>|"data — never touches the master"| workers
+    workers -.->|"heartbeats every 3s<br/>+ block digests"| masters`}</pre></figure>
+
+Every role is the same executable, selected at boot with `--role`. The CLI, the
+gateway and the SDK all speak to one `Backend` trait, so a single-machine
+simulation and a real cluster are indistinguishable to callers.
+[Read the architecture](/Mammoth/concepts/architecture/).
+
+## If you know Hadoop
+
+| Hadoop says | Mammoth says | Plain English |
+| --- | --- | --- |
+| NameNode | **master** | the index |
+| DataNode | **worker** | the shelves |
+| ZooKeeper / JournalNode / ZKFC | *(gone)* | HA plumbing, replaced by built-in Raft |
+| ResourceManager | **master** (scheduler) | the job scheduler |
+| Container | **slot** | a CPU + RAM reservation |
+| `hdfs dfs -ls /` | `mammoth ls /` | list a directory |
+
+The [full translation table](/Mammoth/intro/what/) covers the rest. Never used
+Hadoop? Start with [Hadoop in 10 minutes](/Mammoth/intro/hadoop-primer/) — blocks,
+replication, the write pipeline and YARN, without the JVM.
+
+## Where to go next
+
+<CardGrid>
+  <Card title="Run a cluster" icon="seti:powershell">
+    [5-minute cluster](/Mammoth/intro/quickstart/) brings up six simulated
+    workers on one machine, with sample data and the UI open.
+  </Card>
+  <Card title="Learn the model" icon="open-book">
+    [What is Mammoth?](/Mammoth/intro/what/) ·
+    [Architecture](/Mammoth/concepts/architecture/) ·
+    [Performance](/Mammoth/concepts/performance/)
+  </Card>
+  <Card title="Move your data" icon="random">
+    [Migration](/Mammoth/migration/) plans, runs, verifies and cuts over from
+    HDFS or S3 — resumable, and dry-run first.
+  </Card>
+  <Card title="Operate it" icon="setting">
+    [Operations](/Mammoth/ops/) and [Configuration](/Mammoth/ops/configuration/)
+    — one TOML file, validated before it is applied.
   </Card>
 </CardGrid>

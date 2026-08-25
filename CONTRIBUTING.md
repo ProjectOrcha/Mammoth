@@ -65,6 +65,11 @@ cargo xtask docs
   code — justifying a design in prose surfaces half the problems for free.
 - **`unsafe` is denied** workspace-wide. If you genuinely need it, that is an
   ADR conversation.
+- **Diagrams are Mermaid**, never ASCII box art. A ```mermaid fence renders on
+  GitHub as-is, and on the site through `web/plugins/remark-mermaid.mjs` plus
+  the client-side renderer in `web/src/components/Head.astro`. Verbatim terminal
+  output — `mammoth top`, `mammoth viz`, `tree`-style listings — stays a plain
+  code block; it is program output, not a drawing.
 
 ## Distributed bugs
 

@@ -16,11 +16,11 @@ a live cluster overview and a file browser with a block map.
 
 ## The shape of it
 
-```
-  browser ──HTTP──▶ mammoth-gateway ──Backend trait──▶ LocalBackend
-                    (axum, port 8080)                  (chapters 5–6)
-                          │
-                          └── serves the built Svelte app from inside the binary
+```mermaid
+flowchart LR
+    b["browser"] -->|"HTTP"| g["mammoth-gateway<br/>axum, port 8080"]
+    g -->|"Backend trait"| lb["LocalBackend<br/>chapters 5–6"]
+    g -.->|"serves the built Svelte app<br/>from inside the binary"| ui["admin UI"]
 ```
 
 Two things worth noticing before you write code:

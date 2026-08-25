@@ -17,11 +17,10 @@ The idea: chop the file into pieces, put the pieces on 100 machines, and have al
 
 That's it. That's the whole idea. Everything else is bookkeeping.
 
-```
-One machine:                     100 machines:
-┌──────────────┐                 ┌────┐┌────┐┌────┐      ┌────┐
-│  10 TB file  │  14 hours       │100G││100G││100G│ ...  │100G│   8 minutes
-└──────────────┘                 └────┘└────┘└────┘      └────┘
+```mermaid
+flowchart LR
+    f1["10 TB file"] --> one["1 machine<br/>one disk at 200 MB/s"] --> t1["14 hours"]
+    f2["10 TB file"] --> many["100 machines<br/>100 GB each, all reading at once"] --> t2["8 minutes"]
 ```
 
 The bookkeeping problems this creates:
@@ -36,12 +35,12 @@ Hadoop's three answers: **HDFS** (storage + index), **replication** (copies), **
 
 A file is split into fixed-size **blocks**. Hadoop's default is 128 MB.
 
-```
-sales.csv  (350 MB)
-│
-├── block 1  ──  128 MB
-├── block 2  ──  128 MB
-└── block 3  ──   94 MB    ← last block is partial, not padded
+```mermaid
+flowchart LR
+    f["sales.csv<br/>350 MB"]
+    f --> b1["block 1<br/>128 MB"]
+    f --> b2["block 2<br/>128 MB"]
+    f --> b3["block 3<br/>94 MB<br/>partial, not padded"]
 ```
 
 Each block gets a globally unique ID. The file itself becomes nothing more than an **ordered list of block IDs**:
@@ -58,20 +57,38 @@ To read the file, you fetch those three blocks in order and concatenate them.
 
 Every block is stored on **3 different machines** by default. If one dies, two copies remain, and the system quietly makes a third copy somewhere else.
 
-```
-blk_1001  →  worker-02, worker-07, worker-15
-blk_1002  →  worker-03, worker-07, worker-22
-blk_1003  →  worker-02, worker-11, worker-22
+```mermaid
+flowchart LR
+    b1["blk_1001"] --> w02["worker-02"]
+    b1 --> w07["worker-07"]
+    b1 --> w15["worker-15"]
+
+    b2["blk_1002"] --> w03["worker-03"]
+    b2 --> w07
+    b2 --> w22["worker-22"]
+
+    b3["blk_1003"] --> w02
+    b3 --> w11["worker-11"]
+    b3 --> w22
 ```
 
 Cost: 10 TB of data uses 30 TB of disk. (Erasure coding later reduces this to ~15 TB — see §6.6.)
 
 **Rack awareness.** Machines live in racks. A whole rack can lose power at once. So the placement rule is:
 
-```
-replica 1 → same machine as the writer (or nearest)   ← fast write
-replica 2 → a machine in a DIFFERENT rack             ← survives rack failure
-replica 3 → a different machine in the SAME rack as replica 2   ← cheap, one cross-rack hop
+```mermaid
+flowchart LR
+    subgraph rackA["rack A — the writer's rack"]
+        r1["replica 1<br/>the writer's own machine,<br/>or the nearest one"]
+    end
+
+    subgraph rackB["rack B — a separate failure domain"]
+        r2["replica 2"]
+        r3["replica 3"]
+    end
+
+    r1 -->|"the one cross-rack hop"| r2
+    r2 -->|"same rack, so cheap"| r3
 ```
 
 You get rack-failure survival while only sending data across the (expensive, slow) rack-to-rack link once instead of twice.
@@ -87,12 +104,20 @@ Think of a library: the **card catalog** (NameNode) tells you shelf 12, row 4. T
 
 Reading a file is a two-step dance:
 
-```
-1. client → NameNode:  "where is /data/sales.csv?"
-   NameNode → client:  "blk_1001 on [w2,w7,w15], blk_1002 on [w3,w7,w22], ..."
+```mermaid
+sequenceDiagram
+    participant C as client
+    participant NN as NameNode
+    participant W2 as w2
+    participant W3 as w3
 
-2. client → w2:  "give me blk_1001"        ← data never touches the NameNode
-   client → w3:  "give me blk_1002"           (this is why it scales)
+    C->>NN: where is /data/sales.csv?
+    NN-->>C: blk_1001 on [w2, w7, w15]<br/>blk_1002 on [w3, w7, w22]
+    C->>W2: give me blk_1001
+    W2-->>C: 128 MB of bytes
+    C->>W3: give me blk_1002
+    W3-->>C: 128 MB of bytes
+    Note over C,NN: data never touches the NameNode — that is why it scales
 ```
 
 **Critical detail:** the NameNode never sees file data. It only handles metadata. That's what lets one NameNode serve thousands of DataNodes.
@@ -105,9 +130,20 @@ Reading a file is a two-step dance:
 
 Writing is more interesting than reading. The client does **not** send the data three times.
 
-```
-client ──64KB packet──▶ w2 ──forward──▶ w7 ──forward──▶ w15
-       ◀─────ack───────    ◀────ack───    ◀────ack────
+```mermaid
+sequenceDiagram
+    participant C as client
+    participant W2 as w2
+    participant W7 as w7
+    participant W15 as w15
+
+    C->>W2: 64 KB packet, sent once
+    W2->>W7: forward
+    W7->>W15: forward
+    W15-->>W7: ack
+    W7-->>W2: ack
+    W2-->>C: ack
+    Note over C,W15: chain replication — the client's upload bandwidth is never tripled
 ```
 
 The client sends each 64 KB packet **once**, to the first DataNode. That node writes it to disk _and simultaneously_ forwards it to the second, which forwards to the third. Acks flow back down the chain. This is **chain replication**, and it means the client's upload bandwidth isn't tripled.
@@ -118,26 +154,30 @@ The client sends each 64 KB packet **once**, to the first DataNode. That node wr
 
 **YARN** is the job scheduler. Its key insight is **data locality**: don't move 128 MB of data to the code, move the 5 KB of code to the machine that already has the data.
 
-```
-ResourceManager  ← the scheduler (one per cluster)
-NodeManager      ← the agent on each machine that launches tasks
-ApplicationMaster← a per-job coordinator that YARN itself launches (yes, really)
-Container        ← a CPU+memory allocation on one machine
+```mermaid
+flowchart TB
+    RM["ResourceManager<br/>the scheduler — one per cluster"]
+    AM["ApplicationMaster<br/>a per-job coordinator that<br/>YARN itself launches"]
+    NM["NodeManager<br/>the agent on each machine"]
+    CT["Container<br/>a CPU + memory allocation<br/>on one machine"]
+
+    RM -->|"launches"| AM
+    AM -->|"asks for containers"| RM
+    RM -->|"assigns work"| NM
+    NM -->|"launches"| CT
+    AM -.->|"tracks the tasks in"| CT
 ```
 
 **MapReduce** is the original programming model. Word count, the "hello world":
 
-```
-Input:  "the cat sat on the mat"
+```mermaid
+flowchart TB
+    in["input<br/>the cat sat on the mat"]
+    map["MAP — runs on each block, in parallel<br/>the,1 · cat,1 · sat,1 · on,1 · the,1 · mat,1"]
+    shuffle["SHUFFLE — network sort, grouped by key<br/>the → 1,1 · cat → 1 · sat → 1 · on → 1 · mat → 1"]
+    reduce["REDUCE — runs per key group, in parallel<br/>the,2 · cat,1 · sat,1 · on,1 · mat,1"]
 
-MAP     (runs on each block, in parallel)
-        → (the,1) (cat,1) (sat,1) (on,1) (the,1) (mat,1)
-
-SHUFFLE (the expensive part — network sort, groups by key)
-        → the:[1,1]  cat:[1]  sat:[1]  on:[1]  mat:[1]
-
-REDUCE  (runs per key group, in parallel)
-        → (the,2) (cat,1) (sat,1) (on,1) (mat,1)
+    in --> map --> shuffle --> reduce
 ```
 
 The **shuffle** is where MapReduce jobs spend most of their time — it's an all-to-all network transfer plus a disk sort. Every performance conversation about Hadoop eventually becomes a conversation about shuffle.

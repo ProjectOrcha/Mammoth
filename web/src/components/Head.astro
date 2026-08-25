@@ -1,0 +1,160 @@
+---
+// Starlight component override: the stock <head>, plus the mermaid renderer.
+//
+// Head is the one component rendered on every page including the splash
+// landing page, which makes it the right place to hang a site-wide script.
+import type { Props } from '@astrojs/starlight/props';
+import Default from '@astrojs/starlight/components/Head.astro';
+---
+
+<Default {...Astro.props}><slot /></Default>
+
+<script>
+  const blocks = Array.from(document.querySelectorAll('pre.mermaid'));
+
+  if (blocks.length > 0) {
+    // Hide the raw source only once we know we can replace it. With JS off the
+    // diagram degrades to readable mermaid text rather than to nothing.
+    for (const el of blocks) el.closest('.mermaid-figure').dataset.state = 'loading';
+
+    // Dynamic, so the ~1 MB mermaid bundle only loads on pages that draw.
+    const { default: mermaid } = await import('mermaid');
+
+    // mermaid overwrites the element with SVG, so keep the source for re-renders.
+    blocks.forEach((el, i) => {
+      el.dataset.source = el.textContent ?? '';
+      el.id = `mermaid-${i}`;
+    });
+
+    // Diagrams are drawn in the site palette rather than mermaid's stock one,
+    // so a flowchart sits in the page instead of on top of it. Keep these in
+    // step with the --mm-* ramp in src/styles/mammoth.css.
+    const PALETTE = {
+      dark: {
+        background: 'transparent',
+        primaryColor: '#0d2740',
+        mainBkg: '#0d2740',
+        secondaryColor: '#12314e',
+        tertiaryColor: '#12314e',
+        primaryTextColor: '#fefefe',
+        textColor: '#fefefe',
+        primaryBorderColor: '#8cabc7',
+        nodeBorder: '#8cabc7',
+        lineColor: '#dbc560',
+        edgeLabelBackground: '#08192a',
+        clusterBkg: 'rgba(22, 73, 130, 0.28)',
+        clusterBorder: '#dbc560',
+        actorBkg: '#12314e',
+        actorBorder: '#8cabc7',
+        actorTextColor: '#fefefe',
+        actorLineColor: '#8cabc7',
+        signalColor: '#dbc560',
+        signalTextColor: '#fbf78c',
+        labelBoxBkg: '#12314e',
+        labelBoxBorderColor: '#8cabc7',
+        labelTextColor: '#fefefe',
+        noteBkgColor: '#164982',
+        noteTextColor: '#fefefe',
+        noteBorderColor: '#dbc560',
+      },
+      light: {
+        background: 'transparent',
+        primaryColor: '#eef4f9',
+        mainBkg: '#eef4f9',
+        secondaryColor: '#e6eff7',
+        tertiaryColor: '#e6eff7',
+        primaryTextColor: '#061726',
+        textColor: '#061726',
+        primaryBorderColor: '#164982',
+        nodeBorder: '#164982',
+        lineColor: '#194a7a',
+        edgeLabelBackground: '#fefefe',
+        clusterBkg: '#f2f7fb',
+        clusterBorder: '#164982',
+        actorBkg: '#e6eff7',
+        actorBorder: '#164982',
+        actorTextColor: '#061726',
+        actorLineColor: '#6b8fad',
+        signalColor: '#194a7a',
+        signalTextColor: '#164982',
+        labelBoxBkg: '#e6eff7',
+        labelBoxBorderColor: '#164982',
+        labelTextColor: '#061726',
+        noteBkgColor: '#fbf78c',
+        noteTextColor: '#061726',
+        noteBorderColor: '#dbc560',
+      },
+    };
+
+    let rendered = null;
+
+    const render = async () => {
+      const mode = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+      if (mode === rendered) return;
+      rendered = mode;
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        themeVariables: {
+          ...PALETTE[mode],
+          fontFamily: getComputedStyle(document.body).fontFamily,
+          fontSize: '15px',
+        },
+        securityLevel: 'strict',
+        flowchart: { curve: 'basis', useMaxWidth: true },
+        sequence: { useMaxWidth: true },
+      });
+
+      for (const el of blocks) {
+        el.innerHTML = el.dataset.source ?? '';
+        el.removeAttribute('data-processed');
+      }
+      await mermaid.run({ nodes: blocks });
+      for (const el of blocks) el.closest('.mermaid-figure').dataset.state = 'ready';
+    };
+
+    await render();
+
+    // Starlight flips `data-theme` on <html> when the reader uses the theme
+    // switcher; mermaid bakes its colours into the SVG, so redraw.
+    new MutationObserver(render).observe(document.documentElement, {
+      attributeFilter: ['data-theme'],
+    });
+  }
+</script>
+
+<style is:global>
+  /* Diagram plates. `not-content` already opts these out of Starlight's prose
+     styles, so this is only about the frame, sizing and the loading swap. */
+  .mermaid-figure {
+    margin: 1.75rem 0;
+    padding: 1.25rem 1rem;
+    border: 1px solid var(--sl-color-hairline-light);
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .mermaid-figure pre.mermaid {
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Between "script is running" and "SVG is on screen" there is nothing worth
+     showing. Without JS neither attribute is ever set and the source stays
+     visible as text. */
+  .mermaid-figure[data-state='loading'] {
+    visibility: hidden;
+  }
+
+  .mermaid-figure[data-state='ready'] {
+    visibility: visible;
+  }
+
+  .mermaid-figure svg {
+    max-width: 100%;
+    height: auto;
+  }
+</style>

@@ -1,0 +1,351 @@
+/* Mammoth site theme.
+ *
+ * A deep-blue field, Roman capitals and an old-style text face — the register
+ * of an engraved plate rather than a SaaS landing page. Colours are declared
+ * once here as `--mm-*` and then mapped onto Starlight's own tokens, so
+ * restyling the site means editing the ramp below and nothing else.
+ *
+ * Fonts are pulled in from Google Fonts by the `head` entries in
+ * astro.config.mjs; every stack below still names a system fallback.
+ */
+
+:root {
+	/* ── the brand ramp ─────────────────────────────────────────────────── */
+	--mm-blue: #164982; /* the field */
+	--mm-blue-deep: #194a7a; /* the field, one shade under */
+	--mm-steel: #8cabc7; /* secondary text, hairlines */
+	--mm-gold: #dbc560; /* rules, links, the quieter accent */
+	--mm-lemon: #fbf78c; /* the loud accent — headings on blue */
+	--mm-paper: #fefefe;
+	--mm-ink: #000000;
+
+	/* Derived shades. The site needs a navy dark enough to read body text
+	   against, and the brand blue is far too bright for that job. */
+	--mm-abyss: #05111d;
+	--mm-night: #08192a;
+	--mm-slate: #0d2740;
+	--mm-slate-hi: #12314e;
+
+	/* ── type ───────────────────────────────────────────────────────────── */
+	--sl-font: 'EB Garamond', 'Iowan Old Style', 'Palatino Linotype', Palatino,
+		Georgia, 'Times New Roman', serif;
+	--sl-font-mono: 'Courier Prime', ui-monospace, SFMono-Regular, 'SF Mono',
+		Menlo, Consolas, monospace;
+	--mm-display: 'Cinzel', 'Trajan Pro', 'Optima', 'Palatino Linotype', Palatino,
+		Georgia, serif;
+
+	/* EB Garamond runs small for its point size; nudge the base up so body
+	   copy lands at the same optical size as the old sans stack. */
+	--sl-text-base: 1.0625rem;
+	--sl-line-height: 1.75;
+}
+
+/* ── dark, the default ────────────────────────────────────────────────── */
+:root {
+	--sl-color-white: var(--mm-paper);
+	--sl-color-gray-1: #e9eff6;
+	--sl-color-gray-2: #c2d3e2;
+	--sl-color-gray-3: var(--mm-steel);
+	--sl-color-gray-4: #4f719a;
+	--sl-color-gray-5: #294a6d;
+	--sl-color-gray-6: var(--mm-slate);
+	--sl-color-gray-7: var(--mm-night);
+	--sl-color-black: var(--mm-abyss);
+
+	--sl-color-accent-low: var(--mm-slate-hi);
+	--sl-color-accent: var(--mm-blue);
+	--sl-color-accent-high: var(--mm-lemon);
+	--sl-color-text-accent: var(--mm-gold);
+
+	--sl-color-bg: var(--mm-abyss);
+	--sl-color-bg-nav: rgba(8, 25, 42, 0.92);
+	--sl-color-bg-sidebar: var(--mm-night);
+	--sl-color-bg-inline-code: var(--mm-slate-hi);
+	--sl-color-bg-badge: var(--mm-blue);
+
+	--sl-color-hairline: rgba(140, 171, 199, 0.16);
+	--sl-color-hairline-light: rgba(140, 171, 199, 0.3);
+	--sl-color-hairline-shade: rgba(0, 0, 0, 0.6);
+	--sl-color-backdrop-overlay: rgba(5, 17, 29, 0.82);
+
+	/* Starlight rotates --sl-color-accent-low and the hairlines per card, so
+	   anything that must stay one colour across a grid reads these instead. */
+	--mm-panel: var(--mm-night);
+	--mm-plate: var(--mm-slate-hi);
+	--mm-rule: rgba(140, 171, 199, 0.3);
+}
+
+/* ── light ────────────────────────────────────────────────────────────── */
+:root[data-theme='light'] {
+	--sl-color-white: #061726;
+	--sl-color-gray-1: #0c2439;
+	--sl-color-gray-2: #1b3d5d;
+	--sl-color-gray-3: #3d6688;
+	--sl-color-gray-4: #6b8fad;
+	--sl-color-gray-5: #b6cbdd;
+	--sl-color-gray-6: #dde8f0;
+	--sl-color-gray-7: #eef4f9;
+	--sl-color-black: var(--mm-paper);
+
+	--sl-color-accent-low: #d8e5f2;
+	--sl-color-accent: var(--mm-blue);
+	--sl-color-accent-high: #0b2c52;
+	--sl-color-text-accent: var(--mm-blue);
+
+	--sl-color-bg: var(--mm-paper);
+	--sl-color-bg-nav: rgba(254, 254, 254, 0.92);
+	--sl-color-bg-sidebar: #f4f8fb;
+	--sl-color-bg-inline-code: #e6eff7;
+
+	--sl-color-hairline: rgba(22, 73, 130, 0.14);
+	--sl-color-hairline-light: rgba(22, 73, 130, 0.28);
+	--sl-color-hairline-shade: rgba(22, 73, 130, 0.1);
+	--sl-color-backdrop-overlay: rgba(254, 254, 254, 0.85);
+
+	--mm-panel: #f4f8fb;
+	--mm-plate: #e6eff7;
+	--mm-rule: rgba(22, 73, 130, 0.28);
+}
+
+/* Starlight leaves body sizing to inheritance, so the bumped base above only
+   lands if it is applied somewhere. */
+body {
+	font-size: var(--sl-text-body);
+}
+
+/* The splash template runs the full width of the pane, which is right for card
+   grids and diagrams and much too wide for prose. Cap the text, not the rest. */
+:root[data-has-hero] .sl-markdown-content > p,
+:root[data-has-hero] .sl-markdown-content > ul,
+:root[data-has-hero] .sl-markdown-content > ol {
+	max-width: 72ch;
+}
+
+/* ── headings: Roman capitals ─────────────────────────────────────────── */
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.sl-markdown-content h4,
+h1#_top,
+h1[data-page-title],
+.site-title {
+	font-family: var(--mm-display);
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.055em;
+	line-height: 1.25;
+}
+
+.sl-markdown-content h1,
+h1#_top,
+h1[data-page-title] {
+	font-weight: 400;
+	letter-spacing: 0.07em;
+}
+
+/* A long title set solid in capitals needs a little more room to breathe. */
+:root h1#_top {
+	font-size: clamp(1.9rem, 3.4vw, 2.5rem);
+	line-height: 1.3;
+}
+
+.sl-markdown-content h5,
+.sl-markdown-content h6 {
+	font-family: var(--mm-display);
+	text-transform: uppercase;
+	letter-spacing: 0.09em;
+	font-size: var(--sl-text-sm);
+	color: var(--sl-color-text-accent);
+}
+
+/* A hairline under every section heading — the engraved-plate rule. */
+.sl-markdown-content h2 {
+	border-bottom: 1px solid var(--sl-color-hairline-light);
+	padding-bottom: 0.35em;
+}
+
+/* ── chrome ───────────────────────────────────────────────────────────── */
+.site-title {
+	color: var(--mm-lemon);
+	font-size: var(--sl-text-h4);
+}
+
+:root[data-theme='light'] .site-title {
+	color: var(--mm-blue);
+}
+
+.sidebar-content .large,
+.sidebar-content summary .group-label span {
+	font-family: var(--mm-display);
+	text-transform: uppercase;
+	letter-spacing: 0.11em;
+	font-size: 0.78rem;
+	color: var(--sl-color-text-accent);
+}
+
+:root .sidebar-content a[aria-current='page'] {
+	background: var(--mm-plate);
+	color: var(--mm-lemon);
+	box-shadow: inset 2px 0 0 var(--mm-gold);
+}
+
+:root[data-theme='light'] .sidebar-content a[aria-current='page'] {
+	color: var(--mm-blue);
+}
+
+header.header {
+	border-bottom: 1px solid var(--sl-color-hairline-light);
+}
+
+/* ── links ────────────────────────────────────────────────────────────── */
+.sl-markdown-content a:not(:where(.not-content *)) {
+	text-decoration-color: var(--sl-color-hairline-light);
+	text-underline-offset: 0.22em;
+}
+
+.sl-markdown-content a:not(:where(.not-content *)):hover {
+	color: var(--mm-lemon);
+	text-decoration-color: currentColor;
+}
+
+:root[data-theme='light'] .sl-markdown-content a:not(:where(.not-content *)):hover {
+	color: var(--mm-blue-deep);
+}
+
+/* ── the splash page: a full blue field ───────────────────────────────── */
+/* Starlight puts the hero and the page body in the same panel, so the stops
+   here are absolute lengths rather than percentages: the field has to end just
+   past the hero no matter how long the page below it runs. */
+:root[data-has-hero] .content-panel:first-of-type {
+	background: linear-gradient(
+		180deg,
+		var(--mm-blue) 0,
+		var(--mm-blue) 240px,
+		var(--mm-blue-deep) 440px,
+		var(--sl-color-bg) 660px
+	);
+}
+
+:root[data-has-hero] .hero h1[data-page-title] {
+	color: var(--mm-lemon);
+	font-size: clamp(2.6rem, 7vw, 5rem);
+	letter-spacing: 0.1em;
+}
+
+:root[data-has-hero] .hero .tagline {
+	color: var(--mm-paper);
+	font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+	font-style: italic;
+	max-width: 42ch;
+}
+
+:root[data-has-hero] .hero img {
+	filter: drop-shadow(0 12px 40px rgba(0, 0, 0, 0.45));
+}
+
+/* Hero buttons: hairline plates, not pills. */
+:root[data-has-hero] .sl-link-button {
+	font-family: var(--mm-display);
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	font-size: 0.82rem;
+	border-radius: 0;
+	border: 1px solid var(--mm-gold);
+}
+
+:root[data-has-hero] .sl-link-button.primary {
+	background: var(--mm-lemon);
+	border-color: var(--mm-lemon);
+	color: var(--mm-blue-deep);
+}
+
+:root[data-has-hero] .sl-link-button.primary:hover {
+	background: var(--mm-gold);
+	color: var(--mm-ink);
+}
+
+:root[data-has-hero] .sl-link-button.minimal {
+	color: var(--mm-paper);
+	padding-inline: 1.15rem;
+}
+
+:root[data-has-hero] .sl-link-button.minimal:hover {
+	background: rgba(251, 247, 140, 0.12);
+	color: var(--mm-lemon);
+}
+
+/* ── the eyebrow: tiny letterspaced mono, used above hero sections ────── */
+.mm-eyebrow {
+	font-family: var(--sl-font-mono);
+	text-transform: uppercase;
+	letter-spacing: 0.28em;
+	font-size: 0.7rem;
+	color: var(--mm-gold);
+	margin-bottom: 0.75rem;
+}
+
+/* Gold on paper is unreadable at this size — swap to the brand blue. */
+:root[data-theme='light'] .mm-eyebrow {
+	color: var(--mm-blue);
+}
+
+/* ── cards ────────────────────────────────────────────────────────────── */
+:root .card {
+	border-radius: 0;
+	border: 1px solid var(--mm-rule);
+	background: var(--mm-panel);
+}
+
+:root .card .title {
+	font-family: var(--mm-display);
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	color: var(--sl-color-text-accent);
+}
+
+/* Starlight tints each card icon a different hue off the card's position in
+   the grid. One palette, one plate. */
+:root .card .icon {
+	color: var(--mm-gold);
+	background: var(--mm-plate);
+	border: 1px solid var(--mm-rule);
+	border-radius: 0;
+}
+
+/* ── code ─────────────────────────────────────────────────────────────── */
+.sl-markdown-content code:not(:where(.not-content *)) {
+	border: 1px solid var(--sl-color-hairline);
+	border-radius: 0;
+	padding: 0.08em 0.32em;
+}
+
+.expressive-code .frame pre {
+	border-radius: 0;
+	border-color: var(--sl-color-hairline-light);
+}
+
+/* ── tables ───────────────────────────────────────────────────────────── */
+.sl-markdown-content table:not(:where(.not-content *)) {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+.sl-markdown-content th:not(:where(.not-content *)) {
+	font-family: var(--mm-display);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	font-size: 0.78rem;
+	color: var(--sl-color-text-accent);
+	border-bottom: 1px solid var(--mm-gold);
+}
+
+.sl-markdown-content td:not(:where(.not-content *)) {
+	border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* ── quotes ───────────────────────────────────────────────────────────── */
+.sl-markdown-content blockquote:not(:where(.not-content *)) {
+	border-inline-start: 2px solid var(--mm-gold);
+	font-style: italic;
+	color: var(--sl-color-gray-2);
+}
