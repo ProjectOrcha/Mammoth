@@ -7,9 +7,9 @@ version      = "0.1.0"
 edition      = "2021"
 rust-version = "1.82"
 license      = "Apache-2.0 OR MIT"
-repository   = "https://github.com/Sakib-Dalal/mammoth"
-homepage     = "https://sakib-dalal.github.io/mammoth"
-authors      = ["Sakib Dalal"]
+repository   = "https://github.com/ProjectOrcha/Mammoth"
+homepage     = "https://projectorcha.github.io/Mammoth"
+authors      = ["ProjectOrcha"]
 
 [workspace.dependencies]
 # --- internal ---
@@ -45,6 +45,7 @@ thiserror    = "2"
 tracing      = "0.1"
 async-trait  = "0.1"
 futures-core = "0.3"
+futures-util = "0.3.31"
 
 [profile.release]
 lto           = "fat"

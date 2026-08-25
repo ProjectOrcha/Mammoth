@@ -36,6 +36,11 @@ that release decides whether M7 is worth ten weeks.
 | `mammoth-compute` | M7 | DAG engine, shuffle |
 | `mammoth-migrate` | M8 | HDFS/S3 migration |
 
+## Building it
+
+Step-by-step, with worked code: **[docs/guide/](guide/)**. Chapters 5–8 cover
+M1–M2 in full.
+
 ## Week 1
 
 1. The `Backend` trait in `mammoth-core` — the whole architecture hangs off it.

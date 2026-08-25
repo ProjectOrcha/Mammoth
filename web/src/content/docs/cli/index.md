@@ -44,6 +44,6 @@ mammoth
 4. **Progress bars on anything over one second**, auto-disabled when piped.
 5. **`mammoth doctor` exists** and checks what beginners get wrong.
 
-The full command reference at [`cli/reference`](/mammoth/cli/reference/) is
+The full command reference at [`cli/reference`](/Mammoth/cli/reference/) is
 generated from the `clap` tree by `cargo xtask docs` and verified in CI, so it
 can never drift from the binary.

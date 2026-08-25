@@ -32,7 +32,7 @@ If you know Hadoop, this is the whole vocabulary change:
 | Rack awareness | **topology** | which machines share a failure domain |
 | `hdfs dfs -ls /` | `mammoth ls /` | list a directory |
 
-New to all of this? Read [Hadoop in 10 minutes](/mammoth/intro/hadoop-primer/) first.
+New to all of this? Read [Hadoop in 10 minutes](/Mammoth/intro/hadoop-primer/) first.
 
 ## What Mammoth is not
 

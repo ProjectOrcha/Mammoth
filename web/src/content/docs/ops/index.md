@@ -3,7 +3,7 @@ title: Operations
 description: Running a Mammoth cluster.
 ---
 
-- [Configuration](/mammoth/ops/configuration/) — the single `mammoth.toml`
+- [Configuration](/Mammoth/ops/configuration/) — the single `mammoth.toml`
 - `mammoth doctor` — config, ports, disks, clock skew, ulimits
 - `mammoth admin fsck` — block-level integrity
 - `mammoth admin balancer` — even out per-node usage

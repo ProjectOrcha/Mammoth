@@ -2,7 +2,7 @@
 //!
 //! Design principle 3 from Part V: never print a stack trace. Every variant
 //! carries a stable `E….` code so the CLI can point at
-//! `https://sakib-dalal.github.io/mammoth/errors/<code>` and so scripts can
+//! `https://projectorcha.github.io/Mammoth/errors/<code>` and so scripts can
 //! match on something that will not change when the wording does.
 
 use std::path::PathBuf;
@@ -112,6 +112,6 @@ impl Error {
 
     /// Documentation URL for this error code.
     pub fn docs_url(&self) -> String {
-        format!("https://sakib-dalal.github.io/mammoth/errors/{}", self.code())
+        format!("https://projectorcha.github.io/Mammoth/errors/{}", self.code())
     }
 }

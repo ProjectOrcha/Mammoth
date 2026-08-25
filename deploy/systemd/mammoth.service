@@ -1,7 +1,7 @@
 # Written by `mammoth systemd install --role worker`. Do not hand-write units.
 [Unit]
 Description=Mammoth %i
-Documentation=https://sakib-dalal.github.io/mammoth
+Documentation=https://projectorcha.github.io/Mammoth
 After=network-online.target
 Wants=network-online.target
 

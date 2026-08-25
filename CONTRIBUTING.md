@@ -1,10 +1,14 @@
 # Contributing to Mammoth
 
+New to the project, or to Rust? Start with
+**[the build guide](docs/guide/)** rather than this file — it walks through the
+same material from an empty machine, with worked examples.
+
 ## Getting set up
 
 ```bash
-git clone https://github.com/Sakib-Dalal/mammoth
-cd mammoth
+git clone https://github.com/ProjectOrcha/Mammoth
+cd Mammoth
 cargo build
 cargo test
 ```
@@ -28,6 +32,7 @@ Node 20+ is needed only if you are touching `ui/` or `web/`.
 | `examples/` | numbered, runnable walkthroughs |
 | `tests/` | `e2e/`, `sim/`, `compat/` — see [tests/README.md](tests/README.md) |
 | `xtask/` | `cargo xtask build-ui \| docs \| assets \| dist` |
+| `docs/guide/` | the twelve-chapter build guide |
 | `assets/logo/` | canonical logo files — see [assets/logo/README.md](assets/logo/README.md) |
 
 ## Before you open a PR

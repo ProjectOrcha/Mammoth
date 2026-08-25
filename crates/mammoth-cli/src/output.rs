@@ -54,7 +54,7 @@ pub fn emit<T: Render>(v: &T, fmt: OutputFormat) {
 ///     · lower replication:   mammoth put ./big.bin /data/big.bin --replication 2
 ///     · check node health:   mammoth node list
 ///
-///   docs: https://sakib-dalal.github.io/mammoth/errors/E0301
+///   docs: https://projectorcha.github.io/Mammoth/errors/E0301
 /// ```
 pub fn print_error(e: &Error) {
     let color = std::io::stderr().is_terminal();

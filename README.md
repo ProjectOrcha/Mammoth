@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Sakib-Dalal/mammoth/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Sakib-Dalal/mammoth/ci.yml?branch=main&label=ci"></a>
+  <a href="https://github.com/ProjectOrcha/Mammoth/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ProjectOrcha/Mammoth/ci.yml?branch=main&label=ci"></a>
   <a href="#licence"><img alt="Licence" src="https://img.shields.io/badge/licence-Apache--2.0%20OR%20MIT-blue"></a>
   <img alt="Rust" src="https://img.shields.io/badge/rust-1.82%2B-orange">
   <img alt="Status" src="https://img.shields.io/badge/status-pre--release-yellow">
@@ -60,8 +60,8 @@ Full vocabulary mapping in
 ## Try it
 
 ```bash
-git clone https://github.com/Sakib-Dalal/mammoth
-cd mammoth
+git clone https://github.com/ProjectOrcha/Mammoth
+cd Mammoth
 cargo build --release -p mammoth-cli
 ./target/release/mammoth quickstart
 ```
@@ -83,10 +83,10 @@ $ mammoth quickstart
 At `v0.1.0` this becomes a 30-second install:
 
 ```bash
-curl -fsSL https://sakib-dalal.github.io/mammoth/install.sh | sh
+curl -fsSL https://projectorcha.github.io/Mammoth/install.sh | sh
 cargo install mammoth-cli --locked
-brew install Sakib-Dalal/tap/mammoth
-docker run -p 8080:8080 -p 9000:9000 ghcr.io/sakib-dalal/mammoth quickstart
+brew install ProjectOrcha/tap/mammoth
+docker run -p 8080:8080 -p 9000:9000 ghcr.io/projectorcha/mammoth quickstart
 ```
 
 ## You can see your data
@@ -162,7 +162,7 @@ $ mammoth put ./big.bin /data/big.bin
     · check node health:   mammoth node list
     · why is a node down:  mammoth doctor --node w3
 
-  docs: https://sakib-dalal.github.io/mammoth/errors/E0301
+  docs: https://projectorcha.github.io/Mammoth/errors/E0301
 ```
 
 ## Architecture
@@ -285,6 +285,26 @@ The site is built from `web/` and published to GitHub Pages.
 - [Data guide](web/src/content/docs/data/index.md) — block size, replication, formats, partitioning, skew
 - [Configuration](web/src/content/docs/ops/configuration.md) · [Operations](web/src/content/docs/ops/index.md)
 - [HTTP and S3 API](web/src/content/docs/api/index.md) · [Migration](web/src/content/docs/migration/index.md)
+
+## Building it yourself
+
+New to Rust, or to distributed systems? **[The Mammoth build guide](docs/guide/)**
+takes you from an empty machine to a working filesystem with block
+visualization, in twelve chapters, with every code block compiled and tested.
+
+| | |
+| --- | --- |
+| [0 · Set up your machine](docs/guide/00-setup.md) | Rust, Git, Node, first build |
+| [1 · The Rust you actually need](docs/guide/01-rust-you-need.md) | 30 minutes, not a course |
+| [2 · Your first change](docs/guide/02-first-change.md) | a real command, end to end |
+| [3 · How the team works together](docs/guide/03-team-workflow.md) | branches, reviews, who does what |
+| [4 · Understanding the Backend trait](docs/guide/04-the-backend-trait.md) | the idea everything hangs off |
+| [5](docs/guide/05-localbackend-part-1.md) · [6 · LocalBackend](docs/guide/06-localbackend-part-2.md) | blocks, replicas, rack-aware placement |
+| [7 · Wiring up the CLI](docs/guide/07-wiring-the-cli.md) | `ls`, `put`, `cat`, `stat` |
+| [8 · `viz blocks`](docs/guide/08-viz-blocks.md) | seeing where your data went |
+| [9 · The web UI](docs/guide/09-web-ui.md) | REST API and embedded dashboard |
+| [10 · GitHub Pages](docs/guide/10-github-pages.md) | publish the docs site |
+| [11 · Where to go next](docs/guide/11-what-next.md) | M4 and beyond |
 
 ## Contributing
 

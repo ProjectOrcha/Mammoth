@@ -9,7 +9,10 @@ repository.workspace   = true
 
 [dependencies]
 mammoth-core = { workspace = true }
-async-trait = { workspace = true }
-bytes = { workspace = true }
+async-trait  = { workspace = true }
+bytes        = { workspace = true }
 futures-core = { workspace = true }
-tokio = { workspace = true }
+futures-util = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+tokio        = { workspace = true }

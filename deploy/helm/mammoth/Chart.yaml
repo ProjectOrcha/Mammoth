@@ -4,6 +4,6 @@ description: A Hadoop-class distributed storage engine in Rust
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-home: https://sakib-dalal.github.io/mammoth
+home: https://projectorcha.github.io/Mammoth
 sources:
-  - https://github.com/Sakib-Dalal/mammoth
+  - https://github.com/ProjectOrcha/Mammoth

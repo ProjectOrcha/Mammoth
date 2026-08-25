@@ -3,8 +3,8 @@ import starlight from '@astrojs/starlight';
 
 // Custom domain? Put it in web/public/CNAME and delete `base` below.
 export default defineConfig({
-  site: 'https://sakib-dalal.github.io',
-  base: '/mammoth',
+  site: 'https://projectorcha.github.io',
+  base: '/Mammoth',
   integrations: [
     starlight({
       title: 'Mammoth',
@@ -13,7 +13,7 @@ export default defineConfig({
       // pipeline and only accepts paths under src/.
       favicon: '/logo.svg',
       description: 'A Hadoop-class distributed storage engine in Rust.',
-      social: { github: 'https://github.com/Sakib-Dalal/mammoth' },
+      social: { github: 'https://github.com/ProjectOrcha/Mammoth' },
       sidebar: [
         {
           label: 'Start Here',

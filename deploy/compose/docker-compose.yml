@@ -8,7 +8,7 @@
 name: mammoth
 
 x-mammoth: &mammoth
-  image: ghcr.io/sakib-dalal/mammoth:latest
+  image: ghcr.io/projectorcha/mammoth:latest
   build:
     context: ../..
     dockerfile: deploy/docker/Dockerfile

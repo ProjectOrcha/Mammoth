@@ -32,4 +32,4 @@ multipart upload, and SigV4 verification.
 ## Rust SDK
 
 Published as `mammoth-client`. Generated rustdoc is at
-[`/mammoth/rustdoc/`](/mammoth/rustdoc/).
+[`/mammoth/rustdoc/`](/Mammoth/rustdoc/).

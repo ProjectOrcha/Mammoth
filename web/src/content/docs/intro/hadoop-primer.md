@@ -6,7 +6,7 @@ sidebar:
 ---
 
 You cannot simplify something you do not understand. This is the short version of
-Hadoop architecture. If you already know it, skip ahead to [What is Mammoth?](/mammoth/intro/what/).
+Hadoop architecture. If you already know it, skip ahead to [What is Mammoth?](/Mammoth/intro/what/).
 
 
 ## 1.1 The problem Hadoop solves

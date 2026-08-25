@@ -1,5 +1,5 @@
 image:
-  repository: ghcr.io/sakib-dalal/mammoth
+  repository: ghcr.io/projectorcha/mammoth
   tag: ""              # defaults to .Chart.AppVersion
   pullPolicy: IfNotPresent
 

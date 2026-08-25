@@ -9,5 +9,5 @@ targets = [
   "x86_64-pc-windows-msvc",
 ]
 ci  = ["github"]
-tap = "Sakib-Dalal/homebrew-tap"
+tap = "ProjectOrcha/homebrew-tap"
 install-path = "CARGO_HOME"

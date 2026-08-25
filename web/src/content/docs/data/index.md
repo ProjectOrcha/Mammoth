@@ -83,7 +83,7 @@ $ mammoth put ./events.csv.gz /warehouse/events.csv.gz
   ⚠ gzip is not splittable — this file will be processed by a single task
     even though it spans 65 blocks across 12 nodes.
     consider: parquet, or bzip2/lz4-framed if you must stay row-based.
-    docs: https://<you>.github.io/mammoth/data/formats
+    docs: https://projectorcha.github.io/Mammoth/data/formats
 ```
 
 That one warning will save your users more time than most of your optimizations.
