@@ -1,0 +1,9 @@
+apiVersion: v2
+name: mammoth
+description: A Hadoop-class distributed storage engine in Rust
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://sakib-dalal.github.io/mammoth
+sources:
+  - https://github.com/Sakib-Dalal/mammoth

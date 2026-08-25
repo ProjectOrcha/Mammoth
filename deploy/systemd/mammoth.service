@@ -1,0 +1,29 @@
+# Written by `mammoth systemd install --role worker`. Do not hand-write units.
+[Unit]
+Description=Mammoth %i
+Documentation=https://sakib-dalal.github.io/mammoth
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=mammoth
+Group=mammoth
+ExecStart=/usr/local/bin/mammoth serve --role worker
+Environment=MAMMOTH_CONFIG=/etc/mammoth/mammoth.toml
+Restart=on-failure
+RestartSec=5s
+
+# Block storage opens a lot of files. 1024 is the single most common cause of
+# a worker falling over under load — `mammoth doctor` checks for it.
+LimitNOFILE=1048576
+
+# Hardening. Storage volumes are granted explicitly via ReadWritePaths.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/mammoth /data
+
+[Install]
+WantedBy=multi-user.target

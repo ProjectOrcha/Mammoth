@@ -1,0 +1,14 @@
+[package]
+name        = "mammoth-proto"
+description = "Protobuf definitions and tonic codegen"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+license.workspace      = true
+repository.workspace   = true
+
+[dependencies]
+
+
+[build-dependencies]
+# tonic-build = "0.12"   # enable when the .proto files land (M5)

@@ -1,0 +1,26 @@
+name: Bug report
+description: Something does not work
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the exact command and its full output.
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected instead
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes:
+      label: mammoth doctor
+      description: Output of `mammoth doctor`, and `mammoth --version`.
+      render: shell
+  - type: input
+    id: seed
+    attributes:
+      label: Simulation seed
+      description: If this came from a nightly sim failure, the seed from the issue.

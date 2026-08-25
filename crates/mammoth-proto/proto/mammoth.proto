@@ -1,0 +1,30 @@
+// Master <-> worker and client <-> master RPC. Compiled by tonic-build (M5).
+//
+// The heartbeat is a *bidirectional* stream: workers push liveness and block
+// digests up, and the master pushes commands (replicate, delete, decommission)
+// back down the same connection — so the master never has to dial a worker.
+//
+// Block reports carry a rolling xxhash3 digest over the sorted block-ID set
+// rather than the full list. The master asks for a full report only when the
+// digest disagrees, and that report is streamed in 10k chunks with yields
+// between them. That is what removes the multi-second metadata pauses.
+
+syntax = "proto3";
+
+package mammoth.v1;
+
+service Master {
+  rpc Heartbeat(stream WorkerBeat) returns (stream MasterCommand);
+}
+
+message WorkerBeat {
+  string node_id      = 1;
+  uint64 used         = 2;
+  uint64 capacity     = 3;
+  uint64 block_digest = 4;  // xxhash3 over the sorted block-ID set
+}
+
+message MasterCommand {
+  // replicate | delete | recover_lease | decommission | full_block_report
+  string kind = 1;
+}

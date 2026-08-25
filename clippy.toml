@@ -1,0 +1,3 @@
+# Mammoth lint policy: catch footguns early, stay pragmatic.
+too-many-arguments-threshold = 10
+type-complexity-threshold    = 500

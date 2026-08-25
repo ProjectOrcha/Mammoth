@@ -1,0 +1,25 @@
+name: Release
+
+# Generated and maintained by `cargo dist init`. Re-run it after editing
+# dist-workspace.toml rather than hand-editing this file.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Placeholder
+        run: |
+          echo "Run 'cargo dist init' to generate the real release workflow."
+          echo "It builds every target in dist-workspace.toml, produces the"
+          echo "shell/PowerShell/Homebrew/MSI installers, and attaches them"
+          echo "to the GitHub Release."
+          exit 1

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://sakib-dalal.github.io/mammoth
+    about: Concepts, CLI reference, data guide and operations.

@@ -1,0 +1,55 @@
+[workspace]
+resolver = "2"
+members  = ["crates/*", "xtask"]
+
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+rust-version = "1.82"
+license      = "Apache-2.0 OR MIT"
+repository   = "https://github.com/Sakib-Dalal/mammoth"
+homepage     = "https://sakib-dalal.github.io/mammoth"
+authors      = ["Sakib Dalal"]
+
+[workspace.dependencies]
+# --- internal ---
+mammoth-core      = { path = "crates/mammoth-core",      version = "0.1.0" }
+mammoth-viz       = { path = "crates/mammoth-viz",       version = "0.1.0" }
+mammoth-local     = { path = "crates/mammoth-local",     version = "0.1.0" }
+mammoth-gateway   = { path = "crates/mammoth-gateway",   version = "0.1.0" }
+mammoth-proto     = { path = "crates/mammoth-proto",     version = "0.1.0" }
+mammoth-rpc       = { path = "crates/mammoth-rpc",       version = "0.1.0" }
+mammoth-storage   = { path = "crates/mammoth-storage",   version = "0.1.0" }
+mammoth-meta      = { path = "crates/mammoth-meta",      version = "0.1.0" }
+mammoth-master    = { path = "crates/mammoth-master",    version = "0.1.0" }
+mammoth-worker    = { path = "crates/mammoth-worker",    version = "0.1.0" }
+mammoth-client    = { path = "crates/mammoth-client",    version = "0.1.0" }
+mammoth-scheduler = { path = "crates/mammoth-scheduler", version = "0.1.0" }
+mammoth-compute   = { path = "crates/mammoth-compute",   version = "0.1.0" }
+mammoth-migrate   = { path = "crates/mammoth-migrate",   version = "0.1.0" }
+mammoth-testkit   = { path = "crates/mammoth-testkit",   version = "0.1.0" }
+
+# --- external ---
+tokio        = { version = "1", features = ["full"] }
+clap         = { version = "4", features = ["derive", "env"] }
+axum         = "0.7"
+serde        = { version = "1", features = ["derive"] }
+serde_json   = "1"
+figment      = { version = "0.10", features = ["toml", "env"] }
+comfy-table  = "7"
+ratatui      = "0.28"
+indicatif    = "0.17"
+owo-colors   = "4"
+bytes        = "1"
+thiserror    = "2"
+tracing      = "0.1"
+async-trait  = "0.1"
+futures-core = "0.3"
+
+[profile.release]
+lto           = "fat"
+codegen-units = 1
+strip         = true
+
+[profile.bench]
+debug = true

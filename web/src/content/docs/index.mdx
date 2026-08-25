@@ -1,0 +1,37 @@
+---
+title: Mammoth
+description: A Hadoop-class distributed storage engine in Rust. The elephant, but faster, and without the JVM.
+template: splash
+hero:
+  tagline: The elephant, but faster, and without the JVM.
+  image:
+    html: '<img src="/mammoth/logo.svg" alt="Mammoth" width="360">'
+  actions:
+    - text: 5-minute cluster
+      link: /mammoth/intro/quickstart/
+      icon: right-arrow
+    - text: Hadoop in 10 minutes
+      link: /mammoth/intro/hadoop-primer/
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+  <Card title="One binary" icon="rocket">
+    `mammoth serve --role master|worker|gateway|all`. One TOML file. No XML, no
+    ZooKeeper, no JournalNodes, no ZKFC.
+  </Card>
+  <Card title="Speaks S3" icon="cloud-download">
+    Spark, DuckDB, Polars, Trino, ClickHouse, Iceberg and Delta Lake work on day
+    one with a one-line config change.
+  </Card>
+  <Card title="You can see your data" icon="chart">
+    `mammoth viz` and the distribution page show you where every block actually
+    landed — not a table of numbers.
+  </Card>
+  <Card title="No GC pauses" icon="approve-check">
+    Lock-free metadata reads over an immutable namespace behind `ArcSwap`.
+    Readers never block. Ever.
+  </Card>
+</CardGrid>

@@ -1,0 +1,6 @@
+//! The master role: namespace, placement, safe mode
+//!
+//! Status: not yet implemented — scheduled for milestone M5.
+//! See `docs/ROADMAP.md` for what "done" means for this crate.
+
+#![forbid(unsafe_code)]

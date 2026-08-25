@@ -1,0 +1,11 @@
+Mammoth {{ .Chart.AppVersion }} is installing into namespace {{ .Release.Namespace }}.
+
+The cluster starts in safe mode and is read-only until workers have reported
+their blocks. Watch it leave:
+
+  kubectl -n {{ .Release.Namespace }} exec deploy/{{ .Release.Name }}-gateway -- \
+    mammoth admin safemode status
+
+Then open the UI:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }}-gateway 8080:8080

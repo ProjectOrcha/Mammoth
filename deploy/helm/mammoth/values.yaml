@@ -1,0 +1,39 @@
+image:
+  repository: ghcr.io/sakib-dalal/mammoth
+  tag: ""              # defaults to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+cluster:
+  name: prod-01
+
+master:
+  replicas: 3          # Raft needs an odd number; 3 tolerates one loss
+  persistence:
+    size: 50Gi
+    storageClass: ""
+
+worker:
+  replicas: 4
+  # One PVC per volume. Do not put two volumes on one physical disk.
+  volumes:
+    count: 4
+    size: 2Ti
+    storageClass: ""
+  # Set from the node's topology label so placement is genuinely rack-aware.
+  rackFromNodeLabel: topology.kubernetes.io/zone
+
+gateway:
+  replicas: 2
+  service:
+    type: ClusterIP
+    s3Port: 9000
+    uiPort: 8080
+
+storage:
+  blockSize: 128MiB
+  replication: 3
+  inlineThreshold: 1MiB
+
+security:
+  tls: auto
+  auth: token

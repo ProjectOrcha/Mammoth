@@ -1,0 +1,13 @@
+[package]
+name        = "mammoth-viz"
+description = "Terminal charts, heatmaps and the ratatui dashboard"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+license.workspace      = true
+repository.workspace   = true
+
+[dependencies]
+mammoth-core = { workspace = true }
+comfy-table = { workspace = true }
+owo-colors = { workspace = true }

@@ -1,0 +1,73 @@
+# 1 master + 3 workers + gateway. The smallest layout that exercises
+# rack-aware placement and re-replication.
+#
+#   docker compose up -d
+#   open http://localhost:8080
+#   docker compose stop worker-3     # watch the UI re-replicate
+
+name: mammoth
+
+x-mammoth: &mammoth
+  image: ghcr.io/sakib-dalal/mammoth:latest
+  build:
+    context: ../..
+    dockerfile: deploy/docker/Dockerfile
+  environment:
+    MAMMOTH_CLUSTER__NAME: dev-01
+    MAMMOTH_CLUSTER__MASTERS: master:7000
+    MAMMOTH_SECURITY__TLS: "off"
+  restart: unless-stopped
+
+services:
+  master:
+    <<: *mammoth
+    command: ["serve", "--role", "master"]
+    environment:
+      MAMMOTH_CLUSTER__MASTERS: master:7000
+      MAMMOTH_SECURITY__TLS: "off"
+      MAMMOTH_MASTER__SAFEMODE_THRESHOLD: "0.99"
+    volumes: ["master-meta:/var/lib/mammoth/meta"]
+    ports: ["7000:7000"]
+
+  worker-1: &worker
+    <<: *mammoth
+    command: ["serve", "--role", "worker"]
+    environment:
+      MAMMOTH_CLUSTER__MASTERS: master:7000
+      MAMMOTH_SECURITY__TLS: "off"
+      MAMMOTH_NODE__RACK: /dc1/rack-a
+      MAMMOTH_STORAGE__VOLUMES: /data/d1
+    volumes: ["w1:/data/d1"]
+    depends_on: [master]
+
+  worker-2:
+    <<: *worker
+    environment:
+      MAMMOTH_CLUSTER__MASTERS: master:7000
+      MAMMOTH_SECURITY__TLS: "off"
+      MAMMOTH_NODE__RACK: /dc1/rack-b
+      MAMMOTH_STORAGE__VOLUMES: /data/d1
+    volumes: ["w2:/data/d1"]
+
+  worker-3:
+    <<: *worker
+    environment:
+      MAMMOTH_CLUSTER__MASTERS: master:7000
+      MAMMOTH_SECURITY__TLS: "off"
+      MAMMOTH_NODE__RACK: /dc1/rack-c
+      MAMMOTH_STORAGE__VOLUMES: /data/d1
+    volumes: ["w3:/data/d1"]
+
+  gateway:
+    <<: *mammoth
+    command: ["serve", "--role", "gateway"]
+    ports:
+      - "8080:8080"   # Web UI + REST/SSE
+      - "9000:9000"   # S3
+    depends_on: [master]
+
+volumes:
+  master-meta:
+  w1:
+  w2:
+  w3:

@@ -1,0 +1,11 @@
+[package]
+name        = "mammoth-scheduler"
+description = "Queues, slot placement and locality scoring"
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+license.workspace      = true
+repository.workspace   = true
+
+[dependencies]
+mammoth-core = { workspace = true }
