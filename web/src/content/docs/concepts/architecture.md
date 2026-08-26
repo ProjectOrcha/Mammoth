@@ -11,13 +11,21 @@ flowchart TB
     workers["workers ×N — the shelves,<br/>and the muscle<br/>block storage<br/>task execution · shuffle"]
 
     clients --> gw
-    gw -->|"metadata only"| masters
-    masters -->|"block placement"| workers
-    gw ==>|"data — never touches the master"| workers
-    workers -.->|"heartbeats every 3s<br/>+ block digests"| masters
+    gw -->|"open — once per lease,<br/>not once per read"| masters
+    masters -->|"namespace, streamed to<br/>read-only learners"| workers
+    gw ==>|"data — never touches the master<br/>reads resolve at the worker<br/>writes disperse in parallel"| workers
+    workers -.->|"heartbeats every 3s<br/>+ 32-byte Merkle root"| masters
 ```
 
 One binary: `mammoth serve --role master|worker|gateway|all`.
+
+Note what the master is *not* on: the read path. Placement is computed from the
+block ID rather than looked up, `open` returns a lease covering the whole file,
+and workers carry a read-only replica of the namespace — so a warm read never
+speaks to a master at all, and a cold one can resolve at the first worker it
+reaches. That, the parallel write, the declustered repair and the memory-mapped
+restart are the four mechanisms that separate this design from HDFS's:
+**[The four fast paths](/Mammoth/concepts/fast-paths/)**.
 
 ## The Backend trait
 

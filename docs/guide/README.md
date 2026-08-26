@@ -27,9 +27,12 @@ Every chapter has the same shape:
 > shown is real output, captured from those runs, not illustration. Chapter 10's
 > build steps and expected output were verified the same way.
 >
-> The exception is **chapter 9**, whose Rust and Svelte are written to the same
-> standard but were not machine-verified end to end. Treat its code as a solid
-> starting point rather than a guarantee.
+> The exceptions are **chapter 9**, whose Rust and Svelte are written to the
+> same standard but were not machine-verified end to end, and **chapter 12**,
+> which is a design chapter: its §0 is real code you can run today, and §1–§4
+> describe machinery that does not exist yet. Treat both as a solid starting
+> point rather than a guarantee, and treat every number in chapter 12 as a
+> target derived from a cost model rather than a benchmark.
 >
 > So if you type something in and it does not work, the likely cause is a typo
 > or a skipped step. Read the "If it went wrong" section at the end of each
@@ -64,10 +67,23 @@ Every chapter has the same shape:
 | 10 | [Publishing the docs to GitHub Pages](10-github-pages.md) | 45 min |
 | 11 | [Where to go next](11-what-next.md) | 15 min |
 
+### Part 4 — Going faster than Hadoop
+
+| # | Chapter | Time |
+| --- | --- | --- |
+| 12 | [The four fast paths](12-the-fast-paths.md) | 90 min |
+
 Chapters 0–8 get you to **milestone M1–M2** in the [roadmap](../ROADMAP.md):
 a working single-machine filesystem with the visualization that makes this
 project worth building. Chapter 10 stands alone — you can do it on day one, and
 you probably should, because a live docs site makes the project feel real.
+
+Chapter 12 is the design for the distributed half: how a read gets down to one
+round trip, how a write goes out in one hop instead of three, how a dead node is
+rebuilt by the whole cluster at once, and how a master restarts in seconds
+instead of half an hour. Read it before you write `mammoth-master` or
+`mammoth-worker` — two of the four are *simpler* than the HDFS approach, and all
+four are far cheaper to build than to retrofit.
 
 ## The one rule
 

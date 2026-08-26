@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" href="%sveltekit.assets%/logo.svg" />
+    <title>Mammoth</title>
+    <!-- No webfont link on purpose. This UI is embedded in the binary and
+         served from inside a cluster, where fonts.googleapis.com is usually
+         unreachable and always slow. Every stack in app.css names the faces we
+         want first and a system fallback after, so it looks right where those
+         faces are installed and correct everywhere else. -->
+    <script>
+      // Applied before first paint so the page never flashes the wrong theme.
+      // An explicit choice wins; with no choice we follow the system and keep
+      // following it, so a machine that flips to light at sunset takes the UI
+      // with it. With JS off, :root's own tokens give the dark default.
+      try {
+        var mq = window.matchMedia('(prefers-color-scheme: light)');
+        var apply = function () {
+          var t = null;
+          try { t = localStorage.getItem('mammoth:theme'); } catch (e) { /* blocked */ }
+          document.documentElement.dataset.theme =
+            t === 'light' || t === 'dark' ? t : mq.matches ? 'light' : 'dark';
+        };
+        apply();
+        mq.addEventListener('change', apply);
+      } catch (e) { /* no matchMedia — keep the default */ }
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div style="display: contents">%sveltekit.body%</div>
+  </body>
+</html>

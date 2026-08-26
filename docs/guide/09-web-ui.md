@@ -7,8 +7,9 @@
 ---
 
 The CLI is for you. The web UI is for everyone else — and it is what people
-screenshot. This chapter builds the smallest version that is genuinely useful:
-a live cluster overview and a file browser with a block map.
+screenshot. The front end already exists in `ui/`; this chapter builds the Rust
+half that feeds it — the REST API, the embedded assets, and
+`serve --role gateway` — and then points the two at each other.
 
 > **This chapter is a different skill set** from chapters 5–8: TypeScript,
 > Svelte, HTTP. If your team split the work as chapter 3 suggested, this is
@@ -307,96 +308,68 @@ curl -s -w '\n%{http_code}\n' "localhost:8080/api/v1/fs?path=/nope"
 ## Step 4 · The front end
 
 ```bash
-cd ui && npm install
+cd ui && npm install && npm run dev
 ```
 
-Replace `ui/src/routes/+page.svelte` with a real overview:
+Open <http://localhost:5173>. **The front end is already written** — it shipped
+with the scaffold, and it is a complete dashboard rather than a stub:
 
-```svelte
-<script lang="ts">
-  import { onMount } from 'svelte';
-  import { api, type ClusterReport } from '$lib/api';
+| Route | What it shows |
+| --- | --- |
+| `/` | capacity, throughput, block health, alerts, and the four fast paths as live numbers |
+| `/nodes` | sortable, rack-grouped worker table with per-node detail |
+| `/files` · `/files/[...path]` | namespace browser, and per-file block placement, read plan and EC layout |
+| `/distribution` | the six visualizations, a repair panel, and a 24-hour time machine |
+| `/jobs` | stage DAG, task Gantt, and the straggler that is setting your job's runtime |
+| `/cluster` | Raft members, and what the last start actually cost |
 
-  let report = $state<ClusterReport | null>(null);
-  let error = $state<string | null>(null);
+**It works before your gateway does.** `src/lib/api.ts` probes
+`/api/v1/cluster/report`; if nothing answers, it falls back to the simulated
+cluster in `src/lib/demo.ts` — twelve workers, one dead, a repair in flight —
+and says so in a banner. So person C can build every screen while persons A and
+B are still on chapters 7 and 8, and the two halves meet at a typed interface
+instead of at a merge conflict.
 
-  onMount(async () => {
-    try {
-      report = await api.clusterReport();
-    } catch (e) {
-      error = String(e);
-    }
-  });
+```
+ui/src/
+├── app.html            theme bootstrap, before first paint
+├── app.css             the --mm-* ramp, shared with the docs site
+├── lib/
+│   ├── types.ts        every shape the gateway serves
+│   ├── api.ts          the typed client, with the demo fallback
+│   ├── demo.ts         the simulated cluster
+│   ├── live.svelte.ts  one shared, ref-counted subscription
+│   ├── format.ts       bytes, rates, durations — one place
+│   ├── components/     Panel, Stat, Meter, StateDot, Sparkline, FastPaths
+│   └── charts/         BlockMatrix, HeatGrid, Treemap, RackTopology,
+│                       SkewScatter, FlowSankey
+└── routes/             the seven pages above
+```
 
-  const pct = (used: number, cap: number) => (cap === 0 ? 0 : (used / cap) * 100);
+Two conventions worth copying if you add a page:
 
-  function human(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    let v = bytes, u = 0;
-    while (v >= 1024 && u < units.length - 1) { v /= 1024; u++; }
-    return `${v.toFixed(1)} ${units[u]}`;
-  }
-</script>
+**Read from `live`, not from `api`.** `live.svelte.ts` holds one subscription
+with a reference count — the first component to `attach()` starts it, the last
+to detach stops it, and every page reads the same `$state`. Six pages polling
+the same endpoint independently is how a dashboard becomes the cluster's
+busiest client.
 
-<h1>Mammoth {report?.name ?? ''}</h1>
+**Colour comes from the value, not from the caller.** `Meter` decides its own
+colour from its fraction, so 94% is the same red on every page it appears on.
+The heat ramp goes further and picks its label colour from the tile's
+luminance, because white text on the gold middle of a heat scale is not
+readable.
 
-{#if error}
-  <p class="error">{error}</p>
-{:else if !report}
-  <p>loading…</p>
-{:else}
-  <section>
-    <h2>Capacity</h2>
-    <div class="meter">
-      <div class="fill" style="width: {pct(report.used, report.capacity)}%"></div>
-    </div>
-    <p>{human(report.used)} / {human(report.capacity)}</p>
-  </section>
+Your job in this step is to make the *real* data arrive: `npm run dev` proxies
+`/api` to port 8080, so start the gateway in the other terminal and watch the
+banner disappear.
 
-  <section>
-    <h2>Nodes</h2>
-    <table>
-      <thead>
-        <tr><th>node</th><th>rack</th><th>state</th><th>used</th><th>blocks</th></tr>
-      </thead>
-      <tbody>
-        {#each report.nodes as n (n.id)}
-          <tr>
-            <td>{n.id}</td>
-            <td>{n.rack}</td>
-            <td class={n.state}>{n.state}</td>
-            <td>{human(n.used)}</td>
-            <td>{n.blocks}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-  </section>
-{/if}
-
-<style>
-  .meter { background: #eee; height: 1.5rem; border-radius: 3px; overflow: hidden; }
-  .fill { background: #2e7d32; height: 100%; }
-  table { border-collapse: collapse; }
-  th, td { text-align: left; padding: 0.3rem 1rem 0.3rem 0; }
-  .dead { color: #b71c1c; }
-  .warn { color: #f9a825; }
-  .error { color: #b71c1c; }
-</style>
+```bash
+cargo run -p mammoth-cli -- serve --role gateway
 ```
 
 `$state` is Svelte 5's rune syntax — it makes a variable reactive, so the page
-re-renders when it changes. `ui/src/lib/api.ts` already has the typed client and
-the `ClusterReport` interface; you wrote none of that, it shipped with the
-scaffold.
-
-```bash
-npm run dev
-```
-
-Open <http://localhost:5173>. Vite proxies `/api` to port 8080 (that is the
-`proxy` block in `vite.config.ts`), so the dev server talks to your real Rust
-gateway with hot reload on the front end.
+re-renders when it changes.
 
 ## Step 5 · Build it into the binary
 
@@ -460,14 +433,24 @@ output does not belong in Git. CI rebuilds it.
 
 ## Exercises
 
-1. **The file browser.** `/files` calling `api.list(path)`, with directories as
-   links. This is the page people will actually use.
-2. **The block matrix.** `/files/[...path]` calling `api.blocks(path)`. The same
-   grid you built in chapter 8, in HTML. Use a CSS grid, one cell per replica.
-3. **Live updates.** The scaffold's `subscribe()` in `api.ts` expects an SSE
-   endpoint at `/api/v1/events`. Implement it with `axum::response::sse` and
-   push a `cluster_report` every two seconds. Now the dashboard updates itself.
-4. **`mammoth ui`.** Start the gateway and open the browser in one command.
+The front end is written; these are all on the Rust side of the line, which is
+the half that does not exist yet.
+
+1. **`/api/v1/fs` and `/api/v1/fs/blocks`.** The file browser and the block
+   matrix are already built against them. Return the shapes in
+   `ui/src/lib/types.ts` and both pages light up with no front-end change.
+2. **Live updates.** `subscribe()` in `api.ts` expects SSE at
+   `/api/v1/events`, carrying `node_state`, `block_health`, `throughput`,
+   `job_update` and `alert`. Implement it with `axum::response::sse` and push a
+   `cluster_report` every two seconds. The header's *simulated* pill turns into
+   *live* on its own.
+3. **`/api/v1/distribution/*`.** Four endpoints — `heat`, `treemap`, `skew`,
+   `topology` — feed the whole visualization page. `cluster_report` and `list`
+   already have everything they need.
+4. **The time machine.** `/api/v1/cluster/report?minutes_ago=N`. Keep a ring
+   buffer of reports and serve the nearest one. Watching blocks redistribute
+   after a node failure is both genuinely useful and the best demo you have.
+5. **`mammoth ui`.** Start the gateway and open the browser in one command.
    `webbrowser` is the crate.
 
 ## If it went wrong
@@ -493,6 +476,14 @@ compile time; rebuild the binary to refresh them.
 
 **`npm run check` complains about `$state`** — you are on Svelte 4. Runes need
 Svelte 5. Check `ui/package.json` says `"svelte": "^5.0.0"`.
+
+**The header says *simulated* and the numbers look too tidy** — nothing answered
+on `/api/v1`, so the UI is drawing `src/lib/demo.ts`. That is the intended
+behaviour, and the banner says so. Start the gateway and reload.
+
+**`sveltekit is not exported from @sveltejs/vite-plugin-svelte`** — it comes from
+`@sveltejs/kit/vite`. The Svelte plugin is what SvelteKit wraps, not what
+exports the SvelteKit plugin.
 
 ---
 

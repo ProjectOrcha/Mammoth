@@ -263,9 +263,22 @@ for exactly **one** cross-rack hop: send it over once, then let the far side
 make its own local copy.
 
 **`place` is deterministic.** Given the same block ID it always returns the same
-workers, so we never have to store the placement — we recompute it. A real
-cluster cannot do that (workers die, disks fill up), which is why the master
-keeps a block map and rebuilds it from block reports on startup.
+workers, so we never have to store the placement — we recompute it.
+
+Hold on to that idea: it is not a shortcut, it is the design. HDFS stores
+placement in the NameNode and rebuilds it from block reports at every start —
+which is why a big cluster takes **30+ minutes to boot**, read-only the whole
+time. Mammoth keeps recomputing, with a real hash (rendezvous hashing) over a
+versioned topology instead of the modulo you are writing today. The master then
+only has to remember the *exceptions* — the blocks that are not where the
+function says, because a disk filled up or a repair is mid-flight — and it keeps
+that small list memory-mapped on disk, so a restart is a page-in rather than a
+rebuild.
+
+The consequence is bigger than startup time. Because a client can compute
+placement too, it does not have to ask the master where a block is, which is how
+a read gets down to one round trip. Chapter 12 has the whole design:
+[The four fast paths](12-the-fast-paths.md).
 
 ## Step 4 · `list` and `stat`
 

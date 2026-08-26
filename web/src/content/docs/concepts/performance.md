@@ -3,9 +3,24 @@ title: Performance
 description: Lock-free metadata reads, short-circuit reads, zero-copy, io_uring, hardware CRC32C, quorum acks, hedged reads.
 ---
 
-Explained so you know *why*, not just *what*. Ordered by impact.
-
 Explained so you know _why_, not just _what_. Ordered by impact.
+
+### 0 · The four fast paths — read this first
+
+Four mechanisms change the *shape* of the system rather than tuning it, and they
+are worth more than everything below combined. They have their own page:
+**[The four fast paths](/Mammoth/concepts/fast-paths/)**.
+
+| | Hadoop | Mammoth |
+| --- | --- | --- |
+| [Open + read](/Mammoth/concepts/fast-paths/#1--the-one-shot-read) | 2 round trips, every time | 0–1 round trip |
+| [Write a block](/Mammoth/concepts/fast-paths/#2--the-fan-out-dispersal-write) | 3 serial hops, serial acks | 1 parallel hop, quorum ack |
+| [Rebuild a dead node](/Mammoth/concepts/fast-paths/#3--declustered-parallel-repair) | one source, one sink, chained | every node, in parallel |
+| [Master restart](/Mammoth/concepts/fast-paths/#4--warm-start) | 30+ min rebuilding the block map | seconds, no rebuild at all |
+
+All four rest on one change: **placement is computed from the block ID, not
+remembered by the master**. Everything from §1 down is what you do once those
+four are in place.
 
 ### 1 · Lock-free metadata reads — the big one
 
@@ -57,13 +72,19 @@ Data integrity requires checksumming every byte. Software CRC32 runs at ~400 MB/
 
 Default HDFS waits for all 3 replicas. If one disk hiccups, the client waits. With `ack_policy = "quorum"`, ack after 2 of 3 are durable and repair the third asynchronously. **Cuts p99 write latency substantially** at a small durability cost — make it configurable, default to quorum, document the tradeoff honestly.
 
+This is the ack rule of the [fan-out dispersal write](/Mammoth/concepts/fast-paths/#2--the-fan-out-dispersal-write), where it matters more: with `k + m` fragments in flight on independent sockets, acking at `k + 1` means the slowest of nine nodes is never on the critical path.
+
 ### 7 · Hedged reads
 
 Same idea on the read side: if replica 1 hasn't responded within `p99 × 1.5`, fire the same request at replica 2 and take whichever returns first. Kills tail latency caused by one slow disk.
 
+Hedging is free here in a way it is not in HDFS: the client derived the whole replica set itself with `place()`, so firing at the second replica costs no extra metadata lookup. See [the one-shot read](/Mammoth/concepts/fast-paths/#1--the-one-shot-read).
+
 ### 8 · Digest-based block reports
 
 Instead of a 10-million-entry full report, each worker keeps a rolling `xxhash3` digest over its sorted block-ID set and sends it every heartbeat, plus any incremental changes. The master compares digests; only on mismatch does it request a full report — streamed in 10k chunks with yields between them. **Removes the multi-second metadata pauses.**
+
+Make that digest a **shallow Merkle tree** (1024 leaves by block-ID prefix) rather than a single hash, and the same structure also solves startup: a mismatch narrows to a bucket in two round trips instead of streaming ten million IDs. That is [warm start](/Mammoth/concepts/fast-paths/#4--warm-start), and it is the difference between a 30-minute boot and a 10-second one.
 
 ### 9 · Thread-per-core sharding
 

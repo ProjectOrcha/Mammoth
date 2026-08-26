@@ -28,9 +28,17 @@ If you know Hadoop, this is the whole vocabulary change:
 | Container | **slot** | a CPU+RAM reservation |
 | fsimage + edits | Raft snapshot + Raft log | how the index survives restarts |
 | Block | **block** | a 128 MB chunk of a file |
-| Safe mode | **safe mode** | read-only until the index is trustworthy |
+| Block report | **Merkle root** | a 32-byte "here's everything I'm storing" |
+| Replication pipeline | **dispersal** | the fragments of one block, sent all at once |
+| `getBlockLocations` | *(gone)* | placement is computed from the block ID |
+| Block map rebuild | *(gone)* | the map is memory-mapped back, not rebuilt |
+| Safe mode | **safe mode** | read-only until the index is trustworthy — per shard, and measured in seconds |
 | Rack awareness | **topology** | which machines share a failure domain |
 | `hdfs dfs -ls /` | `mammoth ls /` | list a directory |
+
+The four rows in the middle are not renamings — they are mechanisms that no
+longer exist, because reads, writes, repair and restart all work differently
+here. **[The four fast paths](/Mammoth/concepts/fast-paths/)** is why.
 
 New to all of this? Read [Hadoop in 10 minutes](/Mammoth/intro/hadoop-primer/) first.
 

@@ -37,7 +37,8 @@ pub enum Error {
         available: u8,
     },
 
-    /// The master is still rebuilding its block map and will not accept writes.
+    /// The master has not reconciled this shard's blocks yet and will not
+    /// accept writes to it. Reads are served from the mapped snapshot.
     #[error("cluster is in safe mode: {reported:.3} of blocks reported, need {threshold:.3}")]
     SafeMode {
         /// Fraction of blocks accounted for so far.

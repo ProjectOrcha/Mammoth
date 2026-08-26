@@ -28,6 +28,10 @@ pub struct Cli {
     #[arg(long, global = true, value_enum, default_value = "auto")]
     pub output: OutputFormat,
 
+    /// Shorthand for `--output json`. Common enough in scripts to deserve it.
+    #[arg(long, global = true, conflicts_with = "output")]
+    pub json: bool,
+
     /// Repeat for more detail: -v, -vv, -vvv.
     #[arg(short, long, global = true, action = ArgAction::Count)]
     pub verbose: u8,
@@ -49,6 +53,20 @@ pub enum OutputFormat {
     Yaml,
     /// Always CSV.
     Csv,
+}
+
+impl Cli {
+    /// The output format to use, with the `--json` shorthand folded in.
+    ///
+    /// Call this rather than reading `output` directly, or `--json` silently
+    /// does nothing.
+    pub fn format(&self) -> OutputFormat {
+        if self.json {
+            OutputFormat::Json
+        } else {
+            self.output
+        }
+    }
 }
 
 #[derive(Subcommand)]

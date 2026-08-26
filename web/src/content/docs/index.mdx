@@ -68,7 +68,31 @@ that works today. Packages, `brew`, and the `curl | sh` one-liner land with
     Every failure names the cause, the fix, and the command that applies it —
     then links to the page that explains why.
   </Card>
+  <Card title="Reads skip the master" icon="forward-slash">
+    Placement is computed from the block ID, not looked up. `open` hands back a
+    lease for the whole file, so a warm read costs **zero** metadata round trips.
+  </Card>
+  <Card title="Writes go out at once" icon="seti:pipeline">
+    Not a three-hop chain — erasure-coded fragments scattered in parallel and
+    acked on a quorum. Network depth 1, and 1.67× storage instead of 3×.
+  </Card>
+  <Card title="Restarts take seconds" icon="seti:clock">
+    The block map is memory-mapped back, not rebuilt from reports. Each worker
+    confirms four million blocks with one 32-byte Merkle root.
+  </Card>
 </CardGrid>
+
+<p class="mm-eyebrow">The four fast paths</p>
+
+| | Hadoop | Mammoth |
+| --- | --- | --- |
+| Open + read | 2 round trips, every time | **0–1 round trip** |
+| Write a block | 3 serial hops, serial acks | **1 parallel hop**, quorum ack |
+| Rebuild a dead node | one source, one sink, chained | **every node**, in parallel |
+| Master restart | 30+ min rebuilding the block map | **seconds**, no rebuild at all |
+
+[The four fast paths](/Mammoth/concepts/fast-paths/) is the design for all four —
+what Hadoop does, what it costs, and what replaces it.
 
 ## The shape of a cluster
 
@@ -114,6 +138,7 @@ replication, the write pipeline and YARN, without the JVM.
   <Card title="Learn the model" icon="open-book">
     [What is Mammoth?](/Mammoth/intro/what/) ·
     [Architecture](/Mammoth/concepts/architecture/) ·
+    [The four fast paths](/Mammoth/concepts/fast-paths/) ·
     [Performance](/Mammoth/concepts/performance/)
   </Card>
   <Card title="Move your data" icon="random">

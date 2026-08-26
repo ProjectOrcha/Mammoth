@@ -25,17 +25,82 @@ $ mammoth put ./huge.parquet /warehouse/huge.parquet --block-size 512MB
 
 ### 9.2 Replication factor
 
-|Factor|Use for|Durability|
-|---|---|---|
-|1|scratch, `/tmp`, regenerable output|none — one disk loss = data loss|
-|2|dev clusters, cold archives|survives 1 failure|
-|**3** (default)|production|survives 2 failures, survives a rack loss|
-|RS(6,3) erasure coding|cold data|same durability as 3× at **1.5× storage** instead of 3×|
+|Policy|Use for|Storage|Durability|
+|---|---|---|---|
+|`replication = 1`|scratch, `/tmp`, regenerable output|1×|none — one disk loss = data loss|
+|`replication = 2`|dev clusters, cold archives|2×|survives 1 failure|
+|`replication = 3`|hot tables, tiny blocks, thin-uplink clients|3×|survives 2 failures, survives a rack loss|
+|**`lrc-6-2-2`** (default)|general purpose|**1.67×**|survives any 3 failures, and most 4s|
+|`rs-6-3`|cold archives|1.50×|survives any 3 failures — but reads 6 fragments to repair 1|
 
 ```console
 $ mammoth admin ec convert /warehouse/archive --policy rs-6-3
   ✔ 412 TB queued  ·  will free ~275 TB  ·  ETA 9h
   note: EC reads are more CPU-expensive; use for cold data, not hot tables.
+```
+
+**Why LRC is the default and not RS.** Both survive three losses. The difference
+is what a *single* loss costs, and single losses are what actually happen:
+RS(6,3) reconstructs one missing fragment by reading **six** across the network,
+while LRC(6,2,2) adds a local parity per group and reads **three**, from inside
+one rack. You pay 0.17× more disk to halve the repair traffic on the case that
+occurs every day. Disk is cheap during an incident; repair bandwidth is not.
+
+### 9.2.1 How a replica actually gets made
+
+Three distinct moments, and Hadoop uses the same chained mechanism for all
+three. Mammoth does not, which is where most of its write and recovery
+performance comes from. Full design in
+[The four fast paths](/Mammoth/concepts/fast-paths/).
+
+```mermaid
+flowchart TB
+    subgraph w["1 · on write — dispersal"]
+        c["client / gateway"] -->|"split: 6 data + 2 local + 2 global<br/>Reed–Solomon, SIMD"| f["10 fragments"]
+        f -->|"all at once — network depth 1"| n["10 nodes, chosen by place()"]
+        n -->|"ack at k+1 durable"| done["write complete<br/>stragglers land later"]
+    end
+    subgraph r["2 · on failure — declustered repair"]
+        diff["expectation diff:<br/>place() says who should hold it,<br/>the map says who does"] --> q["repair queue,<br/>least-redundant first"]
+        q -->|"every surviving node<br/>reads and writes at once"| fixed["redundancy restored"]
+    end
+    subgraph s["3 · forever after — scrub"]
+        sc["background scrub<br/>50 MB/s per node"] -->|"CRC32C mismatch"| q
+    end
+```
+
+**1 · On write — dispersal, not a pipeline.** The block is erasure-coded at the
+client or gateway and the fragments are sent to `k + m` nodes *in parallel*. One
+network hop, not three. The write acks as soon as `k + 1` fragments are durable,
+so one slow disk cannot extend it, and a node that dies mid-write costs one
+fragment rather than a rebuilt pipeline.
+
+**2 · On failure — declustered repair.** The work list is a *diff*: `place()`
+says which nodes should hold a block, the reconciled map says which do, and the
+difference is the queue. Because placement is spread across the whole cluster
+rather than fixed replica groups, every surviving node both reads and writes
+during a rebuild — repair scales with the cluster instead of with one disk.
+It is rate-limited by a token bucket and it yields to client traffic, and a node
+that is merely absent gets a ten-minute grace period before anything is copied.
+
+**3 · Forever after — scrub.** A background pass re-verifies CRC32C over every
+fragment. A mismatch is a corruption, and corruption feeds the same repair queue
+as a failure does.
+
+```console
+$ mammoth viz health --live
+
+  BLOCK HEALTH                                    refreshing every 2s
+
+  ● healthy            ████████████████████████████  4,201,882   99.97%
+  ◐ degraded (1 lost)  ▎                                 1,204    0.03%
+  ◐ critical (3 lost)  ▏                                    12  ← urgent
+  ✕ corrupt                                                   0
+
+  recovery queue   1,216 blocks    ▓▓▓▓▓▓▓░░░░░░░  52%   ETA 4m 12s
+  participating    11 of 12 nodes  ·  declustered, 11-way parallel
+  recovery rate    284 blk/s · 3.1 GB/s   (capped at 40% of idle)
+  cause            w12 went dead 12m ago
 ```
 
 ### 9.3 The small-file problem — and Mammoth's fix

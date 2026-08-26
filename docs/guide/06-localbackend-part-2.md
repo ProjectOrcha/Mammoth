@@ -138,10 +138,26 @@ With six workers you will never hit it, but drop `WORKERS` to two and ask for
 replication 3 and you get the real thing, with its hints and its docs link.
 
 **We write the same `chunk` to three different paths.** A real cluster does not
-do this — the client sends each 64 KB packet *once* to the first worker, which
-writes it and simultaneously forwards it to the second, which forwards to the
-third. That is chain replication, and it means the client's upload bandwidth is
-not tripled. `LocalBackend` has no network, so the simple version is fine.
+do this, and it is worth knowing what it does instead — because Hadoop and
+Mammoth answer differently here.
+
+*HDFS* uses **chain replication**: the client sends each 64 KB packet once to
+the first DataNode, which writes it and forwards it to the second, which
+forwards to the third; acks come back down the chain. The client's uplink is
+never tripled — but three hops out and three acks back are all in series, one
+slow disk stalls the whole write, and a node dying mid-block means rebuilding
+the pipeline and re-sending.
+
+*Mammoth* **disperses** instead. The block is erasure-coded into `k` data plus
+`m` parity fragments and all `k + m` go out **at the same time** to `k + m`
+workers — network depth 1 instead of 3 — and the write acks as soon as any
+`k + 1` are durable, so the slowest node is never waited on. Storage drops from
+3× to 1.67×, and the fabric carries 1.67× instead of 3×; the cost is that the
+client's own uplink carries 1.67× rather than 1×.
+
+`LocalBackend` has no network, so the loop above is fine — there is no latency
+to save. When you build the real write path, build the fan-out:
+[Chapter 12 — The four fast paths](12-the-fast-paths.md).
 
 ## Step 3 · `read`
 

@@ -31,10 +31,10 @@ But be clear about the gap, especially if you are showing this to anyone:
 | You have | A real cluster needs |
 | --- | --- |
 | six directories | six machines, any of which can die mid-write |
-| `place()` recomputed on demand | a block map rebuilt from block reports after every restart |
+| `place()` recomputed on demand | the same idea, done properly — rendezvous hashing over a versioned topology, with the exceptions memory-mapped on disk ([ch. 12](12-the-fast-paths.md)) |
 | whole files buffered in memory | streaming, because files are terabytes |
 | one process | Raft consensus across three masters |
-| `std::fs::write` | a write pipeline with checksums at every hop |
+| `std::fs::write` | erasure-coded fragments dispersed in parallel, checksummed on arrival, acked on a quorum ([ch. 12](12-the-fast-paths.md)) |
 | nothing can fail | everything fails, constantly, in combinations you did not imagine |
 
 ## What to build next, in order
@@ -87,7 +87,12 @@ This is the big one, and it is where the project stops being a toy.
 - `mammoth-proto` — the gRPC surface, with `tonic`. There is already a starter
   `.proto` in `crates/mammoth-proto/proto/`.
 - `mammoth-master` — namespace, block map, lease management, safe mode.
-- `mammoth-worker` — block serving, heartbeats every 3 s, block reports.
+- `mammoth-worker` — block serving, heartbeats every 3 s, Merkle roots.
+
+  **Read [chapter 12](12-the-fast-paths.md) before you write either of these.**
+  The read path, the write path, repair and startup are all cheaper to build the
+  fast way than to build the HDFS way and then fix — and two of the four are
+  *simpler*, not harder.
 - `mammoth-client` — `ClusterBackend`, the second implementation of the trait.
   **When this compiles, your CLI and web UI work against a real cluster with no
   changes.** That is the payoff for chapter 4.
@@ -154,9 +159,17 @@ Written down now, because everyone learns them the expensive way:
 3. **Retry storms.** Every client retrying a failed master at the same instant
    makes recovery impossible. Exponential backoff with jitter, from day one.
 4. **The full block report is a stall.** A worker with 10 million blocks
-   reporting in can pause the master for seconds. Rolling `xxhash3` digests,
-   full report only on mismatch, streamed in chunks with yields.
-5. **`unwrap()` in a server is a crash.** It is fine in tests. On a request
+   reporting in can pause the master for seconds. Make the digest a shallow
+   Merkle tree rather than one hash and the same structure also fixes startup —
+   a matching root confirms millions of blocks in 32 bytes
+   ([ch. 12 §4](12-the-fast-paths.md#4--warm-start)).
+
+5. **Repair will take your cluster down if you let it.** An uncapped rebuild
+   after a node failure saturates the network and turns a redundancy problem
+   into an outage. Token-bucket it, make it yield to client traffic, and give an
+   absent-but-not-confirmed-dead node a grace period before you copy a petabyte
+   that turns out to be unnecessary.
+6. **`unwrap()` in a server is a crash.** It is fine in tests. On a request
    path it is a denial of service that a user can trigger with a bad path.
 
 ## Keeping the project healthy
@@ -185,5 +198,10 @@ Written down now, because everyone learns them the expensive way:
 **You have built a distributed filesystem's front half, and you can see your
 data.** That is further than most people who start this get. The rest is
 engineering, and now you know where it goes.
+
+---
+
+**Next:** [Chapter 12 — The four fast paths](12-the-fast-paths.md) — the design
+for reads, writes, repair and startup, and the one idea all four rest on.
 
 ← [Back to the guide index](README.md)

@@ -1,0 +1,267 @@
+/* Mammoth admin UI.
+ *
+ * Same register as the docs site — a deep-blue field, Roman capitals for
+ * display, letterspaced monospace micro-labels, hairline rules, square corners
+ * — tuned for a dense operations screen rather than for prose.
+ *
+ * Colours are declared once as --mm-* and consumed as semantic tokens
+ * (--bg, --fg, --rule, --ok …) so restyling means editing the ramp below.
+ */
+
+:root {
+  /* ── the brand ramp, shared with web/src/styles/mammoth.css ───────────── */
+  --mm-blue: #164982;
+  --mm-blue-deep: #194a7a;
+  --mm-steel: #8cabc7;
+  --mm-gold: #dbc560;
+  --mm-lemon: #fbf78c;
+  --mm-paper: #fefefe;
+  --mm-abyss: #05111d;
+  --mm-night: #08192a;
+  --mm-slate: #0d2740;
+  --mm-slate-hi: #12314e;
+
+  /* ── type ─────────────────────────────────────────────────────────────── */
+  --font-display: 'Cinzel', 'Trajan Pro', Optima, 'Palatino Linotype', Palatino,
+    Georgia, serif;
+  --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Courier Prime', ui-monospace, SFMono-Regular, 'SF Mono', Menlo,
+    Consolas, monospace;
+
+  --step--1: 0.78rem;
+  --step-0: 0.875rem;
+  --step-1: 1rem;
+  --step-2: 1.35rem;
+  --step-3: 1.9rem;
+
+  /* ── layout ───────────────────────────────────────────────────────────── */
+  --rail: 14.5rem;
+  --header: 3.5rem;
+  --gap: 1rem;
+}
+
+/* ── dark, the default ──────────────────────────────────────────────────── */
+:root,
+:root[data-theme='dark'] {
+  --bg: var(--mm-abyss);
+  --bg-rail: var(--mm-night);
+  --bg-panel: var(--mm-night);
+  --bg-plate: var(--mm-slate);
+  --bg-raised: var(--mm-slate-hi);
+  --bg-hover: rgba(140, 171, 199, 0.09);
+
+  --fg: #e9eff6;
+  --fg-dim: var(--mm-steel);
+  --fg-faint: #5b7f9f;
+  --fg-display: var(--mm-lemon);
+
+  --rule: rgba(140, 171, 199, 0.18);
+  --rule-strong: rgba(140, 171, 199, 0.34);
+
+  --accent: var(--mm-gold);
+  --accent-quiet: var(--mm-blue);
+
+  --ok: #56c98a;
+  --warn: var(--mm-gold);
+  --danger: #e2564d;
+  --dead: #6a7f92;
+  --info: #6fa8dc;
+
+  --track: rgba(140, 171, 199, 0.14);
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ── light ──────────────────────────────────────────────────────────────── */
+:root[data-theme='light'] {
+  --bg: #f4f8fb;
+  --bg-rail: #eaf1f7;
+  --bg-panel: var(--mm-paper);
+  --bg-plate: #e6eff7;
+  --bg-raised: #dbe8f3;
+  --bg-hover: rgba(22, 73, 130, 0.07);
+
+  --fg: #0c2439;
+  --fg-dim: #3d6688;
+  --fg-faint: #6b8fad;
+  --fg-display: var(--mm-blue);
+
+  --rule: rgba(22, 73, 130, 0.16);
+  --rule-strong: rgba(22, 73, 130, 0.32);
+
+  --accent: var(--mm-blue-deep);
+  --accent-quiet: #b6cbdd;
+
+  --ok: #1f8a4c;
+  --warn: #a8791a;
+  --danger: #b7302a;
+  --dead: #7c93a6;
+  --info: #1c5f96;
+
+  --track: rgba(22, 73, 130, 0.13);
+  --shadow: 0 1px 0 rgba(22, 73, 130, 0.08);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-display);
+  margin: 0;
+}
+h1 {
+  font-size: var(--step-3);
+  line-height: 1.15;
+}
+h2 {
+  font-size: var(--step-1);
+  letter-spacing: 0.1em;
+}
+h3 {
+  font-size: var(--step-0);
+  letter-spacing: 0.12em;
+}
+
+/* The letterspaced monospace micro-label, used everywhere as the unit of
+   labelling. Small, quiet, and the thing that makes the screen feel engraved. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin: 0;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+button:hover {
+  background: var(--bg-hover);
+  border-color: var(--rule-strong);
+}
+button[aria-pressed='true'],
+button.on {
+  background: var(--accent-quiet);
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+input[type='search'],
+input[type='text'],
+select {
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg-plate);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 0.3rem 0.55rem;
+}
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--step--1);
+}
+th {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  font-weight: 400;
+  text-align: left;
+  padding: 0.45rem 0.75rem 0.45rem 0;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+td {
+  padding: 0.45rem 0.75rem 0.45rem 0;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+tbody tr:hover td {
+  background: var(--bg-hover);
+}
+th.num,
+td.num {
+  text-align: right;
+  padding-right: 1.25rem;
+}
+
+/* Scrollbars, so a dense table does not paint a bright rail on a dark page. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

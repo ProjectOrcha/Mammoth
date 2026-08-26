@@ -49,6 +49,10 @@ New to any of this? Read
 | One global namespace lock | one slow `listStatus` blocks thousands of clients | immutable namespace behind `ArcSwap` — readers never block |
 | Metadata in RAM only | namespace capped by one machine's RAM | Raft-backed metadata store |
 | The small-file problem | 1M tiny files kill a cluster | files under 1 MiB skip the block layer entirely |
+| Two-step reads | a master round trip before every open, and again every 10 blocks | placement is computed, not looked up — **0–1 round trip** |
+| Chain-replicated writes | 3 serial hops out, 3 acks back; one slow disk stalls the write | erasure-coded fragments **scattered in parallel**, quorum-acked |
+| Chain-replicated repair | rebuilding a dead 160 TB node takes hours | **every node repairs at once**; LRC halves the traffic |
+| 30-minute startup | the block map is rebuilt from reports, read-only meanwhile | the map is **memory-mapped back**; a 32-byte Merkle root per worker |
 | 6+ XML files, 1000+ properties | nobody knows what is actually set | one `mammoth.toml`, env-overridable |
 | ZooKeeper + JournalNodes + ZKFC | three extra distributed systems to fail over one process | Raft, built in |
 | Full block reports | multi-second metadata stalls | rolling `xxhash3` digests, full report only on mismatch |
@@ -175,10 +179,10 @@ flowchart TB
     workers["workers ×N — the shelves,<br/>and the muscle<br/>block storage<br/>task execution · shuffle"]
 
     clients --> gw
-    gw -->|"metadata only"| masters
-    masters -->|"block placement"| workers
-    gw ==>|"data — never touches the master"| workers
-    workers -.->|"heartbeats every 3s<br/>+ block digests"| masters
+    gw -->|"open — once per lease,<br/>not once per read"| masters
+    masters -->|"namespace, streamed to<br/>read-only learners"| workers
+    gw ==>|"data — never touches the master<br/>reads resolve at the worker<br/>writes disperse in parallel"| workers
+    workers -.->|"heartbeats every 3s<br/>+ 32-byte Merkle root"| masters
 ```
 
 ONE binary: `mammoth serve --role master|worker|gateway|all`
@@ -202,6 +206,27 @@ pub trait Backend: Send + Sync {
 `LocalBackend` fakes six workers as six directories on one disk.
 `ClusterBackend` talks to real masters over gRPC. Same trait, same callers.
 Why: [ADR 0002](docs/adr/0002-backend-trait.md).
+
+## The four fast paths
+
+Four operations decide how a cluster feels, and HDFS's answers to all four were
+designed for 1 Gb networks and spinning disks.
+
+| | Hadoop | Mammoth |
+| --- | --- | --- |
+| **Open + read** | 2 round trips, every time | **0–1 round trip** — placement is computed from the block ID, and `open` returns a lease for the whole file |
+| **Write a block** | 3 serial hops, serial acks | **1 parallel hop** — erasure-coded fragments scattered at once, acked on a quorum |
+| **Rebuild a dead node** | one source, one sink, chained | **every node at once** — repair is declustered, and LRC repairs one loss from 3 fragments instead of 6 |
+| **Master restart** | 30+ min rebuilding the block map | **seconds** — the map is `mmap`ed back, and each worker confirms millions of blocks with one 32-byte Merkle root |
+
+All four rest on one change: **placement is computed, not remembered.** Given a
+block ID and the topology, every party derives the same replica set in ~200 ns
+with no lookup — which is what lets a read skip the master, a repair run
+everywhere at once, and a restart skip the rebuild entirely.
+
+Design, cost models and build steps:
+[The four fast paths](web/src/content/docs/concepts/fast-paths.md).
+These are design targets, not benchmarks — Mammoth is pre-release.
 
 ## Repository layout
 
@@ -272,7 +297,7 @@ The site is built from `web/` and published to GitHub Pages.
 - [What is Mammoth?](web/src/content/docs/intro/what.md)
 - [Hadoop in 10 minutes](web/src/content/docs/intro/hadoop-primer.md)
 - [5-minute cluster](web/src/content/docs/intro/quickstart.md)
-- [Architecture](web/src/content/docs/concepts/architecture.md) · [Performance](web/src/content/docs/concepts/performance.md) · [Visualization](web/src/content/docs/concepts/visualization.md)
+- [Architecture](web/src/content/docs/concepts/architecture.md) · [The four fast paths](web/src/content/docs/concepts/fast-paths.md) · [Performance](web/src/content/docs/concepts/performance.md) · [Visualization](web/src/content/docs/concepts/visualization.md)
 - [Data guide](web/src/content/docs/data/index.md) — block size, replication, formats, partitioning, skew
 - [Configuration](web/src/content/docs/ops/configuration.md) · [Operations](web/src/content/docs/ops/index.md)
 - [HTTP and S3 API](web/src/content/docs/api/index.md) · [Migration](web/src/content/docs/migration/index.md)

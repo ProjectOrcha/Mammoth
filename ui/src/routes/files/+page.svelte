@@ -1,7 +1,20 @@
-<!-- File browser — browsable tree, upload/download, per-file block map -->
+<!-- File browser — the root of the namespace. -->
 <script lang="ts">
-  import { api } from "$lib/api";
-  // TODO(M3): load and render.
+  import Browse from '$lib/components/Browse.svelte';
 </script>
 
-<h1>File browser</h1>
+<header class="page">
+  <h1>Files</h1>
+  <p class="eyebrow">browse · block placement · read plan</p>
+</header>
+
+<Browse path="/" />
+
+<style>
+  .page {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    margin-bottom: 1.1rem;
+  }
+</style>

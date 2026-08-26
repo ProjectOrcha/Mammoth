@@ -15,26 +15,41 @@ block_size       = "128MiB"
 replication      = 3
 inline_threshold = "1MiB"        # small files skip the block layer entirely
 reserved_space   = "10GiB"
+placement        = "rendezvous"  # rendezvous | explicit — computed, not stored
 
 [storage.scrub]
 enabled       = true
 bytes_per_sec = "50MiB"
 
 [write]
+mode        = "disperse"         # disperse | mirror | pipeline
+ec_policy   = "lrc-6-2-2"        # 6 data · 2 local parities · 2 global
+ack_policy  = "quorum"           # all | quorum — quorum acks at k+1 fragments
 packet_size = "64KiB"
-ack_policy  = "quorum"           # all | quorum
+window      = "8MiB"             # per-fragment sliding window
 
 [read]
-short_circuit = true
-hedged_after  = "50ms"
-cache_size    = "4GiB"
+short_circuit  = true
+hedged_after   = "50ms"
+cache_size     = "4GiB"
+lease_ttl      = "60s"           # how long a location lease stays usable
+inline_resolve = true            # workers resolve paths from their own learner
+
+[repair]
+delay         = "10m"            # grace period for an absent-but-not-dead node
+parallelism   = "auto"           # auto = every healthy node participates
+bytes_per_sec = "auto"           # token bucket; yields to client traffic
+priority      = "redundancy"     # least-redundant blocks first
 
 [master]
 listen             = "0.0.0.0:7000"
 data_dir           = "/var/lib/mammoth/meta"
 heartbeat_ms       = 3000
 dead_after         = "10m"
-safemode_threshold = 0.999
+block_map          = "mmap"      # mmap | rebuild — rebuild is HDFS behaviour
+merkle_fanout      = 1024        # leaves in the worker's block-ID Merkle tree
+safemode           = "per-range" # per-range | global
+safemode_threshold = 0.999       # only consulted when safemode = "global"
 
 [gateway]
 s3_listen = "0.0.0.0:9000"
