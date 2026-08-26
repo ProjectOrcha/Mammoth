@@ -26,10 +26,10 @@ mammoth compat hdfs dfs -ls /data     # runs the Mammoth equivalent and tells
 
 | Page | Commands |
 | --- | --- |
-| [Files](/Mammoth/cli/filesystem/) | `ls` `put` `get` `cat` `head` `tail` `mkdir` `rm` `mv` `cp` `stat` `du` `df` `find` `chmod` `chown` `setrep` `checksum` |
-| [Visualization](/Mammoth/cli/viz/) | `viz blocks` `viz cluster` `viz topology` `viz skew` `viz treemap` `viz health` `viz flow` `top` |
-| [Operations](/Mammoth/cli/operations/) | `init` `quickstart` `serve` `ui` `doctor` `node` `cluster` `admin` `job` `migrate` `bench` `config` `token` `completions` |
-| [Reference](/Mammoth/cli/reference/) | every flag, generated from the binary |
+| [Files](/cli/filesystem/) | `ls` `put` `get` `cat` `head` `tail` `mkdir` `rm` `mv` `cp` `stat` `du` `df` `find` `chmod` `chown` `setrep` `checksum` |
+| [Visualization](/cli/viz/) | `viz blocks` `viz cluster` `viz topology` `viz skew` `viz treemap` `viz health` `viz flow` `top` |
+| [Operations](/cli/operations/) | `init` `quickstart` `serve` `ui` `doctor` `node` `cluster` `admin` `job` `migrate` `bench` `config` `token` `completions` |
+| [Reference](/cli/reference/) | every flag, generated from the binary |
 
 ## The command tree
 
@@ -168,7 +168,7 @@ Codes are stable and greppable. The common ones:
 4. **Progress bars on anything over one second**, auto-disabled when piped.
 5. **`mammoth doctor` exists** and checks what beginners get wrong.
 
-The full flag-by-flag reference at [`cli/reference`](/Mammoth/cli/reference/) is
+The full flag-by-flag reference at [`cli/reference`](/cli/reference/) is
 generated from the `clap` tree by `cargo xtask docs` and verified in CI, so it
 can never drift from the binary. The pages here are the hand-written half: what
 each command is *for*, and what its output is telling you.

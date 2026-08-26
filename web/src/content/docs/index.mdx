@@ -5,13 +5,13 @@ template: splash
 hero:
   tagline: The elephant, but faster, and without the JVM.
   image:
-    html: '<img src="/Mammoth/logo.svg" alt="Mammoth" width="360">'
+    html: '<img src="/logo.svg" alt="Mammoth" width="360">'
   actions:
     - text: 5-minute cluster
-      link: /Mammoth/intro/quickstart/
+      link: /intro/quickstart/
       icon: right-arrow
     - text: Hadoop in 10 minutes
-      link: /Mammoth/intro/hadoop-primer/
+      link: /intro/hadoop-primer/
       variant: minimal
     - text: Source
       link: https://github.com/ProjectOrcha/Mammoth
@@ -39,7 +39,7 @@ cd Mammoth && cargo build --release -p mammoth-cli
 
 The first release has not been cut yet, so building from source is the only path
 that works today. Packages, `brew`, and the `curl | sh` one-liner land with
-`v0.1.0` — see [Install](/Mammoth/intro/install/).
+`v0.1.0` — see [Install](/intro/install/).
 
 ## What you get
 
@@ -91,7 +91,7 @@ that works today. Packages, `brew`, and the `curl | sh` one-liner land with
 | Rebuild a dead node | one source, one sink, chained | **every node**, in parallel |
 | Master restart | 30+ min rebuilding the block map | **seconds**, no rebuild at all |
 
-[The four fast paths](/Mammoth/concepts/fast-paths/) is the design for all four —
+[The four fast paths](/concepts/fast-paths/) is the design for all four —
 what Hadoop does, what it costs, and what replaces it.
 
 ## The shape of a cluster
@@ -111,7 +111,7 @@ what Hadoop does, what it costs, and what replaces it.
 Every role is the same executable, selected at boot with `--role`. The CLI, the
 gateway and the SDK all speak to one `Backend` trait, so a single-machine
 simulation and a real cluster are indistinguishable to callers.
-[Read the architecture](/Mammoth/concepts/architecture/).
+[Read the architecture](/concepts/architecture/).
 
 ## If you know Hadoop
 
@@ -124,29 +124,29 @@ simulation and a real cluster are indistinguishable to callers.
 | Container | **slot** | a CPU + RAM reservation |
 | `hdfs dfs -ls /` | `mammoth ls /` | list a directory |
 
-The [full translation table](/Mammoth/intro/what/) covers the rest. Never used
-Hadoop? Start with [Hadoop in 10 minutes](/Mammoth/intro/hadoop-primer/) — blocks,
+The [full translation table](/intro/what/) covers the rest. Never used
+Hadoop? Start with [Hadoop in 10 minutes](/intro/hadoop-primer/) — blocks,
 replication, the write pipeline and YARN, without the JVM.
 
 ## Where to go next
 
 <CardGrid>
   <Card title="Run a cluster" icon="seti:powershell">
-    [5-minute cluster](/Mammoth/intro/quickstart/) brings up six simulated
+    [5-minute cluster](/intro/quickstart/) brings up six simulated
     workers on one machine, with sample data and the UI open.
   </Card>
   <Card title="Learn the model" icon="open-book">
-    [What is Mammoth?](/Mammoth/intro/what/) ·
-    [Architecture](/Mammoth/concepts/architecture/) ·
-    [The four fast paths](/Mammoth/concepts/fast-paths/) ·
-    [Performance](/Mammoth/concepts/performance/)
+    [What is Mammoth?](/intro/what/) ·
+    [Architecture](/concepts/architecture/) ·
+    [The four fast paths](/concepts/fast-paths/) ·
+    [Performance](/concepts/performance/)
   </Card>
   <Card title="Move your data" icon="random">
-    [Migration](/Mammoth/migration/) plans, runs, verifies and cuts over from
+    [Migration](/migration/) plans, runs, verifies and cuts over from
     HDFS or S3 — resumable, and dry-run first.
   </Card>
   <Card title="Operate it" icon="setting">
-    [Operations](/Mammoth/ops/) and [Configuration](/Mammoth/ops/configuration/)
+    [Operations](/ops/) and [Configuration](/ops/configuration/)
     — one TOML file, validated before it is applied.
   </Card>
 </CardGrid>

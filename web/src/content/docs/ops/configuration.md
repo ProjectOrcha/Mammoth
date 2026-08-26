@@ -114,7 +114,7 @@ Everything overridable by env: `MAMMOTH_STORAGE__REPLICATION=2`.
 ## The keys that change the shape of the system
 
 Most of the file is sizing. These six change *how* the cluster works, and each
-one is explained in [The four fast paths](/Mammoth/concepts/fast-paths/).
+one is explained in [The four fast paths](/concepts/fast-paths/).
 
 | Key | Default | What flipping it does |
 | --- | --- | --- |

@@ -38,9 +38,9 @@ If you know Hadoop, this is the whole vocabulary change:
 
 The four rows in the middle are not renamings — they are mechanisms that no
 longer exist, because reads, writes, repair and restart all work differently
-here. **[The four fast paths](/Mammoth/concepts/fast-paths/)** is why.
+here. **[The four fast paths](/concepts/fast-paths/)** is why.
 
-New to all of this? Read [Hadoop in 10 minutes](/Mammoth/intro/hadoop-primer/) first.
+New to all of this? Read [Hadoop in 10 minutes](/intro/hadoop-primer/) first.
 
 ## What Mammoth is not
 

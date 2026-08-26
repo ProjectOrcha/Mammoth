@@ -31,5 +31,7 @@ multipart upload, and SigV4 verification.
 
 ## Rust SDK
 
-Published as `mammoth-client`. Generated rustdoc is at
-[`/mammoth/rustdoc/`](/Mammoth/rustdoc/).
+Published as `mammoth-client`. Generated rustdoc goes up with the crate, at
+[docs.rs/mammoth-client](https://docs.rs/mammoth-client) — live once `v0.1.0`
+is on crates.io. Until then, `cargo doc --open -p mammoth-client` builds it
+locally from a checkout.

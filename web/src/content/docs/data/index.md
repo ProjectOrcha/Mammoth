@@ -51,7 +51,7 @@ occurs every day. Disk is cheap during an incident; repair bandwidth is not.
 Three distinct moments, and Hadoop uses the same chained mechanism for all
 three. Mammoth does not, which is where most of its write and recovery
 performance comes from. Full design in
-[The four fast paths](/Mammoth/concepts/fast-paths/).
+[The four fast paths](/concepts/fast-paths/).
 
 ```mermaid
 flowchart TB

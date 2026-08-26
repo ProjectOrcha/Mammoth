@@ -3,34 +3,34 @@ name: Deploy site
 on:
   push:
     branches: [main]
-    paths: ['web/**', 'crates/**', '.github/workflows/pages.yml']
+    paths: ['web/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions: { contents: read, pages: write, id-token: write }
 concurrency: { group: pages, cancel-in-progress: true }
+
+# GitHub Pages serves the site from /Mammoth/; Vercel serves the same tree from
+# a domain root. web/astro.config.mjs reads both of these, and defaults to the
+# Vercel shape when they are unset.
+env:
+  SITE_URL: https://projectorcha.github.io
+  BASE_PATH: /Mammoth
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Generate CLI reference
-        run: cargo xtask docs
-
-      - name: Build rustdoc
-        run: |
-          cargo doc --no-deps --workspace --all-features
-          mkdir -p web/public/rustdoc && cp -r target/doc/* web/public/rustdoc/
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
 
+      # web/src/content/docs/cli/reference.md is committed. `cargo xtask docs`
+      # regenerates it from the clap tree, but it is a stub until M2 — so the
+      # site build needs no Rust toolchain at all.
       - name: Build site
         working-directory: web
         run: npm ci && npm run build && touch dist/.nojekyll

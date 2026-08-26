@@ -1,15 +1,38 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import remarkMermaid from './plugins/remark-mermaid.mjs';
+import rehypeBaseLinks from './plugins/rehype-base-links.mjs';
 
-// Custom domain? Put it in web/public/CNAME and delete `base` below.
+// One source tree, two hosts.
+//
+//   Vercel        served from the domain root. Needs no configuration: the
+//                 deployment reports its own production domain, and the base
+//                 stays '/'. A custom domain added in the Vercel dashboard is
+//                 picked up the same way.
+//   GitHub Pages  served from /Mammoth/. .github/workflows/pages.yml sets
+//                 SITE_URL and BASE_PATH to say so.
+//
+// Pages are written with root-relative links throughout; rehypeBaseLinks below
+// prefixes them when the base is not '/'. Set SITE_URL by hand to override the
+// domain that lands in the sitemap and in canonical URLs.
+const site =
+  process.env.SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : 'http://localhost:4321');
+
+const base = process.env.BASE_PATH || '/';
+
 export default defineConfig({
-  site: 'https://projectorcha.github.io',
-  base: '/Mammoth',
+  site,
+  base,
   // Diagrams are ```mermaid fences everywhere — in these pages, in the
   // README and in docs/guide/. The plugin hands them to the client-side
   // renderer wired up in src/components/Head.astro.
-  markdown: { remarkPlugins: [remarkMermaid] },
+  markdown: {
+    remarkPlugins: [remarkMermaid],
+    rehypePlugins: [rehypeBaseLinks(base)],
+  },
   integrations: [
     starlight({
       title: 'Mammoth',
@@ -19,7 +42,10 @@ export default defineConfig({
       favicon: '/logo.svg',
       description: 'A Hadoop-class distributed storage engine in Rust.',
       social: { github: 'https://github.com/ProjectOrcha/Mammoth' },
-      components: { Head: './src/components/Head.astro' },
+      components: {
+        Head: './src/components/Head.astro',
+        Hero: './src/components/Hero.astro',
+      },
       // Cinzel for Roman capitals, EB Garamond for the text face, Courier
       // Prime for the letterspaced micro-labels. Every stack in mammoth.css
       // names a system fallback, so the site still reads if these never load.

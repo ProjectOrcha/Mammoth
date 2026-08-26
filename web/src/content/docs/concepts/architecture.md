@@ -25,7 +25,7 @@ and workers carry a read-only replica of the namespace — so a warm read never
 speaks to a master at all, and a cold one can resolve at the first worker it
 reaches. That, the parallel write, the declustered repair and the memory-mapped
 restart are the four mechanisms that separate this design from HDFS's:
-**[The four fast paths](/Mammoth/concepts/fast-paths/)**.
+**[The four fast paths](/concepts/fast-paths/)**.
 
 ## The Backend trait
 

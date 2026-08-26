@@ -53,7 +53,7 @@ Three lines worth reacting to:
   *nothing* here, because they get inlined into their own metadata.
 - **`skew`** — directories that are far larger than their siblings. They will be
   the slowest part of the copy and the slowest part of every job afterwards.
-  [`viz skew`](/Mammoth/cli/viz/#viz-skew) explains what to do about them.
+  [`viz skew`](/cli/viz/#viz-skew) explains what to do about them.
 - **`estimate`** — if this is longer than you expected, it is almost always the
   small files, not the bytes.
 

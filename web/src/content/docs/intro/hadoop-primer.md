@@ -6,7 +6,7 @@ sidebar:
 ---
 
 You cannot simplify something you do not understand. This is the short version of
-Hadoop architecture. If you already know it, skip ahead to [What is Mammoth?](/Mammoth/intro/what/).
+Hadoop architecture. If you already know it, skip ahead to [What is Mammoth?](/intro/what/).
 
 
 ## 1.1 The problem Hadoop solves
@@ -129,7 +129,7 @@ block ID by rendezvous hashing rather than looked up, `open` hands back a
 **location lease** covering the whole file, and a client with no lease can send
 `path + range` straight to the nearest worker — which resolves it locally from a
 read-only replica of the namespace. Warm reads never touch the master at all.
-[The one-shot read →](/Mammoth/concepts/fast-paths/#1--the-one-shot-read)
+[The one-shot read →](/concepts/fast-paths/#1--the-one-shot-read)
 :::
 
 **How the NameNode learns where blocks are:** it doesn't store that on disk. Every DataNode sends a **block report** on startup ("I have these 4 million blocks") and a **heartbeat** every 3 seconds ("still alive, here's my free space"). The block→location map is rebuilt in RAM every time the NameNode restarts. That's why big Hadoop clusters take 30+ minutes to boot.
@@ -143,7 +143,7 @@ Mammoth doesn't rebuild the map, because it doesn't have to: the map is
 so reports are a correction rather than a source of truth, and each worker
 confirms its four million blocks with **one 32-byte Merkle root**. Safe mode
 becomes per-shard and is measured in seconds.
-[Warm start →](/Mammoth/concepts/fast-paths/#4--warm-start)
+[Warm start →](/concepts/fast-paths/#4--warm-start)
 :::
 
 ## 1.5 The write path — the replication pipeline
@@ -177,7 +177,7 @@ them in parallel** — network depth 1 instead of 3 — then acks as soon as a
 quorum is durable, so the slowest node is never waited on. Storage drops from 3×
 to 1.67×, and so does the traffic on the fabric; the client's own uplink carries
 1.67× instead of 1×, which is the trade.
-[The fan-out dispersal write →](/Mammoth/concepts/fast-paths/#2--the-fan-out-dispersal-write)
+[The fan-out dispersal write →](/concepts/fast-paths/#2--the-fan-out-dispersal-write)
 :::
 
 **Lease:** while a file is open for writing, the client holds a _lease_ (an exclusive lock with a timeout). If the client crashes, the lease expires and the NameNode recovers the half-written file. This is how HDFS gets single-writer semantics without distributed locks.
@@ -224,14 +224,14 @@ Now the important part — what you're actually fixing.
 |**One global lock**|The NameNode serializes nearly all namespace operations behind `FSNamesystem`'s lock. One slow op blocks thousands.|Immutable namespace behind `ArcSwap` — readers never block.|
 |**Metadata in RAM only**|Namespace size is capped by one machine's RAM. ~400 bytes/file means 100M files ≈ 40 GB heap.|Raft-backed metadata store, spilled to disk.|
 |**Small-file problem**|1 million 10 KB files consume the same index space as 1 million 128 MB files. Clusters die from this.|Files under 1 MiB are inlined into their own metadata.|
-|**Two-step reads**|Every open costs a NameNode round trip before a single byte moves — and repeats every 10 blocks on a long scan.|[One-shot read](/Mammoth/concepts/fast-paths/#1--the-one-shot-read): computed placement + location leases. 0–1 RTT.|
-|**Chain-replicated writes**|Three hops out and three acks back, in series. One slow disk stalls the write; a death mid-block rebuilds the pipeline.|[Fan-out dispersal](/Mammoth/concepts/fast-paths/#2--the-fan-out-dispersal-write): parallel RS fragments, depth 1, quorum ack.|
-|**Chain-replicated repair**|One source, one sink, per block. Rebuilding a dead 160 TB node takes hours — hours of reduced redundancy.|[Declustered repair](/Mammoth/concepts/fast-paths/#3--declustered-parallel-repair): every node repairs at once; LRC halves the traffic.|
+|**Two-step reads**|Every open costs a NameNode round trip before a single byte moves — and repeats every 10 blocks on a long scan.|[One-shot read](/concepts/fast-paths/#1--the-one-shot-read): computed placement + location leases. 0–1 RTT.|
+|**Chain-replicated writes**|Three hops out and three acks back, in series. One slow disk stalls the write; a death mid-block rebuilds the pipeline.|[Fan-out dispersal](/concepts/fast-paths/#2--the-fan-out-dispersal-write): parallel RS fragments, depth 1, quorum ack.|
+|**Chain-replicated repair**|One source, one sink, per block. Rebuilding a dead 160 TB node takes hours — hours of reduced redundancy.|[Declustered repair](/concepts/fast-paths/#3--declustered-parallel-repair): every node repairs at once; LRC halves the traffic.|
 |**6+ XML config files**|`core-site.xml`, `hdfs-site.xml`, `yarn-site.xml`, `mapred-site.xml`... with 1000+ tunable properties.|One `mammoth.toml`, env-overridable.|
 |**ZooKeeper + JournalNodes + ZKFC**|HA requires _three additional distributed systems_ just to fail over one NameNode.|Raft, built in.|
 |**Kerberos**|Security is all-or-nothing and famously painful to configure.|Tokens or mTLS by default; Kerberos only if you need it.|
 |**Full block reports**|A 10M-block DataNode reporting in can pause the NameNode for seconds.|Rolling `xxhash3` digests; a full report only on mismatch.|
-|**Slow startup**|Rebuilding the block map from reports takes 30+ minutes on large clusters.|[Warm start](/Mammoth/concepts/fast-paths/#4--warm-start): the map is `mmap`ed back, workers confirm with a 32-byte Merkle root.|
+|**Slow startup**|Rebuilding the block map from reports takes 30+ minutes on large clusters.|[Warm start](/concepts/fast-paths/#4--warm-start): the map is `mmap`ed back, workers confirm with a 32-byte Merkle root.|
 |**Java everywhere**|A separate script for each subsystem: `hdfs`, `yarn`, `mapred`, `hadoop`.|One binary, one verb set: `mammoth`.|
 
 ## 1.8 Translation table — keep this handy

@@ -30,6 +30,9 @@ web/.astro/
 web/public/rustdoc/
 npm-debug.log*
 
+# --- Vercel ---
+.vercel/
+
 # --- cargo-dist / release ---
 target/distrib/
 

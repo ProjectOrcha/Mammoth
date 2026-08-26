@@ -270,7 +270,7 @@ Plus a **time machine slider**: replay the last 24h of distribution state. Watch
 
 ### The fast paths, as live numbers
 
-The four mechanisms in [The four fast paths](/Mammoth/concepts/fast-paths/) are
+The four mechanisms in [The four fast paths](/concepts/fast-paths/) are
 claims until you can watch them. So each one has a place in the UI where it is a
 number, next to the number it replaced:
 

@@ -167,7 +167,7 @@ $ mammoth cluster members
 **Learners are workers**, holding a read-only replica of the namespace so a
 client with no location lease can resolve `path + range` at the nearest worker
 in a single round trip. They never vote and they are allowed to lag — see
-[the one-shot read](/Mammoth/concepts/fast-paths/#1--the-one-shot-read).
+[the one-shot read](/concepts/fast-paths/#1--the-one-shot-read).
 
 `transfer-leadership` moves the leader deliberately, which is what you want
 before rebooting the machine that currently holds it.
@@ -204,7 +204,7 @@ $ mammoth admin safemode status
 
 You should almost never have to `enter` or `leave` it by hand. If a restart is
 taking longer than seconds, that is the thing to investigate — see
-[warm start](/Mammoth/concepts/fast-paths/#4--warm-start).
+[warm start](/concepts/fast-paths/#4--warm-start).
 
 ### `fsck`
 
@@ -300,7 +300,7 @@ mammoth migrate plan|run|resume|verify|sync|cutover|metastore
 ```
 
 Six steps, plan first, resumable throughout. Fully worked in
-[Migration](/Mammoth/migration/).
+[Migration](/migration/).
 
 ## `bench` — built-in benchmarks
 

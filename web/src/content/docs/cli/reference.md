@@ -17,9 +17,9 @@ right and never explains anything.
 For what each command is *for* — and what its output is telling you — read the
 hand-written pages instead:
 
-- **[Files](/Mammoth/cli/filesystem/)** — `ls` `put` `get` `cat` `rm` `stat` `du` `df` `find` `setrep` `checksum` …
-- **[Visualization](/Mammoth/cli/viz/)** — `viz blocks` `viz cluster` `viz skew` `viz health` `viz flow` `top`
-- **[Operations](/Mammoth/cli/operations/)** — `init` `serve` `doctor` `node` `cluster` `admin` `job` `migrate` `bench` `config` `token`
+- **[Files](/cli/filesystem/)** — `ls` `put` `get` `cat` `rm` `stat` `du` `df` `find` `setrep` `checksum` …
+- **[Visualization](/cli/viz/)** — `viz blocks` `viz cluster` `viz skew` `viz health` `viz flow` `top`
+- **[Operations](/cli/operations/)** — `init` `serve` `doctor` `node` `cluster` `admin` `job` `migrate` `bench` `config` `token`
 
 You can also get the same information from the binary, which needs no network:
 

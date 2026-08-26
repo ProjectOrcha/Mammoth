@@ -212,7 +212,7 @@ lives inside its own metadata, so resolving it *is* reading it. One round trip,
 no block layer, no second hop.
 
 Then the two tail-latency mechanisms that already exist in
-[Performance](/Mammoth/concepts/performance/) compose on top: **short-circuit
+[Performance](/concepts/performance/) compose on top: **short-circuit
 local reads** pass a file descriptor over a Unix socket when the replica is on
 the reader's machine, and **hedged reads** fire at a second replica when the
 first is slow. Because the client derived the whole replica set itself, hedging
@@ -761,7 +761,7 @@ safemode_threshold = 0.999         # only consulted when safemode = "global"
 
 - **`mammoth top`** — a `START` line while reconciling: mapped size, roots
   matched, shards still in safe mode.
-- **The web UI** — the [distribution page](/Mammoth/concepts/visualization/)
+- **The web UI** — the [distribution page](/concepts/visualization/)
   shows repair as it happens: how many nodes are participating, how much
   redundancy is left on the worst block, and the ETA that follows from the two.
 - **The errors** — `SafeMode` names the shard that is not ready, not the

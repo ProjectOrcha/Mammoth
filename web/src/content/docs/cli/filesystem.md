@@ -9,7 +9,7 @@ The file verbs are POSIX. If a flag exists in coreutils and means something
 here, it has the same name and the same behaviour: `-l`, `-h`, `-r`,
 `--recursive`, `-n`.
 
-Everything on this page accepts the [global flags](/Mammoth/cli/), so any of it
+Everything on this page accepts the [global flags](/cli/), so any of it
 can be piped as JSON.
 
 ## `ls` — list a directory
@@ -163,7 +163,7 @@ $ mammoth stat /data/nyc-taxi.parquet
 ```
 
 `--blocks` adds the per-block fragment list. For the visual version of the same
-information, use [`viz blocks`](/Mammoth/cli/viz/#viz-blocks).
+information, use [`viz blocks`](/cli/viz/#viz-blocks).
 
 ## `du` and `df` — space used, space left
 
@@ -253,7 +253,7 @@ $ mammoth setrep /warehouse/archive --policy rs-6-3 -R --dry-run
 **Read the `repair cost` line before you accept the space saving.** `rs-6-3` is
 cheaper on disk than `lrc-6-2-2` and twice as expensive to repair, which is the
 wrong trade for anything you might have to rebuild in a hurry. See
-[the four fast paths](/Mammoth/concepts/fast-paths/#3--declustered-parallel-repair).
+[the four fast paths](/concepts/fast-paths/#3--declustered-parallel-repair).
 
 Track it afterwards with `mammoth admin ec status`.
 
@@ -273,7 +273,7 @@ $ mammoth checksum /data/nyc-taxi.parquet --verify ./local.parquet
 `--algorithm md5-of-md5` computes HDFS's composite
 `MD5-of-MD5-of-CRC32C`, so you can compare a Mammoth file against an HDFS file
 without reading either of them twice. That is the check that makes a
-[migration](/Mammoth/migration/) trustworthy.
+[migration](/migration/) trustworthy.
 
 ## Common recipes
 

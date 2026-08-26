@@ -21,7 +21,7 @@ none of them needing a browser.
 
 Every one takes `--json`, so the same numbers a human reads are the numbers a
 script gets. The [full gallery of sample output is on the
-visualization page](/Mammoth/concepts/visualization/); this page is the
+visualization page](/concepts/visualization/); this page is the
 per-command detail.
 
 ## `viz blocks`
@@ -158,7 +158,7 @@ participating, and the ETA. If `participating` is much lower than your healthy
 node count, repair is not declustering properly and the rebuild will take far
 longer than it should.
 
-[Full sample output, and the erasure-coding-width warning it prints →](/Mammoth/concepts/visualization/)
+[Full sample output, and the erasure-coding-width warning it prints →](/concepts/visualization/)
 
 ## `viz flow`
 
