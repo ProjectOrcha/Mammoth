@@ -7,6 +7,10 @@ distributed system before.
 Terms are grouped by *when you first meet them*, not alphabetically — so the
 first group is the one to read on day one.
 
+This page defines words. [CONCEPTS.md](CONCEPTS.md) explains *why they exist* —
+read that first if the whole idea of a distributed filesystem is new, and use
+this as the lookup table afterwards.
+
 ---
 
 ## Part 1 — Words you need before chapter 4
@@ -94,6 +98,39 @@ is a shortcut that works surprisingly well.
 **A worker saying "I am still alive" every few seconds.** When the master stops
 hearing from a worker for long enough (`master.dead_after`), it marks the worker
 `Dead` and starts rebuilding that worker's blocks from their surviving replicas.
+
+### Block report
+
+**A worker telling the master which blocks it holds.** Sent periodically, and in
+full when a worker starts. This is how the master learns where data is — it does
+not remember it independently, which is why a restarted master can rebuild its
+whole picture of the cluster from the workers.
+
+### Safe mode
+
+**The state a master starts in: reads allowed, writes refused.** It has the
+namespace (from its log) but not yet the physical locations, so it waits for
+enough block reports to arrive before accepting writes. On a large HDFS cluster
+this takes 30–45 minutes and is the system's most-hated property; chapter 12 §4
+is about making it seconds.
+
+### Failure domain
+
+**A set of machines that tend to fail together.** A rack is one — shared power,
+shared switch. In a cloud, an availability zone is one. The placement rule cares
+about failure domains rather than racks specifically; "rack" is just the name
+the code uses.
+
+### Under-replicated
+
+**A block with fewer copies than its target.** Not an error — reads still work —
+but a queue entry: the master will copy it back up to the target. `critical`
+means only one copy is left, which is the number that should wake somebody.
+
+### Lease
+
+**Permission to be the one writer of a file.** Granted by the master, and it
+expires — so a client that dies mid-write does not lock the file forever.
 
 ---
 
@@ -215,6 +252,95 @@ them in.
 
 ---
 
+## Part 3b — Terminal, colour and TUI words (chapters 8, 8a, 8b)
+
+### stdout / stderr
+
+**Two separate output streams.** `stdout` is the command's *result* — the thing
+a pipe or a `>` redirect captures. `stderr` is everything else: errors, progress
+bars, warnings.
+
+The rule this project follows: **results to stdout, everything else to stderr.**
+It is what makes `mammoth ls /data > out.txt` leave a clean file while a human
+still sees the error.
+
+### Exit code
+
+**A number a program returns to the shell.** `0` means success; anything else
+means failure. `echo $?` shows the last one. Shell scripts, `set -e` and CI all
+branch on it, so a command that fails must not exit `0`.
+
+### TTY / terminal
+
+**A "teletype" — an interactive terminal, as opposed to a pipe or a file.**
+`std::io::stdout().is_terminal()` asks the operating system which one you have.
+Nearly every "should I…?" question in chapter 8a is really this question.
+
+### ANSI escape sequence
+
+**A control sequence a terminal interprets rather than prints.** Colour, cursor
+movement and screen clearing are all done this way:
+
+```
+\x1b[31m  red text  \x1b[39m
+```
+
+`\x1b` is the ESC character. See them with `cat -v`, which shows `^[[31m`
+instead of obeying it. They take no visible width but they *do* take bytes,
+which is why padding must happen before colouring.
+
+### `NO_COLOR`
+
+**A convention** ([no-color.org](https://no-color.org)): if the environment
+variable exists at all, even empty, a program should not emit colour. One line
+to honour, and it is the difference between respecting a user's setup and
+overriding it.
+
+### Tone
+
+**Mammoth's name for a colour's *meaning*.** `Tone::Ok`, `Tone::Warn`,
+`Tone::Critical`, `Tone::Accent`, `Tone::Heading`, `Tone::Muted`. Defined once
+in `crates/mammoth-viz/src/style.rs`; every screen asks for a tone and nothing
+else names a colour. Each tone owns a **symbol** as well, so meaning survives a
+pipe, a monochrome terminal and colour-blindness.
+
+### TUI
+
+**Terminal user interface** — a full-screen, interactive program in a terminal.
+`htop`, `vim` and `mammoth top` are TUIs. Distinct from a CLI, which prints
+lines and exits.
+
+### Raw mode
+
+**Terminal mode where keystrokes arrive one at a time, unbuffered and unechoed.**
+Needed so `q` quits immediately rather than waiting for Enter. It is a property
+of the *terminal*, not your process — so a program that exits without turning it
+off leaves the user's shell broken. `stty sane` fixes it by hand.
+
+### Alternate screen
+
+**A second, blank screen buffer the terminal can switch to.** `vim` and `less`
+use it: your scrollback is untouched and comes straight back on exit.
+
+### Sparkline
+
+**A tiny line chart drawn with `▁▂▃▄▅▆▇█`** — a whole time series in one row of
+characters. `mammoth top` puts one next to every worker.
+
+### Eighth-blocks
+
+**The characters `▏▎▍▌▋▊▉█`**, eight widths of a single cell. Using them gives a
+bar eight times the resolution for the same width. The vertical equivalents are
+what a sparkline is made of.
+
+### `owo-colors` / `ratatui` / `indicatif`
+
+The three terminal crates Mammoth uses. `owo-colors` adds colour to strings
+(chapter 8a), `ratatui` draws full-screen interfaces (chapter 8b), `indicatif`
+draws progress bars (chapter 8a, step 8).
+
+---
+
 ## Part 4 — Git and process words
 
 ### Branch
@@ -249,5 +375,10 @@ Written as a command — "add X", not "added X".
 PR automatically. The green tick means it passed. Do not merge without it.
 
 ---
+
+**See also:** [CONCEPTS.md](CONCEPTS.md) for why the distributed-systems words
+exist · [the Rust reference](RUST-REFERENCE.md) for the Rust ones in depth,
+including a [decoder for every compiler error](RUST-REFERENCE.md#the-compiler-error-decoder)
+this codebase produces.
 
 **Back to:** [the guide index](README.md)

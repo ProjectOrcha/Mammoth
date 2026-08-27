@@ -253,7 +253,7 @@ mammoth/
 ├── ui/                Svelte 5 + Vite admin GUI, embedded via rust-embed
 ├── web/               Astro Starlight site + docs → GitHub Pages
 ├── deploy/            Dockerfile · Compose · systemd · Helm
-├── examples/          five numbered, runnable walkthroughs
+├── examples/          product walkthroughs, plus parts/ — 16 runnable one-idea programs
 ├── tests/             e2e · deterministic sim · Hadoop compat
 ├── benches/           criterion micro-benchmarks
 ├── bench-suite/       full-cluster, publishable benchmarks
@@ -274,6 +274,16 @@ mammoth/
 | [03 · Kill a node](examples/03-kill-a-node/) | watch re-replication live |
 | [04 · DuckDB over S3](examples/04-duckdb-over-s3/) | query the cluster from an unmodified tool |
 | [05 · Word count](examples/05-wordcount/) | the DAG engine and the shuffle |
+
+And for people **building** Mammoth rather than using it,
+[`examples/parts/`](examples/parts/) has sixteen small runnable programs — one
+idea each: ownership, traits, async and streams, the clap command tree,
+table-or-JSON output, colour, the block matrix, progress bars, and a live TUI
+dashboard.
+
+```bash
+cargo run -q -p mammoth-parts --example 04-traits-and-dyn
+```
 
 ## Status
 
@@ -306,10 +316,13 @@ The site is built from `web/` and published to GitHub Pages.
 
 New to Rust, or to distributed systems? **[The Mammoth build guide](docs/guide/)**
 takes you from an empty machine to a working filesystem with block
-visualization, in twelve chapters, with every code block compiled and tested.
+visualization, in fourteen chapters, with every code block compiled and tested.
+It assumes no Rust and no Hadoop, and it is written for a team of three.
 
 | | |
 | --- | --- |
+| [**Distributed storage, from zero**](docs/guide/CONCEPTS.md) | 40 minutes, no code — read this first |
+| [**The three-person plan**](docs/guide/TEAM-PLAN.md) | who does what, and the four handoffs |
 | [0 · Set up your machine](docs/guide/00-setup.md) | Rust, Git, Node, first build |
 | [1 · The Rust you actually need](docs/guide/01-rust-you-need.md) | 30 minutes, not a course |
 | [2 · Your first change](docs/guide/02-first-change.md) | a real command, end to end |
@@ -318,9 +331,18 @@ visualization, in twelve chapters, with every code block compiled and tested.
 | [5](docs/guide/05-localbackend-part-1.md) · [6 · LocalBackend](docs/guide/06-localbackend-part-2.md) | blocks, replicas, rack-aware placement |
 | [7 · Wiring up the CLI](docs/guide/07-wiring-the-cli.md) | `ls`, `put`, `cat`, `stat` |
 | [8 · `viz blocks`](docs/guide/08-viz-blocks.md) | seeing where your data went |
+| [8a · Colour, done properly](docs/guide/08a-colour-in-the-terminal.md) | one palette for the CLI, the TUI and the web |
+| [8b · `mammoth top`](docs/guide/08b-the-live-tui.md) | the live dashboard, in ratatui |
 | [9 · The web UI](docs/guide/09-web-ui.md) | REST API and embedded dashboard |
 | [10 · GitHub Pages](docs/guide/10-github-pages.md) | publish the docs site |
 | [11 · Where to go next](docs/guide/11-what-next.md) | M4 and beyond |
+| [12 · The four fast paths](docs/guide/12-the-fast-paths.md) | the design for the distributed half |
+
+Plus three references you come back to rather than read through:
+[the Rust reference](docs/guide/RUST-REFERENCE.md) (including a decoder for
+every compiler error this codebase produces),
+[the glossary](docs/guide/GLOSSARY.md), and
+[the checklists](docs/guide/CHECKLISTS.md).
 
 ## Contributing
 

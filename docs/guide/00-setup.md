@@ -174,7 +174,7 @@ The status bar tells you when it is done.
 
 ## Check it works
 
-Run all four of these. All four must succeed.
+Run all five of these. All five must succeed.
 
 ```bash
 cargo build --workspace
@@ -192,7 +192,21 @@ cargo fmt --all --check
 ./target/debug/mammoth --version
 ```
 
-The last one prints `mammoth 0.1.0`.
+That prints `mammoth 0.1.0`. Finally, build the sixteen teaching examples — they
+are the fastest way to check that colour, Unicode and your terminal all behave:
+
+```bash
+cargo build -p mammoth-parts --examples
+```
+
+```bash
+cargo run -q -p mammoth-parts --example 12-bars-and-heatmap
+```
+
+You should see coloured bars and sparklines, correctly aligned. If the bars are
+boxes or question marks, your terminal font or encoding needs fixing **now**
+rather than in chapter 8 — see
+[chapter 8's terminal check](08-viz-blocks.md#before-you-start).
 
 ## Done when
 
@@ -208,6 +222,9 @@ Tick every box before moving on. Chapter 1 assumes all of these are true.
 - [ ] `cargo fmt --all --check` succeeds
 - [ ] `./target/debug/mammoth --version` prints `mammoth 0.1.0`
 - [ ] `./target/debug/mammoth --help` lists `ls`, `put`, `get`, `viz`, `top`
+- [ ] `cargo build -p mammoth-parts --examples` succeeds
+- [ ] `cargo run -q -p mammoth-parts --example 12-bars-and-heatmap` draws
+      coloured bars, correctly aligned — no boxes, no question marks
 - [ ] VS Code has rust-analyzer installed and has finished indexing
 - [ ] (chapters 9–10 only) `node --version` prints v20 or higher
 ```

@@ -3,17 +3,33 @@
 This guide is written for a team of exactly three. This page is how the three of
 you split it up, in what order, and what you owe each other.
 
-If you read only one thing here, read [the handoff contracts](#the-three-handoff-contracts).
+If you read only one thing here, read [the handoff contracts](#the-handoff-contracts).
 Everything else is scheduling; those are the promises that stop the project
 deadlocking.
+
+> **If all three of you are new to Rust and new to distributed systems** — which
+> is the case this guide was written for — do not change the plan. Change the
+> *pace*: double the week estimates, and spend the whole of week 1 together
+> rather than splitting on day three. Specifically:
+>
+> - Everyone reads [CONCEPTS.md](CONCEPTS.md) and answers its eight questions
+>   out loud, as a group. Forty minutes, and it prevents the failure where three
+>   people build three things that assume different models of the problem.
+> - Everyone runs [`examples/parts/`](../../examples/parts/) 01–05 and can say
+>   what a trait is. Not "has read about" — *has run and can explain*.
+> - Nobody starts chapter 5 until chapter 4 has been read aloud together.
+>
+> Those three things cost about a day and a half between them. Skipping them
+> costs a week in week 4, reliably.
 
 ---
 
 ## The shape of the problem
 
 Chapters 5–10 are *nearly* independent. Nearly. There are exactly three places
-where one person has to wait for another, and if you plan around those three,
-all three of you can work every day without stepping on each other.
+where one person has to **wait** for another — plus a fourth where they have to
+**agree** — and if you plan around those four, all three of you can work every
+day without stepping on each other.
 
 ```mermaid
 flowchart TD
@@ -35,17 +51,23 @@ flowchart TD
 
     a6 -. "handoff 2<br/>read + block_layout work" .-> b8b["ch 8 · viz blocks<br/><b>Ben</b>"]
     b7 --> b8b
+    b8b --> b8a["ch 8a · the Tone palette<br/><b>Ben</b>"]
+    b8a --> b8bb["ch 8b · mammoth top<br/><b>Ben</b>, if time"]
 
     c10 --> c9["ch 9 · gateway + web UI<br/><b>Cai</b>"]
     a6 -. "handoff 3<br/>a real Backend to serve" .-> c9
+    b8a -. "handoff 4<br/>the six Tones" .-> c9
 
-    b8b --> demo["M2 · the demo"]
+    b8a --> demo["M2 · the demo"]
     c9 --> demo
+    b8bb --> demo
     demo --> c12["ch 12 · read together<br/>before mammoth-master"]
 ```
 
-The dotted lines are the only three moments anyone waits. Names are placeholders
-— put your own in.
+The dotted lines are the moments anyone waits. Three of them block work; the
+fourth (the palette) only affects how things *look*, so Cai can pick any colours
+in week 3 and swap to the real `Tone` names when 8a lands. Names are
+placeholders — put your own in.
 
 ---
 
@@ -57,7 +79,7 @@ implicit; "we'll figure it out" is how two people write the same function.
 | | Track | Chapters | Files they own | Skills it builds |
 | --- | --- | --- | --- | --- |
 | **Ana** | Storage | 5, 6 | `crates/mammoth-local/` | Rust, async I/O, filesystem layout, tests |
-| **Ben** | Interface | 7, 8 | `crates/mammoth-cli/`, `crates/mammoth-viz/` | Rust, CLI design, terminal graphics |
+| **Ben** | Interface | 7, 8, 8a, 8b | `crates/mammoth-cli/`, `crates/mammoth-viz/` | Rust, CLI design, colour, terminal graphics |
 | **Cai** | Surface | 9, 10 | `ui/`, `crates/mammoth-gateway/`, `web/` | TypeScript, Svelte, HTTP, CI/CD |
 
 "Owns" means: **they make the final call inside those directories, and they are
@@ -68,8 +90,9 @@ touch the files.
 
 - Whoever is **most comfortable with Rust** takes **Ana's track**. Chapters 5–6
   are the deepest Rust in the guide, and everyone else is downstream of them.
-- Whoever likes **making things look right** takes **Ben's track**. Chapter 8 is
-  the part people will screenshot.
+- Whoever likes **making things look right** takes **Ben's track**. Chapters 8,
+  8a and 8b are the part people will screenshot, and 8b — the live dashboard —
+  is the single most enjoyable afternoon in the guide.
 - Whoever has **any web experience at all** takes **Cai's track**. Chapter 9 is
   TypeScript and HTTP, not Rust.
 - Nobody has web experience? Give Cai chapter 10 first — it is 45 minutes, it
@@ -77,8 +100,12 @@ touch the files.
 
 ### Everyone reads, nobody owns
 
-Three chapters are not on anyone's track because all three of you need them:
+Four things are not on anyone's track because all three of you need them:
 
+- **[CONCEPTS.md](CONCEPTS.md)** — read before chapter 4, and answer its eight
+  questions as a group. It is the shared model of the problem; without it,
+  "block", "replica" and "rack" mean three slightly different things to three
+  people and nobody finds out for a month.
 - **Chapter 4** — read it together, out loud, before splitting up. It is the
   contract between all three tracks. Disagreeing about it in week 3 costs a week.
 - **Chapter 11** — read after M2, together, to decide what comes next.
@@ -88,7 +115,7 @@ Three chapters are not on anyone's track because all three of you need them:
 
 ---
 
-## The three handoff contracts
+## The handoff contracts
 
 A handoff is a promise: "when I say this is done, here is exactly what you can
 rely on." Written down, they let the person downstream start planning before the
@@ -123,6 +150,22 @@ chapter 8 against real data.
 to serve.
 
 **Cai can then:** wire the API endpoints to real data.
+
+### Handoff 4 — Ben → Cai, end of chapter 8a
+
+**Ben delivers:** `mammoth_viz::style::Tone` — six named meanings, each with a
+colour and a symbol, and the `tone_for_fill` / `tone_for_node` /
+`tone_for_replica` functions that decide which is which.
+
+**Cai can then:** colour the web dashboard from the *same* decisions the CLI
+makes, rather than re-implementing "what counts as nearly full" in TypeScript.
+The cheap version is exercise 3 of chapter 8a: put `"tone": "critical"` in the
+JSON, and let the dashboard map six names to six CSS variables.
+
+**This one does not block anything.** Cai should pick provisional colours in
+week 3 and swap the names over when 8a lands — it is a find-and-replace, not a
+rewrite. It is written down because "the CLI says yellow at 75% and the web UI
+says orange at 80%" is the kind of drift nobody notices until a customer does.
 
 ---
 
@@ -159,31 +202,50 @@ states, two racks, a full block — before `LocalBackend` can produce a single
 byte. When handoff 2 lands, swap `fake_layout()` for `backend.block_layout(path)`
 and delete the function.
 
-The same trick works for Cai: serve a hard-coded JSON blob from the gateway,
-build the entire Svelte dashboard against it, then point it at the real backend.
-
 **Why this is safe:** everyone is coding against the same types from
 `mammoth-core`. If your fake data compiles, it has the same shape as the real
 data. That is chapter 4's promise, cashed in.
 
+**There is a worked version of this in the repository.**
+[`examples/parts/13-block-matrix.rs`](../../examples/parts/examples/13-block-matrix.rs)
+is the finished block matrix — colour, rack grouping, the safety warning — built
+entirely on hand-made `BlockPlacement` values:
+
+```bash
+cargo run -q -p mammoth-parts --example 13-block-matrix
+```
+
+Ben can run that on day one. Cai has the same option: serve a hard-coded JSON
+blob from the gateway, build the entire Svelte dashboard against it, and point
+it at the real backend later.
+
 ---
 
-## A six-week shape
+## A seven-week shape
 
-Adjust the weeks to your actual pace — the *order* is the part that matters.
+Adjust the weeks to your actual pace — the *order* is the part that matters. If
+this is everyone's first Rust project, assume ten to twelve weeks rather than
+seven, and do not treat that as falling behind.
 
 | Week | Ana | Ben | Cai | Ends with |
 | --- | --- | --- | --- | --- |
-| **1** | ch 0–4 | ch 0–4 | ch 0–4 | Everyone set up, everyone has merged one PR, chapter 4 agreed |
+| **1** | CONCEPTS, ch 0–4 | CONCEPTS, ch 0–4 | CONCEPTS, ch 0–4 | Everyone set up, everyone has merged one PR, chapter 4 agreed |
 | **2** | ch 5 | ch 8 primitives + fake data | ch 10 (docs site live) | **Handoff 1.** A live docs site — the project feels real |
 | **3** | ch 6 | ch 7 `ls` / `stat` | ch 9 API against fake JSON | Real files listable from the CLI |
 | **4** | ch 6 finish + tests | ch 7 `put` / `cat` | ch 9 Svelte dashboard | **Handoffs 2 & 3.** A file round-trips |
 | **5** | help Ben; harden tests | ch 8 `viz blocks` for real | ch 9 wire to real backend | **M2.** The demo works end to end |
-| **6** | ch 11 + ch 12 together | ch 11 + ch 12 together | ch 11 + ch 12 together | A decision about what to build next |
+| **6** | ch 8b with Ben, or M4 reading | ch 8a, then 8b | ch 9 polish; adopt `Tone` | **Handoff 4.** It stops looking like a prototype |
+| **7** | ch 11 + ch 12 together | ch 11 + ch 12 together | ch 11 + ch 12 together | A decision about what to build next |
 
 Week 2 is worth defending: Cai ships a live documentation site while the others
 are still deep in Rust. **Something public existing in week 2 changes how the
 team feels about the project** far more than the 45 minutes it costs.
+
+Week 6 is the one people are tempted to cut, and it is the week that decides
+whether this reads as a student project or a product. Colour, progress bars and
+`mammoth top` cost about a day and a half of one person's time and they are
+what everybody notices first. If you must cut something, cut **8b**, not 8a —
+8a is where the palette comes from and chapter 9 depends on it.
 
 ---
 
@@ -266,7 +328,7 @@ anyone is away for more than a day, they should:
 - Push their branch, even half-finished — **a pushed broken branch is infinitely
   more useful than a perfect one on a closed laptop**
 - Write what state it is in and what the next step is, in the PR description
-- Say which of the three handoffs they were about to hit
+- Say which of the [handoffs](#the-handoff-contracts) they were about to hit
 
 ### `main` is broken
 
@@ -300,6 +362,9 @@ If you are handing this guide to two teammates today:
 ```markdown
 - [ ] All three of us have run the [day-one checklist](CHECKLISTS.md#day-one--each-person-once)
 - [ ] We have filled our real names into the track table above
+- [ ] All three of us have read [CONCEPTS.md](CONCEPTS.md) and answered its eight
+      questions out loud
+- [ ] All three of us have run [`examples/parts/`](../../examples/parts/) 01–05
 - [ ] We have read [chapter 4](04-the-backend-trait.md) together, out loud
 - [ ] We agree on the `Backend` trait, or have an open issue about it
 - [ ] The [progress tracker](CHECKLISTS.md#the-whole-guide--progress-tracker) is

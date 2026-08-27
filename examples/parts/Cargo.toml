@@ -1,0 +1,34 @@
+[package]
+name        = "mammoth-parts"
+description = "Small, runnable examples — one Mammoth idea per file"
+publish     = false
+version.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+license.workspace      = true
+repository.workspace   = true
+homepage.workspace     = true
+
+# This crate is only a home for `examples/`. There is no library and no binary:
+# every file under examples/ is a standalone program you run with
+#
+#     cargo run -p mammoth-parts --example 06-cli-hello
+#
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+mammoth-core = { workspace = true }
+
+async-trait  = { workspace = true }
+bytes        = { workspace = true }
+clap         = { workspace = true }
+comfy-table  = { workspace = true }
+futures-util = { workspace = true }
+indicatif    = { workspace = true }
+owo-colors   = { workspace = true }
+ratatui      = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+thiserror    = { workspace = true }
+tokio        = { workspace = true }

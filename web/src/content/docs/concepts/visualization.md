@@ -238,7 +238,7 @@ Built with **`ratatui`**. One screen, live, works over SSH:
 |Tables|`comfy-table`|
 |Color|`owo-colors`, gated on `is_terminal()` — never emit ANSI when piped|
 |Interactive|`ratatui` + `crossterm`|
-|Fallback|`--no-color --ascii` for CI logs and dumb terminals|
+|Fallback|`--color never` for CI logs and dumb terminals; every symbol still carries its meaning|
 
 ## 7.2 Web UI: the `/distribution` page
 

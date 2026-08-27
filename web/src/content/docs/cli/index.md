@@ -76,6 +76,7 @@ These work on every command.
 | `--masters <A,B,C>` | `MAMMOTH_MASTERS` | from the config | Talk to a different cluster without editing a file. |
 | `--output <FORMAT>` | — | `auto` | `auto` · `table` · `json` · `yaml` · `csv`. |
 | `--json` | — | off | Shorthand for `--output json`. |
+| `--color <WHEN>` | `NO_COLOR` | `auto` | `auto` · `always` · `never`. `auto` colours only on a terminal; `NO_COLOR` set to anything turns it off. Use `always` for `less -R` and CI log viewers. |
 | `-v`, `-vv`, `-vvv` | — | off | More detail. `-vvv` includes per-RPC timing. |
 
 Any config key can be overridden by environment variable — uppercase the path
@@ -109,8 +110,11 @@ The JSON field names are a **public API**. They will not be renamed without a
 major version bump, so it is safe to build on them.
 
 Colour is emitted only when stdout is a terminal, so redirected output never
-contains escape sequences. `--output table` forces the human form anyway (handy
-for `less -R`), and `--no-color` drops the colour but keeps the table.
+contains escape sequences, and `NO_COLOR` turns it off entirely. `--output table`
+forces the human form anyway, `--color always` keeps the colour through a pipe
+(handy together, for `less -R`), and `--color never` drops the colour but keeps
+the table. Every colour-carried distinction also has a symbol, so nothing is
+lost in plain text — see [Colour](/cli/viz/#colour).
 
 ## Exit codes
 

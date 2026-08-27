@@ -14,9 +14,18 @@ need to be willing to type things and read error messages.
 | --- | --- |
 | **On your own, day one** | [Chapter 0 — Set up your machine](00-setup.md) |
 | **A team of three, starting today** | [The three-person plan](TEAM-PLAN.md) |
+| **New to distributed systems** | [Distributed storage, from zero](CONCEPTS.md) |
+| **New to Rust** | [Chapter 1](01-rust-you-need.md), then [the Rust reference](RUST-REFERENCE.md) |
+| **Learning best by running things** | [`examples/parts/`](../../examples/parts/) — 16 runnable programs |
 | **Lost in a word you do not recognise** | [The glossary](GLOSSARY.md) |
 | **About to commit, or review a PR** | [The checklists](CHECKLISTS.md) |
 | **Wondering what you are even building** | the next section |
+
+> **If both "new to Rust" and "new to distributed systems" describe you, that is
+> the expected starting point** — this guide was written for exactly that, and
+> nothing in it assumes otherwise. Read [CONCEPTS.md](CONCEPTS.md) first (forty
+> minutes, no code), then start at chapter 0. Come back to
+> [the Rust reference](RUST-REFERENCE.md) whenever a line does not parse.
 
 ---
 
@@ -74,8 +83,15 @@ mammoth viz blocks /data/big.log
 ```
 
 …and that last one draws your file's blocks and their replicas as a picture in
-your terminal. By the end of chapter 9 the same thing is a web dashboard anyone
-can open in a browser.
+your terminal — in colour by the end of chapter 8a, and as a live dashboard you
+can leave running by the end of 8b:
+
+```bash
+mammoth top
+```
+
+By the end of chapter 9 the same thing is a web dashboard anyone can open in a
+browser.
 
 ### The trick that makes this possible in weeks instead of months
 
@@ -120,9 +136,12 @@ Mammoth/
 │   │       ├── main.rs           dispatch
 │   │       ├── output.rs         the Render trait: table or JSON
 │   │       └── commands/         one file per command
-│   ├── mammoth-viz/          ← you build this                ch 8
+│   ├── mammoth-viz/          ← you build this                ch 8, 8a, 8b
 │   ├── mammoth-gateway/      ← you build this                ch 9
 │   └── … 11 more, all stubs for later milestones
+├── examples/
+│   ├── parts/                ← 16 runnable one-idea programs. Use these
+│   └── 01-hello-mammoth/…       product demos, for people evaluating Mammoth
 ├── ui/                       ← the Svelte dashboard          ch 9
 ├── web/                      ← the documentation site        ch 10
 ├── docs/
@@ -167,15 +186,18 @@ Every chapter has the same shape:
 | **Why it matters** | so you are not just typing |
 | **The code** | complete, not fragments |
 | **Check it works** | an exact command and its exact expected output |
+| **Run the examples** | the runnable one-idea version, in [`examples/parts/`](../../examples/parts/) |
 | **Done when** | a checklist to tick before you move on |
 | **If it went wrong** | the three errors people actually hit |
 | **Commit it** | the commit message to use |
 
-> **Verified code.** Every Rust block in chapters 1, 2 and 4–8 was assembled
-> exactly as written here, compiled, and run — `cargo clippy -- -D warnings`
+> **Verified code.** Every Rust block in chapters 1, 2, 4–8, 8a and 8b was
+> assembled exactly as written here, compiled, and run — `cargo clippy -- -D warnings`
 > clean, tests passing — before this guide was published. The terminal output
 > shown is real output, captured from those runs, not illustration. Chapter 10's
-> build steps and expected output were verified the same way.
+> build steps and expected output were verified the same way, and all sixteen
+> programs in [`examples/parts/`](../../examples/parts/) are in the workspace, so
+> `cargo test --workspace` keeps them honest.
 >
 > The exceptions are **chapter 9**, whose Rust and Svelte are written to the
 > same standard but were not machine-verified end to end, and **chapter 12**,
@@ -192,6 +214,10 @@ Every chapter has the same shape:
 
 - **Type the code, do not paste it.** You will read it properly, and you will
   learn far more from the typos than from the working version.
+- **Run the example before you write the chapter's version.** Most chapters name
+  one or two programs in [`examples/parts/`](../../examples/parts/) that do the
+  chapter's central trick in isolation, on fake data, with nothing else around
+  it. Twenty minutes there routinely saves an hour.
 - **Do not skip "Check it works".** It is the difference between "I think that
   worked" and knowing.
 - **Errors are the normal state.** Rust's compiler errors are unusually good —
@@ -223,6 +249,8 @@ Everyone on the team does all four of these, in week one.
 | 6 | [LocalBackend, part 2 — write, read, blocks](06-localbackend-part-2.md) | 3 h | Files that round-trip through blocks |
 | 7 | [Wiring up the CLI](07-wiring-the-cli.md) | 2 h | `ls`, `put`, `cat`, `stat` |
 | 8 | [`viz blocks` — seeing your data](08-viz-blocks.md) | 2 h | Your data, drawn |
+| 8a | [Colour, done properly](08a-colour-in-the-terminal.md) | 90 min | One palette, driving every screen |
+| 8b | [`mammoth top` — the live TUI](08b-the-live-tui.md) | 3 h | A dashboard that works over SSH |
 
 ### Part 3 — Shipping it
 
@@ -237,6 +265,12 @@ Everyone on the team does all four of these, in week one.
 | # | Chapter | Time | You end with |
 | --- | --- | --- | --- |
 | 12 | [The four fast paths](12-the-fast-paths.md) | 90 min | The design for the distributed half |
+
+Chapters 8a and 8b are lettered rather than numbered because they extend chapter
+8 rather than following it. **8a is not optional polish** — it is where the
+`Tone` palette comes from, and chapters 8b and 9 both depend on it. 8b is
+genuinely optional if you are short of time; skip it and come back after the
+demo.
 
 Chapters 0–8 get you to **milestone M1–M2** in the [roadmap](../ROADMAP.md):
 a working single-machine filesystem with the visualization that makes this
@@ -267,6 +301,8 @@ with milestones and owner slots, is in [the checklists](CHECKLISTS.md#the-whole-
 - [ ] 6 · LocalBackend, part 2
 - [ ] 7 · Wiring up the CLI
 - [ ] 8 · viz blocks
+- [ ] 8a · Colour, done properly
+- [ ] 8b · mammoth top, the live TUI
 - [ ] 9 · The web UI and the gateway
 - [ ] 10 · Publishing the docs
 - [ ] 11 · Where to go next
@@ -297,8 +333,15 @@ forget — is in [the checklists](CHECKLISTS.md#before-every-commit-the-30-secon
 2. **Run `cargo build` again.** Sometimes you fixed it and did not notice.
 3. **Check you are in the right directory.** `pwd` should end in `/Mammoth`.
 4. **Look up the word.** [The glossary](GLOSSARY.md) covers every term this
-   guide uses, including the Rust and Git ones.
-5. **Work down [the stuck checklist](CHECKLISTS.md#i-am-stuck).** It is eight
+   guide uses, including the Rust and Git ones. For a compiler error
+   specifically, there is a
+   [decoder table](RUST-REFERENCE.md#the-compiler-error-decoder) of every one
+   this codebase produces, with the fix.
+5. **Run the isolated version.** If chapter 6's streams or chapter 8's drawing
+   will not click, the matching program in
+   [`examples/parts/`](../../examples/parts/) does the same thing in forty lines
+   with no backend attached.
+6. **Work down [the stuck checklist](CHECKLISTS.md#i-am-stuck).** It is eight
    boxes and it usually ends before the last one.
-6. **Ask.** Open a [discussion](https://github.com/ProjectOrcha/Mammoth/discussions)
+7. **Ask.** Open a [discussion](https://github.com/ProjectOrcha/Mammoth/discussions)
    or an issue. Paste the *full* error, not a screenshot of part of it.

@@ -40,6 +40,23 @@ If chapter 2 felt clear, this chapter is the same four steps again. If it did
 not, re-read chapter 2 before starting — it is twenty minutes and it will save
 you two hours here.
 
+### Run the examples first
+
+All three of this chapter's patterns — the command tree, table-or-JSON output,
+and errors that teach — run standalone:
+
+```bash
+cargo run -q -p mammoth-parts --example 07-cli-subcommands -- --help
+```
+
+```bash
+cargo run -q -p mammoth-parts --example 09-cli-errors -- not-enough-workers; echo "exit=$?"
+```
+
+The second one is worth ten minutes on its own: it shows why errors go to
+stderr, why the exit code matters, and what a hint that names the next command
+buys you.
+
 ### Who this is for
 
 **Ben's track.** It runs in parallel with Ana's chapter 6 as long as you respect

@@ -10,6 +10,8 @@
 
 ```markdown
 - [ ] Chapter 1 is read — especially §5, "Traits: the shape of a thing"
+- [ ] [CONCEPTS.md](CONCEPTS.md) is read, and its eight questions answered as a
+      group — this chapter is the *code* boundary; that one is the *problem*
 - [ ] All three of you are in the same room, or on the same call
 ```
 
@@ -30,6 +32,19 @@ crates/mammoth-core/src/
 You will not change any of them. You will read `backend.rs` line by line, and
 then write one throwaway implementation of it to feel what the compiler makes
 you do.
+
+### Run the example first
+
+Fifteen minutes, and this chapter lands in one reading rather than two. One
+trait, two implementations, one function called against both — this chapter's
+entire idea, in eighty lines you can run:
+
+```bash
+cargo run -q -p mammoth-parts --example 04-traits-and-dyn
+```
+
+If the group is split on what `&dyn Backend` buys you, read that file together
+before reading `backend.rs`.
 
 ---
 

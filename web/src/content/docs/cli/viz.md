@@ -216,6 +216,44 @@ The live TUI. One screen, works over SSH, built with
 | Bars | Unicode blocks `█▉▊▋▌▍▎▏` — 1/8 resolution per cell |
 | Sparklines | Braille `⣀⣤⣶⣿` or blocks `▁▂▃▄▅▆▇█` |
 | Tables | `comfy-table` |
-| Colour | `owo-colors`, gated on `is_terminal()` — never ANSI into a pipe |
+| Colour | `owo-colors`, gated on `is_terminal()` — never ANSI into a pipe. See [Colour](#colour) |
 | Interactive | `ratatui` + `crossterm` |
-| Fallback | `--no-color --ascii` for CI logs and dumb terminals |
+| Fallback | `--color never` for CI logs and dumb terminals; every symbol still carries its meaning |
+
+## Colour
+
+Every `viz` screen and `mammoth top` draw from one palette of six meanings, not
+from colour names:
+
+| Tone | Colour | Symbol | Means |
+| --- | --- | --- | --- |
+| `ok` | green | `●` | healthy · at target replication · node up |
+| `warn` | yellow | `◐` | under-replicated · node ≥75% full · decommissioning |
+| `critical` | red | `✕` | corrupt · missing · node dead · write refused |
+| `accent` | cyan | `▸` | totals, the selected row, the number that matters |
+| `heading` | white | `─` | column titles, section rules |
+| `muted` | grey | `·` | units, hints, absent values |
+
+Three properties follow from that, and they are worth relying on:
+
+- **The symbol always carries the meaning too.** Pipe the output, print it, or
+  read it with a red/green colour deficiency — nothing is lost. Colour is the
+  second channel, never the only one.
+- **The thresholds are decided once.** "Nearly full" is ≥75% and "critical" is
+  ≥90% in the CLI, in `mammoth top` and in the web dashboard, because all three
+  ask the same function.
+- **The basic sixteen ANSI colours are used deliberately**, so the output follows
+  your terminal's own theme and renders identically over SSH, in tmux, in a
+  Windows console and in a CI log.
+
+Colour is on when stdout is a terminal, and off otherwise. Override it:
+
+```bash
+mammoth viz cluster --color never        # plain, even on a terminal
+mammoth viz cluster --color always | less -R   # keep it through a pipe
+NO_COLOR=1 mammoth viz cluster           # honoured, as on no-color.org
+```
+
+Progress bars follow the same rule and are drawn on **stderr**, so
+`mammoth put ./big.log /data/ > receipt.txt` leaves a clean receipt and still
+shows a human the bar.

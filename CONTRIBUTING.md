@@ -29,10 +29,11 @@ Node 20+ is needed only if you are touching `ui/` or `web/`.
 | `ui/` | Svelte 5 admin GUI, embedded into the binary with `rust-embed` |
 | `web/` | Astro Starlight public site and docs → GitHub Pages |
 | `deploy/` | Dockerfile, Compose, systemd unit, Helm chart |
-| `examples/` | numbered, runnable walkthroughs |
+| `examples/` | numbered product walkthroughs |
+| `examples/parts/` | 16 runnable one-idea programs — `cargo run -p mammoth-parts --example …` |
 | `tests/` | `e2e/`, `sim/`, `compat/` — see [tests/README.md](tests/README.md) |
 | `xtask/` | `cargo xtask build-ui \| docs \| assets \| dist` |
-| `docs/guide/` | the twelve-chapter build guide |
+| `docs/guide/` | the build guide — 14 chapters, plus CONCEPTS, RUST-REFERENCE, GLOSSARY, CHECKLISTS, TEAM-PLAN |
 | `assets/logo/` | canonical logo files — see [assets/logo/README.md](assets/logo/README.md) |
 
 ## Before you open a PR

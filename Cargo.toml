@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members  = ["crates/*", "xtask"]
+members  = ["crates/*", "examples/parts", "xtask"]
 
 [workspace.package]
 version      = "0.1.0"
@@ -39,7 +39,7 @@ figment      = { version = "0.10", features = ["toml", "env"] }
 comfy-table  = "7"
 ratatui      = "0.28"
 indicatif    = "0.17"
-owo-colors   = "4"
+owo-colors   = { version = "4", features = ["supports-colors"] }
 bytes        = "1"
 thiserror    = "2"
 tracing      = "0.1"

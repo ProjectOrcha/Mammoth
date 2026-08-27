@@ -60,12 +60,18 @@ The cheapest valuable work, and it is all in code you already understand.
 - `viz topology`, `viz treemap`, `viz skew` — all fed by `cluster_report` and
   `list`. `viz skew` is the most useful command in the whole tool for anyone
   debugging a slow job.
-- `mammoth top` — the live TUI, built with
-  [`ratatui`](https://ratatui.rs/). One screen, works over SSH.
+- `--json` on the `viz` commands, so every view scripts as cleanly as `stat`
+  does.
 - `mammoth doctor` — check ports, disk space, `ulimit -n`, clock skew. Every
   check you add is a support question you never answer.
-- `--json` on the `viz` commands, and colour via `owo-colors` gated on
-  `is_terminal()`.
+- `mammoth completions bash|zsh|fish` — clap generates these; it is about
+  fifteen lines and it makes the tool feel finished.
+
+If you skipped [chapter 8a](08a-colour-in-the-terminal.md) or
+[8b](08b-the-live-tui.md), they belong at the top of this list. Colour and
+`mammoth top` cost about a day and a half between them and they are what people
+notice first — and 8a's `Tone` palette is what stops the CLI and the web UI
+drifting apart later.
 
 ### 2 · Real block storage (M4)
 

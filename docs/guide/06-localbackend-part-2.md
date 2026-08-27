@@ -40,10 +40,22 @@ Before you type anything, know what you are aiming at — the rest is mechanics:
    bytes live in the metadata. `blocks: 0`, `inlined: true`. This is Mammoth's
    answer to the small-file problem that plagues HDFS.
 
+### Run the example first
+
+This chapter's hardest idea is the byte stream. Watch one hand out chunks before
+you write one:
+
+```bash
+cargo run -q -p mammoth-parts --example 05-async-and-streams
+```
+
+It prints real timings, so you can see `tokio::join!` turn three 100 ms reads
+into 100 ms rather than take it on trust.
+
 ### Who this is for
 
 Still **Ana's track**. Finishing it completes
-[handoffs 2 and 3](TEAM-PLAN.md#the-three-handoff-contracts) at once — it
+[handoffs 2 and 3](TEAM-PLAN.md#the-handoff-contracts) at once — it
 unblocks the rest of chapter 7, all of chapter 8, and the real-data half of
 chapter 9. It is the most unblocking commit in the project, so if it is running
 long, that is when the team pairs on it rather than starting something new.

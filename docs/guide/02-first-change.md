@@ -13,6 +13,22 @@
 - [ ] Chapter 1 is read — you know what a trait is and what `?` does
 ```
 
+### Run the examples first
+
+Two small programs that do this chapter's two ideas in isolation — clap, and the
+`Render` trait — with nothing else around them:
+
+```bash
+cargo run -q -p mammoth-parts --example 06-cli-hello -- --help
+```
+
+```bash
+cargo run -q -p mammoth-parts --example 08-table-or-json
+```
+
+Run that second one again through `| cat` and watch it switch to JSON. That is
+the behaviour you are about to build.
+
 ### Files you will touch
 
 Four files, all in one crate. Two exist and you edit them; one exists and you

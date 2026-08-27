@@ -29,6 +29,22 @@ problem is your font. Use a monospace font with good Unicode coverage (JetBrains
 Mono, Fira Code, Menlo, Cascadia Code) and make sure your terminal is set to
 UTF-8.
 
+### Run the example first
+
+Fifteen minutes here will make step 1 obvious. It is the same drawing code, on
+fake data, with no backend attached:
+
+```bash
+cargo run -q -p mammoth-parts --example 12-bars-and-heatmap
+```
+
+```bash
+cargo run -q -p mammoth-parts --example 13-block-matrix
+```
+
+The second one is the finished matrix — including the rack-safety warning, which
+you can make fire with `-- --unsafe-placement`.
+
 ### Files you will touch
 
 ```
@@ -55,9 +71,12 @@ people screenshot, which is why it is built in week 5 rather than last.
 
 ### Who this is for
 
-**Ben's track.** The drawing primitives in step 1 are pure functions over
-numbers — no backend, no async, no I/O — so **you can build and test all of them
-before chapter 6 exists**, against
+**Ben's track**, and it runs straight on into chapters 8a and 8b — the three
+together are the whole terminal-interface story.
+
+The drawing primitives in step 1 are pure functions over numbers — no backend,
+no async, no I/O — so **you can build and test all of them before chapter 6
+exists**, against
 [fake placements](TEAM-PLAN.md#nobody-waits-work-against-fake-data). Do that in
 week 2 while Ana is still writing `LocalBackend`.
 
@@ -536,7 +555,8 @@ That is a demo.
 - [ ] An inlined small file draws sensibly rather than crashing or drawing nothing
 - [ ] `mammoth viz cluster` draws the six workers with usage bars
 - [ ] The replica symbols are right: `●` primary, `◐` replica, `✕` corrupt
-- [ ] Colours degrade correctly when piped — `mammoth viz blocks /x | cat`
+- [ ] Piped output is identical to terminal output — `mammoth viz blocks /x | cat`
+      (colour arrives in chapter 8a; today there should be nothing to degrade)
 - [ ] `mmcheck` passes
 - [ ] Committed, pushed, PR opened and merged
 ```
@@ -553,8 +573,12 @@ any test in the suite, and this is the last moment when changing it is cheap.
 1. **`--json` for `viz blocks`.** Right now it always prints the matrix. Make it
    implement `Render` like the chapter 7 commands, so
    `mammoth viz blocks /x --json | jq '.[].replicas'` works.
-2. **Colour.** Use `owo-colors` to make `●` green, `◐` yellow, `✕` red. Gate it
-   on `std::io::stdout().is_terminal()` — never emit ANSI escapes into a pipe.
+2. **Colour.** Do not do this here — it is
+   [chapter 8a](08a-colour-in-the-terminal.md), which is next, and which builds
+   a shared palette rather than sprinkling `.red()` through this file. If you
+   cannot wait, run
+   `cargo run -q -p mammoth-parts --example 13-block-matrix` to see where you
+   are heading.
 3. **`viz topology`.** The rack tree. `cluster_report` already has everything.
 4. **Break the placement on purpose.** Edit `WORKERS` in
    `crates/mammoth-local/src/lib.rs` so all six are in `/dc1/rack-a`, re-put a
@@ -586,4 +610,4 @@ Terminal rather than the old console host.
 
 ---
 
-**Next:** [Chapter 9 — The web UI and the gateway](09-web-ui.md)
+**Next:** [Chapter 8a — Colour, done properly](08a-colour-in-the-terminal.md)

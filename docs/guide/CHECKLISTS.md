@@ -36,10 +36,19 @@ permissions, the merge button — out of the way while nothing is at stake.
 - [ ] `./target/debug/mammoth --version` prints `mammoth 0.1.0`
 - [ ] VS Code + rust-analyzer installed, project opened, indexing finished
 
+### The concepts (before chapter 4)
+- [ ] Read [CONCEPTS.md](CONCEPTS.md) — 40 minutes, no code
+- [ ] Answered its eight "check you understand it" questions **out loud, as a team**
+- [ ] Nobody is still fuzzy on why three replicas, or why they must span racks
+
 ### Rust warm-up (chapter 1)
-- [ ] Read chapters 1's six sections
+- [ ] Read chapter 1's six sections
 - [ ] Built and ran the `rust-warmup` scratch project
 - [ ] Saw the three-node bar chart print
+- [ ] Ran `cargo build -p mammoth-parts --examples` — all sixteen compile
+- [ ] Ran examples 01 (ownership) and 04 (traits) and read the source
+- [ ] Bookmarked [the Rust reference](RUST-REFERENCE.md) and its
+      [error decoder](RUST-REFERENCE.md#the-compiler-error-decoder)
 - [ ] Deleted the scratch project
 
 ### First real change (chapter 2)
@@ -208,6 +217,9 @@ three of you tick your own rows. It is the cheapest project-management tool you
 will ever set up.
 
 ```markdown
+## Part 0 — Before any code  (everyone)
+- [ ] CONCEPTS · Distributed storage, from zero   ← read together
+
 ## Part 1 — Getting started  (everyone, day one)
 - [ ] 0 · Set up your machine
 - [ ] 1 · The 30-minute Rust you actually need
@@ -220,6 +232,8 @@ will ever set up.
 - [ ] 6 · LocalBackend, part 2 — write, read, blocks     (owner: ______)
 - [ ] 7 · Wiring up the CLI                              (owner: ______)
 - [ ] 8 · viz blocks — seeing your data                  (owner: ______)
+- [ ] 8a · Colour, done properly                         (owner: ______)
+- [ ] 8b · mammoth top — the live TUI                     (owner: ______)
 
 ## Part 3 — Shipping it
 - [ ] 9 · The web UI and the gateway                     (owner: ______)
@@ -232,6 +246,7 @@ will ever set up.
 ## Milestones
 - [ ] **M1** — `mammoth version` works, dispatch is real       (end of ch. 2)
 - [ ] **M2** — a file can be put, listed, read back, drawn     (end of ch. 8)
+- [ ] **Presentable** — colour, progress bars, `mammoth top`   (end of ch. 8b)
 - [ ] **Demo-able** — someone outside the team can be shown it (end of ch. 9)
 ```
 
