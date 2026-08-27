@@ -6,6 +6,63 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Node.js 20+ is installed — `node --version`
+- [ ] Chapter 6 is merged, **or** I am building against fake JSON for now
+- [ ] I am on a new branch: `git checkout -b feat/gateway-and-ui`
+```
+
+**You do not have to wait for chapter 6.** Serve a hard-coded JSON blob from the
+gateway, build the entire dashboard against it, and swap in the real backend
+when [handoff 3](TEAM-PLAN.md#handoff-3--ana--cai-end-of-chapter-6) lands. The
+API shape is fixed by `mammoth-core`'s types, so a dashboard built against fake
+data of the right shape keeps working.
+
+### Files you will touch
+
+Two halves, one Rust and one TypeScript:
+
+```
+crates/mammoth-gateway/
+├── Cargo.toml              EDIT   axum, tower-http, rust-embed
+└── src/
+    ├── lib.rs              EDIT   the router
+    ├── api.rs              NEW    the REST handlers
+    └── ui.rs               NEW    serve the embedded assets
+
+crates/mammoth-cli/src/commands/
+├── mod.rs                  EDIT   pub mod serve;
+└── serve.rs                NEW    the `mammoth serve` command
+
+ui/                         the Svelte app — already scaffolded
+├── package.json
+└── src/lib/types.ts        EDIT   keep in step with mammoth-core's types
+```
+
+### Two things to understand before you type
+
+**The gateway talks to a `Backend`, not to `LocalBackend`.** Same guarantee as
+the CLI: this dashboard will work against a real cluster unchanged.
+
+**The UI is compiled *into* the binary** with `rust-embed`. There is no separate
+web server and no "where do the static files go" step — one artifact ships
+everything.
+
+### Who this is for
+
+**Cai's track** — and it is a different skill set from chapters 5–8: TypeScript,
+Svelte, HTTP rather than Rust and async I/O. If your team has anyone with web
+experience, this is theirs, and it runs in parallel with everything else.
+
+> **Verification note.** Unlike chapters 1–8 and 10, this chapter's code was
+> written to the same standard but **not machine-verified end to end**. Expect to
+> debug a little more than usual, and read the "If it went wrong" section before
+> you assume you mistyped something.
+
+---
+
 The CLI is for you. The web UI is for everyone else — and it is what people
 screenshot. The front end already exists in `ui/`; this chapter builds the Rust
 half that feeds it — the REST API, the embedded assets, and
@@ -430,6 +487,30 @@ git add -A && git commit -m "feat(gateway): add REST API, embedded UI and serve 
 
 Note `ui/build/` and `ui/.svelte-kit/` are already in `.gitignore` — build
 output does not belong in Git. CI rebuilds it.
+
+## Done when
+
+```markdown
+- [ ] `cargo run -- serve --role gateway` starts without errors
+- [ ] Each API endpoint returns valid JSON when I curl it
+- [ ] `npm run build` in `ui/` succeeds
+- [ ] The built assets are embedded — the binary serves the UI with no `ui/`
+      directory next to it
+- [ ] The dashboard loads in a browser and shows **real** data from LocalBackend
+- [ ] Putting a file with the CLI and refreshing the page shows the new file
+- [ ] An error from the backend shows as a readable message in the UI, not a
+      blank page or a spinner forever
+- [ ] `mmcheck` passes
+- [ ] Committed, pushed, PR opened and merged
+```
+
+The sixth box is the one that proves the whole architecture. You wrote a file
+through the **CLI**, and it appeared in the **browser**, because both went
+through the same `Backend`. Neither knows the other exists.
+
+**This is the demo.** When someone asks what your team has built, this is what
+you show them — so it is worth spending twenty minutes making the first screen
+look right.
 
 ## Exercises
 

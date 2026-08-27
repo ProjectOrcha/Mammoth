@@ -7,6 +7,44 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Node.js 20+ is installed — `node --version`
+- [ ] I have admin access to the GitHub repository (needed for Settings → Pages)
+- [ ] I am on a new branch: `git checkout -b chore/publish-docs`
+```
+
+**No Rust chapter is a prerequisite.** You can do this on day one, and you
+probably should — see the note below.
+
+### Files you will touch
+
+```
+web/                            the Astro Starlight site — already scaffolded
+├── astro.config.mjs            EDIT   site URL, base path, sidebar
+├── package.json
+├── package-lock.json           COMMIT this — CI needs it for `npm ci`
+├── public/
+│   └── .nojekyll               stops GitHub running Jekyll over the output
+└── src/content/docs/           the pages themselves, as Markdown
+
+.github/workflows/
+└── pages.yml                   NEW    build on push, deploy to Pages
+```
+
+### Who this is for
+
+Anyone — and on a three-person team, give it to **Cai in week 2**, while the
+other two are still deep in `LocalBackend`.
+
+Forty-five minutes of work puts a real public site on the internet with your
+project's name on it. **Something public existing in week 2 changes how a team
+feels about a project** far more than the time it costs. Do not save it for the
+end.
+
+---
+
 **Do this early.** You do not need any of chapters 4–9 finished. A live docs
 site makes the project feel real, gives you somewhere to point people, and the
 Hadoop primer alone will bring you more visitors than a feature list ever will.
@@ -370,6 +408,27 @@ Then, on the live site:
 Then prove the loop: change one word in
 `web/src/content/docs/intro/what.md`, push, and watch the site update in about
 90 seconds.
+
+## Done when
+
+```markdown
+- [ ] `npm run dev` in `web/` serves the site locally
+- [ ] `npm run build` succeeds and produces `web/dist/`
+- [ ] `web/package-lock.json` is committed — CI needs it for `npm ci`
+- [ ] `public/.nojekyll` exists
+- [ ] Pages is enabled in Settings → Pages, source **GitHub Actions**
+- [ ] `.github/workflows/pages.yml` is committed
+- [ ] The workflow ran green on the Actions tab
+- [ ] The site is live at the URL and the **CSS actually loaded** (a broken
+      `base` path shows as an unstyled wall of text)
+- [ ] Internal links work — click three of them
+- [ ] It looks right on a phone-width window
+- [ ] Committed, pushed, PR opened and merged
+```
+
+**Then tell someone.** Post the URL in the team channel, put it in the repo
+description, and add it to the README. A docs site nobody knows about is the
+same as no docs site.
 
 ## If it went wrong
 

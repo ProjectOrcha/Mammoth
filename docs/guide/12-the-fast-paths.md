@@ -8,6 +8,47 @@ at M5.
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapters 5–6 are merged — you have a `LocalBackend` to add §0 to
+- [ ] All three of you are reading this together
+- [ ] Nobody has started writing `mammoth-master` or `mammoth-worker` yet
+```
+
+**Read this before you write the distributed half, not after.** Two of the four
+ideas here are *simpler* than the HDFS approach they replace, and all four are
+far cheaper to build in than to retrofit. Reading it in week 12 instead of week
+20 is worth more than any code in this guide.
+
+### What is real and what is design
+
+| Section | Status |
+| --- | --- |
+| **§0 · rendezvous placement** | Real code. You add it to `LocalBackend` today and it works. |
+| **§1 · the one-shot read** | Design. The machinery does not exist yet. |
+| **§2 · fan-out dispersal write** | Design. |
+| **§3 · declustered parallel repair** | Design. |
+| **§4 · warm start** | Design. |
+
+Every number in §1–§4 is a **target derived from a cost model**, not a
+benchmark. Treat them as the shape of the answer, not as measurements.
+
+### Files you will touch (in §0 only)
+
+```
+crates/mammoth-core/src/
+├── place.rs        NEW    rendezvous placement — it belongs in core, because
+│                          master, worker and client must all compute the same
+│                          answer from the same inputs
+└── lib.rs          EDIT   pub mod place;
+
+crates/mammoth-local/src/
+└── lib.rs          EDIT   use it instead of the chapter 5 placement rule
+```
+
+---
+
 > **This chapter is a design chapter.** The rendezvous placement in §0 is real
 > code you can add to the repository right now and see working. Everything from
 > §1 onward describes machinery that does not exist yet — it is written to the
@@ -686,6 +727,36 @@ cargo fmt --all && cargo clippy --workspace --all-targets -- -D warnings && carg
 ```bash
 git add -A && git commit -m "feat(core): rendezvous placement, replacing modulo"
 ```
+
+## Done when
+
+For the code half (§0):
+
+```markdown
+- [ ] `cargo test -p mammoth-core place` passes
+- [ ] The same inputs always produce the same placement — it is deterministic
+- [ ] Adding a node moves only a small fraction of blocks, not most of them
+- [ ] Rack diversity still holds: no block has all replicas in one rack
+- [ ] `LocalBackend` uses it, and chapter 6's five tests still pass
+- [ ] `mmcheck` passes
+- [ ] Committed, pushed, PR opened and merged
+```
+
+For the design half (§1–§4), as a team:
+
+```markdown
+- [ ] All three of us have read §1–§4
+- [ ] Each of us can explain **one** of the four fast paths to the other two
+- [ ] We agree which of the four we are building first
+- [ ] We know which are cheap now and expensive later (all four)
+- [ ] That decision is written down as an ADR before anyone opens
+      `crates/mammoth-master/src/lib.rs`
+```
+
+The fifth box is the whole point of this chapter existing at this position in
+the guide. The cost of designing a one-shot read into a system that has not been
+written is close to zero. The cost of retrofitting one into a system with three
+round trips baked into its RPCs is a rewrite.
 
 ## Exercises
 

@@ -6,6 +6,23 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapter 2 is finished — you have a branch to push
+- [ ] You can push to the repository, or someone has invited you to it
+```
+
+Every checklist in this chapter also lives in [CHECKLISTS.md](CHECKLISTS.md) in
+copy-and-paste form. This chapter explains *why*; that file is what you keep
+open.
+
+If you are three people starting together, read [the three-person
+plan](TEAM-PLAN.md) straight after this chapter — it turns these rules into a
+week-by-week schedule with names on it.
+
+---
+
 You are a team of beginners on a shared repository. The single biggest risk is
 not that the code is wrong — it is that `main` breaks and everyone is blocked.
 This chapter is the smallest process that prevents that.
@@ -104,6 +121,48 @@ The dependency is: B needs A's chapter 5 finished before starting chapter 7. In
 the meantime, B can build the output layer and the table rendering against
 hand-written fake data.
 
+> **The full version of this table** — with a week-by-week schedule, the three
+> handoff contracts, the fake-data trick that keeps everyone working, and what
+> to do when someone is stuck or away — is in
+> [the three-person plan](TEAM-PLAN.md). Read it once, together, right after
+> this chapter.
+
+### Put real names in it
+
+Do this on day one, out loud, and write the answer down. "We will figure it out"
+is how two people spend a week writing the same function.
+
+| | Track | Chapters | Owns |
+| --- | --- | --- | --- |
+| ________ | Storage | 5, 6 | `crates/mammoth-local/` |
+| ________ | Interface | 7, 8 | `crates/mammoth-cli/`, `crates/mammoth-viz/` |
+| ________ | Surface | 9, 10 | `ui/`, `crates/mammoth-gateway/`, `web/` |
+
+Rough rule: the strongest Rust person takes **storage**, because everyone else
+is downstream of it. Anyone with web experience takes **surface**, because it is
+TypeScript and HTTP rather than Rust. Whoever is left takes **interface**, which
+is the most fun.
+
+"Owns" means they make the final call inside those directories and are the
+default reviewer for changes to them. It does not mean nobody else may touch the
+files.
+
+### The review rota
+
+With three people, review is a ring, so nobody has to ask who will look at it:
+
+```mermaid
+flowchart LR
+    A["Storage"] -->|"reviews"| B["Interface"]
+    B -->|"reviews"| C["Surface"]
+    C -->|"reviews"| A
+```
+
+**Every PR gets a first response within one working day.** Not necessarily an
+approval — a response. On a three-person team, a PR sitting for two days is a
+third of the project stopped, which is always worse than whatever is wrong
+inside the PR.
+
 ## Reviewing each other's code
 
 You are all learning, so review for understanding, not for style. `cargo fmt`
@@ -165,6 +224,33 @@ git branch -d chore/add-me-to-authors
 Everyone on the team should do this once, on day one. It gets the awkward parts
 — permissions, review, the merge button — out of the way before there is real
 code at stake.
+
+## Done when
+
+Each of the three of you, individually:
+
+```markdown
+- [ ] `mmcheck` is in my `~/.zshrc` (or `~/.bashrc`) and works
+- [ ] I pushed the `chore/add-me-to-authors` branch
+- [ ] A teammate reviewed and approved my PR
+- [ ] I merged it, pulled `main`, and deleted the branch
+- [ ] I reviewed and approved one of someone else's
+```
+
+And once, together:
+
+```markdown
+- [ ] Branch protection is on for `main` — require one approval and a green CI run
+- [ ] The review rota is written down: who reviews whose PRs
+- [ ] Standup time is agreed and in all three calendars
+- [ ] The [progress tracker](CHECKLISTS.md#the-whole-guide--progress-tracker) is
+      pinned as a GitHub issue, with owners filled in
+- [ ] We have decided who takes which track in [the three-person plan](TEAM-PLAN.md)
+```
+
+Branch protection is the box people skip. Turn it on — Settings → Branches → Add
+rule. It takes two minutes and it makes "never push to `main`" a fact rather
+than a promise.
 
 ## If it went wrong
 

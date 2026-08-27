@@ -6,6 +6,47 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapter 2 is finished — you have built one command already
+- [ ] Chapter 5 is merged — `LocalBackend` compiles with `list` and `stat` working
+- [ ] Chapter 6 is merged, **or** you are only doing `ls` and `stat` for now
+- [ ] I am on a new branch: `git checkout -b feat/cli-fs-commands`
+```
+
+**You can start this before chapter 6 lands.** `ls` and `stat` only need chapter
+5. Build those first, and come back for `put` and `cat` when
+[handoff 2](TEAM-PLAN.md#handoff-2--ana--ben-end-of-chapter-6) arrives — that is
+the whole point of the two-stage handoff.
+
+### Files you will touch
+
+The same four-step shape as chapter 2, with more code in step 3:
+
+```
+crates/mammoth-cli/
+├── Cargo.toml              EDIT   add mammoth-local as a dependency
+└── src/
+    ├── cli.rs              EDIT   ① give Ls/Put/Cat/Stat their arguments
+    ├── main.rs             EDIT   ④ dispatch to them
+    ├── output.rs           read   the Render trait — unchanged since chapter 2
+    └── commands/
+        ├── mod.rs          EDIT   pub mod fs;
+        └── fs.rs           NEW    ③ ls, put, cat, stat live here
+```
+
+If chapter 2 felt clear, this chapter is the same four steps again. If it did
+not, re-read chapter 2 before starting — it is twenty minutes and it will save
+you two hours here.
+
+### Who this is for
+
+**Ben's track.** It runs in parallel with Ana's chapter 6 as long as you respect
+the handoffs.
+
+---
+
 You have a working filesystem. Nobody can use it yet. This chapter connects it
 to the command tree you met in chapter 2.
 
@@ -497,6 +538,33 @@ cargo fmt --all && cargo clippy --workspace --all-targets -- -D warnings && carg
 ```bash
 git add -A && git commit -m "feat(cli): wire ls, put, cat and stat to LocalBackend"
 ```
+
+## Done when
+
+```markdown
+- [ ] `mammoth put /tmp/hello.txt /data/hello.txt` writes a file
+- [ ] `mammoth ls /data --long` lists it, with size and replication
+- [ ] `mammoth stat /data/sales.csv` shows block count and length
+- [ ] `mammoth cat /data/hello.txt` prints the bytes back, unchanged
+- [ ] `mammoth stat /data/sales.csv | python3 …` works — **JSON in a pipe**
+- [ ] `mammoth stat /data/nope.txt` prints a real error, not a panic
+- [ ] `mammoth put … --block-size banana` prints a helpful error that suggests
+      the fix, and exits non-zero
+- [ ] `mmcheck` passes
+- [ ] Committed, pushed, PR opened and merged
+```
+
+Two boxes deserve a second look.
+
+**The pipe one.** You wrote no JSON-formatting code in this chapter, and yet
+every command speaks JSON when its output is piped. That is the `Render` trait
+from chapter 2 paying for itself four commands later.
+
+**The `banana` one.** A bad argument produces a message that names the problem
+*and* suggests the command that fixes it. That is the difference between this
+and a Java stack trace, and it is most of why this project exists. If your error
+is not that good, make it that good now — it is much harder to retrofit across
+thirty commands later.
 
 ## Exercises
 

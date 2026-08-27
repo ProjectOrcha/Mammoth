@@ -6,6 +6,33 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapter 1 is read — especially §5, "Traits: the shape of a thing"
+- [ ] All three of you are in the same room, or on the same call
+```
+
+**Read this one together.** It is thirty minutes and it is the only chapter that
+is worth doing as a group. The `Backend` trait is the contract between all three
+tracks — storage, CLI, web — and if two of you have different mental models of
+it, you will not find out until week four, at a merge conflict.
+
+### What you will have open
+
+```
+crates/mammoth-core/src/
+├── backend.rs      the trait itself — the whole chapter is about this file
+├── types.rs        FileStatus, BlockPlacement, Replica, ClusterReport
+└── error.rs        the Error type and the Result alias
+```
+
+You will not change any of them. You will read `backend.rs` line by line, and
+then write one throwaway implementation of it to feel what the compiler makes
+you do.
+
+---
+
 Everything else in this guide depends on getting this one idea right. It is
 worth half an hour before anyone writes code.
 
@@ -298,6 +325,39 @@ Answer these before moving on. If you cannot, re-read the section named.
 4. If you added an eighth method to the trait, what would break? *(every
    implementation stops compiling until it implements it — which is the point)*
 5. Where does `ByteStream` come from, and what does `Box::pin` do?
+
+## Done when
+
+This chapter produces no committed code, so the checklist is about
+understanding — and about agreement, which matters more.
+
+Individually:
+
+```markdown
+- [ ] I read `crates/mammoth-core/src/backend.rs` top to bottom
+- [ ] I wrote the throwaway `Backend` implementation and it compiled
+- [ ] I can answer all five questions above without looking
+- [ ] I can name the seven methods, roughly
+- [ ] I can explain to someone why the CLI talks to `&dyn Backend` rather than
+      to `LocalBackend`
+```
+
+As a team:
+
+```markdown
+- [ ] All three of us agree the trait as written is the one we are building against
+- [ ] Anything we want to change is an open issue **now**, not a conversation in week 4
+- [ ] We know which methods chapter 5 implements (`list`, `stat`) and which wait
+      for chapter 6 (the other five)
+- [ ] Ben and Cai know they can start their chapters against
+      [fake data](TEAM-PLAN.md#nobody-waits-work-against-fake-data) before Ana
+      finishes
+```
+
+That last box is what stops two thirds of the team idling for a week. The trait
+fixes every method signature the moment it compiles — so the CLI, the
+visualizations and the web UI can all be built against those signatures while
+the bodies are still stubs.
 
 ## If it went wrong
 

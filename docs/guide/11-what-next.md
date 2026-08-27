@@ -4,6 +4,20 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapters 0–10 are merged, or you know which ones you skipped
+- [ ] All three of you are reading this together
+```
+
+**Read this as a team, and end with a decision.** This chapter's job is not to
+teach you anything — it is to stop the project drifting once the guided part
+runs out. The failure mode after chapter 10 is three people each quietly picking
+a different next thing.
+
+---
+
 ## What you have
 
 If you worked through chapters 0–10, the project now has:
@@ -184,6 +198,29 @@ Written down now, because everyone learns them the expensive way:
   can have; a contested one is the worst.
 - **Update the docs in the same PR as the code.** The CLI reference is
   generated and CI-checked, so that one cannot drift. Everything else is on you.
+
+## Done when
+
+This chapter produces no code. It produces a decision, and the decision needs to
+be written down somewhere all three of you will see it again.
+
+```markdown
+- [ ] All three of us have read this chapter
+- [ ] We agree on what comes next — one of: finish M2, real block storage (M4),
+      or make it distributed (M5)
+- [ ] That decision is written down: a pinned issue, a milestone, or a
+      [short ADR](../adr/0002-backend-trait.md) saying what we chose and why
+- [ ] The next chunk of work is broken into issues small enough to finish in a day
+- [ ] Each issue has an owner
+- [ ] If M5 is next, all three of us have read [chapter 12](12-the-fast-paths.md)
+      **before** anyone starts `mammoth-master`
+- [ ] We have kept the habits: standup, the Friday demo, the review rota
+```
+
+That last box is the one that decays. The process in
+[chapter 3](03-team-workflow.md) is cheap while there is a guide telling you
+what to do next, and it is the only thing holding the project together once
+there is not.
 
 ## Where to ask
 

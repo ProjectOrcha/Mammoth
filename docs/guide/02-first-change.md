@@ -6,6 +6,34 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapter 0 is finished — `cargo build --workspace` succeeds
+- [ ] Chapter 1 is read — you know what a trait is and what `?` does
+```
+
+### Files you will touch
+
+Four files, all in one crate. Two exist and you edit them; one exists and you
+add a line; one you create.
+
+```
+crates/mammoth-cli/
+└── src/
+    ├── cli.rs              EDIT    add the Version variant to the command tree
+    ├── main.rs             EDIT    dispatch to it
+    ├── output.rs           read    the Render trait — do not change it
+    └── commands/
+        ├── mod.rs          EDIT    one line: pub mod version;
+        └── version.rs      NEW     the command itself
+```
+
+Open all four in your editor before you start. Being able to see `output.rs`
+while writing `version.rs` is most of what makes this chapter click.
+
+---
+
 ## Why this one
 
 It is the smallest change that touches **every layer you will use for the rest
@@ -235,6 +263,26 @@ git push -u origin feat/version-command
 ```
 
 Then open a pull request on GitHub. Chapter 3 covers what happens next.
+
+## Done when
+
+```markdown
+- [ ] `mammoth version --output table` prints the three-row table
+- [ ] `mammoth version --output json` prints JSON
+- [ ] `mammoth version` alone prints a table
+- [ ] `mammoth version | cat` prints JSON — **and I understand why**
+- [ ] `mmcheck` (or fmt + clippy + test) passes
+- [ ] Committed on a branch as `feat(cli): add mammoth version command`
+- [ ] Pushed, PR opened
+```
+
+That fourth box is the one that matters. The same binary printed a table to your
+terminal and JSON into a pipe, and no code in `version.rs` decided that — the
+`Render` trait did. **Every command in chapters 7 and 8 gets that behaviour for
+free by doing exactly what you just did.**
+
+If you cannot yet explain why it happened, read `output.rs` once more before
+moving on. It is short.
 
 ## If it went wrong
 

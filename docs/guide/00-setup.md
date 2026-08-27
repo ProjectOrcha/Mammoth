@@ -6,6 +6,17 @@
 
 ---
 
+## Before you start
+
+Nothing. This is the first chapter — you need a computer and about half an hour.
+
+If a command in this chapter fails, it is almost always one of two things: your
+terminal has not picked up a newly installed tool (close it and open a new one),
+or you are in the wrong directory (`pwd` should end in `/Mammoth` from step 4
+onwards).
+
+---
+
 ## What you need
 
 | Tool | Why | Needed by |
@@ -182,6 +193,28 @@ cargo fmt --all --check
 ```
 
 The last one prints `mammoth 0.1.0`.
+
+## Done when
+
+Tick every box before moving on. Chapter 1 assumes all of these are true.
+
+```markdown
+- [ ] `rustc --version` prints 1.82.0 or newer
+- [ ] `cargo --version` prints a version
+- [ ] `git config --global user.name` prints my name
+- [ ] The repo is cloned and `pwd` ends in `/Mammoth`
+- [ ] `cargo build --workspace` succeeds
+- [ ] `cargo test --workspace` succeeds
+- [ ] `cargo fmt --all --check` succeeds
+- [ ] `./target/debug/mammoth --version` prints `mammoth 0.1.0`
+- [ ] `./target/debug/mammoth --help` lists `ls`, `put`, `get`, `viz`, `top`
+- [ ] VS Code has rust-analyzer installed and has finished indexing
+- [ ] (chapters 9–10 only) `node --version` prints v20 or higher
+```
+
+**On a team:** all three of you do this on the same day. Setup problems are
+easier to solve together, and nobody wants to be the person still installing a
+linker in week two.
 
 ## If it went wrong
 

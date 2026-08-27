@@ -7,6 +7,49 @@ across three workers, and read back byte-identical.
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapter 5 is merged — `cargo test -p mammoth-local` passes its two tests
+- [ ] I am on a new branch: `git checkout -b feat/local-backend-data-path`
+```
+
+### Files you will touch
+
+```
+crates/mammoth-local/
+├── src/
+│   └── lib.rs          EDIT   five more methods: write, read, remove,
+│   │                          block_layout, cluster_report
+└── tests/
+    └── layout.rs       EDIT   two tests become five
+```
+
+Nothing outside `mammoth-local` changes. That is worth noticing: you are adding
+the entire data path to the system and no other crate needs to know.
+
+### The two ideas to hold on to
+
+Before you type anything, know what you are aiming at — the rest is mechanics:
+
+1. **A file is cut into blocks, and the last block is left partial.** A 300 KB
+   file with 128 KB blocks is `128 + 128 + 44`, not three padded 128s. Getting
+   this wrong is the single most common bug in this chapter, and the tests catch
+   it.
+2. **A very small file skips blocks entirely.** Under the inline threshold, the
+   bytes live in the metadata. `blocks: 0`, `inlined: true`. This is Mammoth's
+   answer to the small-file problem that plagues HDFS.
+
+### Who this is for
+
+Still **Ana's track**. Finishing it completes
+[handoffs 2 and 3](TEAM-PLAN.md#the-three-handoff-contracts) at once — it
+unblocks the rest of chapter 7, all of chapter 8, and the real-data half of
+chapter 9. It is the most unblocking commit in the project, so if it is running
+long, that is when the team pairs on it rather than starting something new.
+
+---
+
 This is the chapter where Mammoth becomes a real filesystem. At the end of it
 you can put a file in, get it back out, and ask where every block landed.
 
@@ -582,6 +625,34 @@ git add -A && git commit -m "feat(local): add write, read, remove, block layout 
 
 You have finished **milestone M1's hardest piece**. Chapter 7 connects it to the
 CLI, which is the easy part by comparison.
+
+## Done when
+
+```markdown
+- [ ] `cargo test -p mammoth-local` passes all **five** tests
+- [ ] `big_file_is_split_and_placed_rack_aware` passes — the file is split, and
+      no block has all three replicas in one rack
+- [ ] The **last block is partial**, not padded out to full size
+- [ ] `small_file_is_inlined` passes — `blocks: 0`, `inlined: true`
+- [ ] `list_and_remove` passes
+- [ ] A file written and read back is **byte-identical**
+- [ ] I ran the `-- --nocapture` variants and actually looked at the output
+- [ ] `mmcheck` passes
+- [ ] Committed, pushed, PR opened and merged
+```
+
+The seventh box is not busywork. Run this and read what it prints:
+
+```bash
+cargo test -p mammoth-local big_file -- --nocapture
+```
+
+You are looking at your own filesystem placing replicas across racks. It is the
+first moment the project stops being an exercise, and it is worth thirty seconds
+of attention before you move on.
+
+**Handoffs 2 and 3 are now done.** Say so in the team channel — two people are
+waiting on this one, and both can now swap their fake data for the real thing.
 
 ## If it went wrong
 

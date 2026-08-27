@@ -6,6 +6,21 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapter 0 is finished — `cargo build --workspace` succeeds
+```
+
+**How to read this chapter.** Do not try to memorise it. Read it once at normal
+speed, do the warm-up at the end, and then *come back to it* whenever a later
+chapter uses something you do not recognise. It is a reference, not an exam.
+
+**Nothing here needs to be committed.** The only code you write is a scratch
+project outside the repository, which you delete at the end.
+
+---
+
 This is not a Rust course. It is the six things that appear on nearly every line
 of Mammoth, explained once so the later chapters do not have to stop and explain
 them. If you already know Rust, skim the last two sections and move on.
@@ -263,6 +278,26 @@ Delete the scratch project when you are done:
 ```bash
 cd ~ && rm -rf rust-warmup
 ```
+
+## Done when
+
+You do not need to have *memorised* any of this. You need to recognise it when
+you see it.
+
+```markdown
+- [ ] The `rust-warmup` project compiled and printed the three-node bar chart
+- [ ] I can say what `?` does in one sentence
+- [ ] I can say what the difference between `&self` and `&mut self` is
+- [ ] I know that `Option<T>` is Rust's replacement for `null`
+- [ ] I know what a trait is, in the "it is like an interface" sense
+- [ ] I know that nothing in an `async fn` runs until it is `.await`ed
+- [ ] I know where to look up the rest — [the glossary](GLOSSARY.md) and
+      [the Rust Book](https://doc.rust-lang.org/book/)
+- [ ] I deleted the scratch project
+```
+
+Six of those boxes are enough to read every line of chapters 4–8. If one is
+still fuzzy, re-read just that section — do not re-read the chapter.
 
 ## If it went wrong
 

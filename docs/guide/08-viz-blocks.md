@@ -6,6 +6,63 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapter 6 is merged — `block_layout` returns real placements
+- [ ] Chapter 7 is merged — you can `put` a file to look at
+- [ ] My terminal renders `█ ▉ ▊ ● ◐ ✕` correctly (see below)
+- [ ] I am on a new branch: `git checkout -b feat/viz-blocks`
+```
+
+**Check your terminal first**, because this chapter is entirely about characters
+appearing in the right place:
+
+```bash
+printf '█ ▉ ▊ ▋ ▌ ▍ ▎ ▏ ● ◐ ✕
+'
+```
+
+If you see boxes, question marks, or misaligned columns, fix it before you write
+any code — otherwise you will spend an hour debugging your renderer when the
+problem is your font. Use a monospace font with good Unicode coverage (JetBrains
+Mono, Fira Code, Menlo, Cascadia Code) and make sure your terminal is set to
+UTF-8.
+
+### Files you will touch
+
+```
+crates/mammoth-viz/
+└── src/
+    └── lib.rs              EDIT   the drawing primitives + the block matrix
+crates/mammoth-cli/
+└── src/
+    └── commands/
+        └── viz.rs          NEW    the viz subcommand
+crates/mammoth-local/
+└── src/
+    └── lib.rs              EDIT   small additions for cluster_report
+```
+
+### Why this chapter matters more than it looks
+
+Hadoop's web UI will tell you a file has 3 blocks and replication 3. It will not
+tell you that all three replicas of block 1 are in the same rack and one power
+failure from gone.
+
+**This chapter is the answer to "why not just use Hadoop".** It is also the part
+people screenshot, which is why it is built in week 5 rather than last.
+
+### Who this is for
+
+**Ben's track.** The drawing primitives in step 1 are pure functions over
+numbers — no backend, no async, no I/O — so **you can build and test all of them
+before chapter 6 exists**, against
+[fake placements](TEAM-PLAN.md#nobody-waits-work-against-fake-data). Do that in
+week 2 while Ana is still writing `LocalBackend`.
+
+---
+
 Hadoop's web UI shows you tables of numbers. It will tell you a file has 3
 blocks and replication 3. It will not show you, at a glance, that all three
 replicas of block 1 are sitting in the same rack and one power failure away from
@@ -468,6 +525,28 @@ git add -A && git commit -m "feat(viz): add viz blocks and viz cluster"
 **You have reached milestone M2.** You have a working single-machine filesystem,
 a CLI that scripts cleanly, and the visualization nobody else in this space has.
 That is a demo.
+
+## Done when
+
+```markdown
+- [ ] `cargo test -p mammoth-viz` passes, including the doctest
+- [ ] `bar_is_always_exactly_width_cells` passes — the bar never wobbles by a cell
+- [ ] `mammoth viz blocks /data/sales.csv` draws the block matrix
+- [ ] A multi-block file (`/warehouse/events.parquet`) draws every block
+- [ ] An inlined small file draws sensibly rather than crashing or drawing nothing
+- [ ] `mammoth viz cluster` draws the six workers with usage bars
+- [ ] The replica symbols are right: `●` primary, `◐` replica, `✕` corrupt
+- [ ] Colours degrade correctly when piped — `mammoth viz blocks /x | cat`
+- [ ] `mmcheck` passes
+- [ ] Committed, pushed, PR opened and merged
+```
+
+**Now show someone.** Not a teammate — someone outside the project. Put a file
+in, draw it, and watch whether they understand what they are looking at without
+you explaining it.
+
+That five-minute test tells you more about whether the visualization works than
+any test in the suite, and this is the last moment when changing it is cheap.
 
 ## Exercises
 

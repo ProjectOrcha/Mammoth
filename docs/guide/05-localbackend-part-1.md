@@ -6,6 +6,48 @@
 
 ---
 
+## Before you start
+
+```markdown
+- [ ] Chapter 4 is read, and the team agrees on the `Backend` trait
+- [ ] `cargo build --workspace` succeeds on a fresh `main`
+- [ ] I am on a new branch: `git checkout -b feat/local-backend-layout`
+```
+
+**This is the longest run of new code in the guide.** Chapters 5 and 6 together
+are one piece of work split across two sittings — do not start chapter 6 in a
+different week and expect to remember where you were.
+
+### Files you will touch
+
+```
+crates/mammoth-local/
+├── Cargo.toml          EDIT   add tokio, serde, async-trait, futures-util
+├── src/
+│   └── lib.rs          EDIT   the whole chapter lives here
+└── tests/
+    └── layout.rs       NEW    two tests that prove the layout is real
+```
+
+And one file you only read, kept open in a second tab the entire time:
+
+```
+crates/mammoth-core/src/backend.rs      the seven signatures you are implementing
+```
+
+### Who this is for
+
+On a three-person team this is **Ana's track**
+([the plan](TEAM-PLAN.md#who-does-what)). It blocks both other tracks, so it
+gets the strongest Rust person and the first review whenever it needs one.
+
+The moment this chapter's code *compiles* — even with five methods still
+`unimplemented!()` — say so in the team channel. That is
+[handoff 1](TEAM-PLAN.md#handoff-1--ana--ben-end-of-chapter-5), and it unblocks
+chapter 7.
+
+---
+
 By the end of chapter 6 you will have a filesystem that chops files into blocks,
 places replicas rack-aware across six simulated workers, and can tell you where
 every block went. This chapter builds the skeleton and the two read-only
@@ -484,6 +526,28 @@ cargo fmt --all && cargo clippy --workspace --all-targets -- -D warnings && carg
 ```bash
 git add -A && git commit -m "feat(local): add store layout, placement, list and stat"
 ```
+
+## Done when
+
+```markdown
+- [ ] `cargo test -p mammoth-local` passes both tests
+- [ ] `open_creates_the_layout` proves `ns/` and all six `workers/wN/` exist
+- [ ] `missing_path_is_a_teaching_error` proves a missing path gives `E0101`
+      with a readable message, not a raw OS error
+- [ ] `list` returns entries for a directory, and an empty `Vec` for an empty one
+- [ ] `stat` returns a `FileStatus` for a file
+- [ ] The other five trait methods are `unimplemented!()` and it still compiles
+- [ ] `mmcheck` passes
+- [ ] Committed, pushed, PR opened and merged
+```
+
+**Team:** the third box is the interesting one. A missing file produces a real
+error with a code, not a panic and not `No such file or directory (os error 2)`.
+That is design principle 3, pinned by a test so nobody can regress it later.
+
+**Handoff 1 is now done.** Tell the team. Whoever has chapter 7 can start
+immediately, because every method signature is final even where the body is a
+stub — that is what the trait bought you.
 
 ## If it went wrong
 
