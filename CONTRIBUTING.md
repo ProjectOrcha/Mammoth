@@ -1,87 +1,77 @@
 # Contributing to Mammoth
 
-New to the project, or to Rust? Start with
-**[the build guide](docs/guide/)** rather than this file — it walks through the
-same material from an empty machine, with worked examples.
+Mammoth is a pre-release scaffold. The dashboard and teaching examples run;
+the Rust filesystem and gateway still need implementation. Start with the
+[current status and first-hour guide](docs/guide/START-HERE.md).
 
-## Getting set up
+Choose your path:
+
+- **Four-person core team:** [roles, handoffs and review rotation](docs/guide/TEAM-PLAN.md).
+- **Outside contributors:** [fork, branch, test and pull-request instructions](docs/guide/EXTERNAL-CONTRIBUTORS.md).
+- **New to Rust or the repository:** [code structure](docs/guide/CODE-MAP.md),
+  [Rust basics](docs/guide/01-rust-you-need.md), [small runnable examples](examples/parts/).
+- **Frontend contributors:** [dashboard walkthrough](docs/guide/09-web-ui.md),
+  [API contract](docs/guide/API-CONTRACT.md), [UI README](ui/README.md).
+
+## Setup and working directories
+
+Use current stable Rust (minimum **1.85**) and Node **22.x** (`.nvmrc`).
 
 ```bash
-git clone https://github.com/ProjectOrcha/Mammoth
+git clone https://github.com/ProjectOrcha/Mammoth.git
 cd Mammoth
-cargo build
-cargo test
+cargo build --workspace --locked
+cargo run -p mammoth-cli -- --help
 ```
 
-Optional, but what CI runs:
+Rust commands run at the root. Run `npm ci` in `ui/` or `web/` before working on
+that app. Each has its own `package.json` and lockfile. A successful build does
+not imply that the commands listed in CLI help are implemented.
 
-```bash
-cargo install cargo-nextest cargo-deny cargo-dist cross
-```
+## Checks before a PR
 
-Node 20+ is needed only if you are touching `ui/` or `web/`.
+| Changed area | Commands | Directory |
+| --- | --- | --- |
+| Rust | `cargo fmt --all --check` | Root |
+| Rust | `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings` | Root |
+| Rust | `cargo test --workspace --locked` | Root |
+| CLI arguments/help | `cargo xtask docs` and include the reference diff | Root |
+| Dashboard | `npm run check`, `npm test`, `npm run build` | `ui/` |
+| Public docs | `npm run build` | `web/` |
+| Learning guides | Run changed examples and verify local links | As indicated by the guide |
 
-## The layout
+Run `cargo fmt --all` to apply formatting before the check. CI also runs
+nextest, dependency/license checks (`cargo-deny`), Rust 1.85, doc tests and
+platform builds. These extra tools are not prerequisites for a first docs or UI
+change. Install only the tool you need; release tools are not onboarding steps.
 
-| Path | What lives there |
+`cargo xtask` is configured in `.cargo/config.toml`. Its tasks are:
+
+| Task | Result |
 | --- | --- |
-| `crates/` | the Rust workspace — see [docs/ROADMAP.md](docs/ROADMAP.md) for per-crate status |
-| `ui/` | Svelte 5 admin GUI, embedded into the binary with `rust-embed` |
-| `web/` | Astro Starlight public site and docs → GitHub Pages |
-| `deploy/` | Dockerfile, Compose, systemd unit, Helm chart |
-| `examples/` | numbered product walkthroughs |
-| `examples/parts/` | 16 runnable one-idea programs — `cargo run -p mammoth-parts --example …` |
-| `tests/` | `e2e/`, `sim/`, `compat/` — see [tests/README.md](tests/README.md) |
-| `xtask/` | `cargo xtask build-ui \| docs \| assets \| dist` |
-| `docs/guide/` | the build guide — 14 chapters, plus CONCEPTS, RUST-REFERENCE, GLOSSARY, CHECKLISTS, TEAM-PLAN |
-| `assets/logo/` | canonical logo files — see [assets/logo/README.md](assets/logo/README.md) |
-
-## Before you open a PR
-
-```bash
-cargo fmt --all
-cargo clippy --workspace --all-targets -- -D warnings
-cargo nextest run --workspace
-cargo deny check
-```
-
-If you changed the CLI surface, regenerate the docs — CI fails if the committed
-reference differs from the `clap` tree:
-
-```bash
-cargo xtask docs
-```
+| `cargo xtask build-ui` | Installs the UI lockfile and builds `ui/build/`; does not embed it in the unfinished gateway |
+| `cargo xtask docs` | Generates the committed CLI reference from the real clap tree |
+| `cargo xtask assets` | Copies the canonical logo to `ui/static/` and `web/public/` |
+| `cargo xtask dist` | Calls `cargo dist build`; requires cargo-dist and release readiness |
 
 ## Conventions
 
-- **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/):
-  `feat(cli): add viz skew --by-partition`.
-- **Errors teach.** Every user-facing error gets a stable `E….` code, a
-  one-line cause, and concrete next commands. Add the variant to
-  `mammoth-core/src/error.rs` and a page under `web/src/content/docs/errors/`.
-  Never print a stack trace.
-- **Everything has `--json`.** JSON field names are a public API; changing one
-  is a breaking change.
-- **Architectural decisions get an ADR** in `docs/adr/`. Write it *before* the
-  code — justifying a design in prose surfaces half the problems for free.
-- **`unsafe` is denied** workspace-wide. If you genuinely need it, that is an
-  ADR conversation.
-- **Diagrams are Mermaid**, never ASCII box art. A ```mermaid fence renders on
-  GitHub as-is, and on the site through `web/plugins/remark-mermaid.mjs` plus
-  the client-side renderer in `web/src/components/Head.astro`. Verbatim terminal
-  output — `mammoth top`, `mammoth viz`, `tree`-style listings — stays a plain
-  code block; it is program output, not a drawing.
+Keep PRs focused. Use commit messages such as `fix(ui): encode file links` or
+`docs(guide): explain borrowed strings`. Include the problem, resulting behavior,
+checks run and any limitations. [Chapter 3](docs/guide/03-team-workflow.md) shows
+the exact Git loop and a conflict-resolution example.
 
-## Distributed bugs
+Preserve JSON field names unless the team agrees on a contract change. Add
+stable error codes and useful hints for new user-facing Rust errors. Keep
+`unsafe` out of crates that forbid it. Record changes to shared architecture or
+storage formats in `docs/adr/` before dependent implementations grow.
 
-Anything involving more than one node needs a deterministic simulation test, not
-just a unit test. If you found the bug from a nightly seed, put the seed in the
-test:
+Use Mermaid fences for diagrams. Use plain code blocks for directory trees and
+terminal output. Mark teaching snippets as fragments when they are not complete
+programs, and distinguish planned capabilities from runnable commands.
 
-```bash
-MAMMOTH_SIM_SEED=8412337 cargo nextest run --test sim
-```
-
-## Licence
+The distributed simulation, fault-injection and compatibility harnesses in
+`tests/` are planned. Add deterministic failure coverage when implementing those
+milestones; the README descriptions are not evidence that the harnesses exist.
 
 Contributions are dual-licensed under Apache-2.0 and MIT, matching the project.

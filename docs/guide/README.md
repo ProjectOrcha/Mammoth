@@ -8,12 +8,23 @@ need to be willing to type things and read error messages.
 
 ---
 
+## What works in this checkout
+
+**Start with [Your first hour](START-HERE.md)** for verified setup commands,
+small examples and an explicit working-versus-planned status table. Then read
+[the code map](CODE-MAP.md) to trace a request through the actual source files.
+The numbered chapters teach you to implement the Rust scaffold. The dashboard
+already runs with simulated data; the real filesystem and gateway do not.
+
 ## Start here
 
 | If you are… | Go to |
 | --- | --- |
 | **On your own, day one** | [Chapter 0 — Set up your machine](00-setup.md) |
-| **A team of three, starting today** | [The three-person plan](TEAM-PLAN.md) |
+| **You and three teammates (four total)** | [The four-person plan](TEAM-PLAN.md) |
+| **An outside contributor** | [Fork-to-PR guide](EXTERNAL-CONTRIBUTORS.md) |
+| **Unsure where code belongs** | [Code map and request flows](CODE-MAP.md) |
+| **Working on the dashboard/API** | [Frontend walkthrough](09-web-ui.md) and [API contract](API-CONTRACT.md) |
 | **New to distributed systems** | [Distributed storage, from zero](CONCEPTS.md) |
 | **New to Rust** | [Chapter 1](01-rust-you-need.md), then [the Rust reference](RUST-REFERENCE.md) |
 | **Learning best by running things** | [`examples/parts/`](../../examples/parts/) — 16 runnable programs |
@@ -90,8 +101,8 @@ can leave running by the end of 8b:
 mammoth top
 ```
 
-By the end of chapter 9 the same thing is a web dashboard anyone can open in a
-browser.
+Chapter 9 explains the existing demo dashboard and the additional gateway
+work needed to connect it to real storage.
 
 ### The trick that makes this possible in weeks instead of months
 
@@ -110,8 +121,9 @@ Everything you build talks to **one trait** with seven methods. First you write
 someone writes `ClusterBackend` with real machines and a real network — and
 **not one line of the CLI, the visualizations, or the web UI changes.**
 
-That is [chapter 4](04-the-backend-trait.md), and it is the most important half
-hour in this guide.
+That boundary is explained in [chapter 4](04-the-backend-trait.md). The current
+dashboard has richer types than the teaching backend, so gateway integration
+also needs the adapter described in [API-CONTRACT.md](API-CONTRACT.md).
 
 ---
 
@@ -177,38 +189,26 @@ Each chapter is a **complete, working step**. You start it with a repository
 that builds, and you end it with a repository that still builds and does one
 more thing than it did before. Nothing is left half-finished between chapters.
 
-Every chapter has the same shape:
+The implementation chapters generally follow this shape:
 
 | Section | What it gives you |
 | --- | --- |
 | **What you'll build** | one sentence |
 | **Before you start** | what must already be true, and what to have open |
 | **Why it matters** | so you are not just typing |
-| **The code** | complete, not fragments |
-| **Check it works** | an exact command and its exact expected output |
+| **The code** | examples labelled with their file and whether they are fragments |
+| **Check it works** | commands and expected behavior; timings may vary |
 | **Run the examples** | the runnable one-idea version, in [`examples/parts/`](../../examples/parts/) |
 | **Done when** | a checklist to tick before you move on |
 | **If it went wrong** | the three errors people actually hit |
 | **Commit it** | the commit message to use |
 
-> **Verified code.** Every Rust block in chapters 1, 2, 4–8, 8a and 8b was
-> assembled exactly as written here, compiled, and run — `cargo clippy -- -D warnings`
-> clean, tests passing — before this guide was published. The terminal output
-> shown is real output, captured from those runs, not illustration. Chapter 10's
-> build steps and expected output were verified the same way, and all sixteen
-> programs in [`examples/parts/`](../../examples/parts/) are in the workspace, so
-> `cargo test --workspace` keeps them honest.
->
-> The exceptions are **chapter 9**, whose Rust and Svelte are written to the
-> same standard but were not machine-verified end to end, and **chapter 12**,
-> which is a design chapter: its §0 is real code you can run today, and §1–§4
-> describe machinery that does not exist yet. Treat both as a solid starting
-> point rather than a guarantee, and treat every number in chapter 12 as a
-> target derived from a cost model rather than a benchmark.
->
-> So if you type something in and it does not work, the likely cause is a typo
-> or a skipped step. Read the "If it went wrong" section at the end of each
-> chapter — it lists the errors people actually hit.
+> **How to interpret examples.** The executable examples in `examples/parts/`
+> are compiled with the workspace. Markdown code is instructional and is not
+> automatically executed by `cargo test`. Apply chapters incrementally and run
+> their checks; if a snippet drifts from the source, open an issue or correct it.
+> Chapter 9 teaches the existing frontend and a future gateway integration;
+> chapter 12 describes planned distributed behavior and performance targets.
 
 ### If you have never used a guide like this
 
@@ -256,7 +256,7 @@ Everyone on the team does all four of these, in week one.
 
 | # | Chapter | Time | You end with |
 | --- | --- | --- | --- |
-| 9 | [The web UI and the gateway](09-web-ui.md) | 4 h | A browser dashboard |
+| 9 | [The web UI and the gateway](09-web-ui.md) | At your pace | Frontend skills, tests and a staged integration plan |
 | 10 | [Publishing the docs to GitHub Pages](10-github-pages.md) | 45 min | A live public docs site |
 | 11 | [Where to go next](11-what-next.md) | 15 min | A decision about what is next |
 

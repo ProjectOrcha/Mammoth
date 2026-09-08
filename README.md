@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/ProjectOrcha/Mammoth/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ProjectOrcha/Mammoth/ci.yml?branch=main&label=ci"></a>
   <a href="#licence"><img alt="Licence" src="https://img.shields.io/badge/licence-Apache--2.0%20OR%20MIT-blue"></a>
-  <img alt="Rust" src="https://img.shields.io/badge/rust-1.82%2B-orange">
+  <img alt="Rust" src="https://img.shields.io/badge/rust-1.85%2B-orange">
   <img alt="Status" src="https://img.shields.io/badge/status-pre--release-yellow">
 </p>
 
@@ -61,14 +61,29 @@ New to any of this? Read
 Full vocabulary mapping in
 [What is Mammoth?](web/src/content/docs/intro/what.md).
 
-## Try it
+## Try what works today
+
+New contributors: start with [Your first hour](docs/guide/START-HERE.md),
+[the code map](docs/guide/CODE-MAP.md), and the
+[four-person team plan](docs/guide/TEAM-PLAN.md). Contributors outside the core
+team have a separate [fork-to-PR guide](docs/guide/EXTERNAL-CONTRIBUTORS.md).
+
 
 ```bash
 git clone https://github.com/ProjectOrcha/Mammoth
 cd Mammoth
 cargo build --release -p mammoth-cli
-./target/release/mammoth quickstart
+./target/release/mammoth --help
+./target/release/mammoth --version
+cargo run -p mammoth-parts --example 13-block-matrix
 ```
+
+The standalone dashboard works with simulated data: run `npm ci` and
+`npm run dev` in `ui/` using Node 22.x, then open <http://localhost:5173>.
+
+**The `quickstart` output below illustrates the planned product.** It does not
+run a cluster in this checkout; command execution currently returns `E0002`.
+
 
 ```console
 $ mammoth quickstart
@@ -322,7 +337,7 @@ It assumes no Rust and no Hadoop, and it is written for a team of three.
 | | |
 | --- | --- |
 | [**Distributed storage, from zero**](docs/guide/CONCEPTS.md) | 40 minutes, no code — read this first |
-| [**The three-person plan**](docs/guide/TEAM-PLAN.md) | who does what, and the four handoffs |
+| [**The four-person plan**](docs/guide/TEAM-PLAN.md) | who does what, and the four handoffs |
 | [0 · Set up your machine](docs/guide/00-setup.md) | Rust, Git, Node, first build |
 | [1 · The Rust you actually need](docs/guide/01-rust-you-need.md) | 30 minutes, not a course |
 | [2 · Your first change](docs/guide/02-first-change.md) | a real command, end to end |

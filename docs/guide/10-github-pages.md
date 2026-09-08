@@ -7,10 +7,18 @@
 
 ---
 
+## Current implementation note
+
+This checkout uses Astro 7 and Starlight 0.42. `web/src/content.config.ts`
+registers `docsLoader()`, and overrides read `Astro.locals.starlightRoute`.
+The existing configuration and workflow are the starting point; the deployment
+examples below explain the pieces, not files you must overwrite wholesale.
+Use Node 22.12+ within the 22.x release line.
+
 ## Before you start
 
 ```markdown
-- [ ] Node.js 20+ is installed — `node --version`
+- [ ] Node.js 22.x is installed — `node --version`
 - [ ] I have admin access to the GitHub repository (needed for Settings → Pages)
 - [ ] I am on a new branch: `git checkout -b chore/publish-docs`
 ```
@@ -35,7 +43,7 @@ web/                            the Astro Starlight site — already scaffolded
 
 ### Who this is for
 
-Anyone — and on a three-person team, give it to **Cai in week 2**, while the
+Anyone — and on a four-person team, give it to **Dev after setup**, while the
 other two are still deep in `LocalBackend`.
 
 Forty-five minutes of work puts a real public site on the internet with your
@@ -162,7 +170,7 @@ npm run preview
 ```
 
 > **If `find` shows only `dist/404.html`**, the docs collection is not
-> registered. Check `web/src/content/config.ts` exists and reads:
+> registered. Check `web/src/content.config.ts` exists and reads:
 >
 > ```ts
 > import { defineCollection } from 'astro:content';
@@ -278,21 +286,15 @@ jobs:
 | `touch dist/.nojekyll` | belt and braces. Without it GitHub's Jekyll would ignore any file starting with `_`, and Astro emits `_astro/` — meaning **no CSS and no JavaScript** |
 | `upload-pages-artifact` → `deploy-pages` | the two-job handshake Pages requires |
 
-> **`cargo xtask docs` is a `todo!()` until you implement it** (chapter 2's
-> pattern, `clap_markdown` is the crate). Until then it will panic and fail the
-> build. Comment out that step, and the `cargo doc` step too, to get your first
-> deploy working — then add them back as you implement them:
->
-> ```yaml
->       # - name: Generate CLI reference
->       #   run: cargo xtask docs
-> ```
+`cargo xtask docs` is implemented in this checkout. `.cargo/config.toml`
+provides the alias and `xtask/src/main.rs` reads the same clap command tree as
+the binary. Run it after CLI help changes and commit the generated reference.
+The site itself builds from the committed file and needs only Node 22.
 
 ## Step 6 · Deploy
 
-```bash
-git push origin main
-```
+Open a PR with the site changes, pass CI, and merge it into `main`. That push
+starts the Pages workflow. Follow your branch protection rules.
 
 Then watch it: <https://github.com/ProjectOrcha/Mammoth/actions>
 
@@ -461,7 +463,7 @@ transitively. If you change it, delete `node_modules` and `package-lock.json`
 and reinstall.
 
 **The build succeeds but only produces `404.html`** — missing
-`web/src/content/config.ts`. See the callout in step 2.
+`web/src/content.config.ts`. See the callout in step 2.
 
 **A page is missing from the sidebar** — no `title` in its frontmatter, or it is
 in a directory with no matching `autogenerate` entry in `astro.config.mjs`.

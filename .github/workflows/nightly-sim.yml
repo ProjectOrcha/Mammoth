@@ -23,8 +23,19 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
 
+      - name: Detect the simulation harness
+        id: harness
+        shell: bash
+        run: |
+          ready=$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json,sys; packages=json.load(sys.stdin)["packages"]; print(str(any(t["name"] == "sim" and "test" in t["kind"] for p in packages for t in p["targets"])).lower())')
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+          if [ "$ready" != "true" ]; then
+            echo "Simulation harness is planned; no seeds run until the sim target exists."
+          fi
+
       - name: Run seeds
         id: sim
+        if: steps.harness.outputs.ready == 'true'
         run: |
           SEEDS="${{ github.event.inputs.seeds || '10000' }}"
           for i in $(seq 1 "$SEEDS"); do

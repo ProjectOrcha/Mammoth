@@ -13,6 +13,10 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 /// Everything that can go wrong at the `Backend` boundary.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// This scaffold declares the operation but does not implement it yet.
+    #[error("not implemented yet: {0}")]
+    NotImplemented(&'static str),
+
     /// The path does not exist in the namespace.
     #[error("no such path: {0}")]
     NotFound(PathBuf),
@@ -80,6 +84,7 @@ impl Error {
     /// Stable error code, for `--json` output and for the docs URL.
     pub fn code(&self) -> &'static str {
         match self {
+            Error::NotImplemented(_) => "E0002",
             Error::NotFound(_) => "E0101",
             Error::WrongKind { .. } => "E0102",
             Error::NotEnoughWorkers { .. } => "E0301",
@@ -94,6 +99,10 @@ impl Error {
     /// Concrete next commands to suggest, in the order a user should try them.
     pub fn hints(&self) -> Vec<String> {
         match self {
+            Error::NotImplemented(_) => vec![
+                "available now:       mammoth --help".into(),
+                "start contributing:  docs/guide/README.md".into(),
+            ],
             Error::NotEnoughWorkers { available, .. } => vec![
                 format!("lower replication:   mammoth put <src> <dst> --replication {available}"),
                 "check node health:   mammoth node list".into(),

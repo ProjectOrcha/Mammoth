@@ -1,13 +1,5 @@
-// Typed client for the gateway API (Part VI §6.4).
-//
-// The CLI and the UI consume the SAME endpoints, so anything the UI can show,
-// a script can also fetch — and the two can never drift apart.
-//
-// One addition the scaffold did not have: if no gateway answers, the client
-// falls back to the simulated cluster in `demo.ts` and says so, once, in the
-// header. `npm run dev` is then useful on its own, and the fallback is loud
-// rather than silent — a dashboard that invents numbers without telling you is
-// worse than one that shows nothing.
+// Typed dashboard client. Development can fall back to clearly labelled demo
+// data; production requires a gateway unless VITE_DATA_SOURCE=demo is set.
 
 import * as demo from './demo';
 import type {
@@ -26,12 +18,10 @@ import type {
 export * from './types';
 
 const BASE = '/api/v1';
-/** A gateway on the same host answers in single-digit milliseconds. If it has
- *  not answered in a second and a half it is not there. */
+const REQUEST_TIMEOUT_MS = 10_000;
 const PROBE_TIMEOUT_MS = 1500;
 
 export type Source = 'unknown' | 'gateway' | 'demo';
-
 let source: Source = 'unknown';
 let probing: Promise<Source> | null = null;
 
@@ -39,37 +29,73 @@ export function currentSource(): Source {
   return source;
 }
 
+/** Reject an incompatible API before any page dereferences its nested fields.
+ * The Rust teaching report is smaller than this dashboard's contract. */
+function checkReport(value: unknown): asserts value is ClusterReport {
+  const r = value as ClusterReport | null;
+  if (!r || typeof r.name !== 'string' || !Array.isArray(r.nodes) ||
+      !Array.isArray(r.alerts) || !Array.isArray(r.raft) || !r.health ||
+      !r.throughput || !r.read_path || !r.write_path || !r.repair || !r.start ||
+      !Array.isArray(r.start.shards)) {
+    throw new Error('Incompatible cluster report. The gateway must implement ui/src/lib/types.ts.');
+  }
+}
+
+async function fetchJson<T>(path: string, timeout = REQUEST_TIMEOUT_MS): Promise<T> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeout);
+  try {
+    const r = await fetch(`${BASE}${path}`, { signal: ctl.signal, headers: { Accept: 'application/json' } });
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${BASE}${path}`);
+    return await r.json() as T;
+  } finally {
+    // Also release timers on HTTP failures, bad JSON and network errors.
+    clearTimeout(timer);
+  }
+}
+
 async function probe(): Promise<Source> {
   if (source !== 'unknown') return source;
   if (probing) return probing;
-
-  probing = (async () => {
-    try {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), PROBE_TIMEOUT_MS);
-      const r = await fetch(`${BASE}/cluster/report`, { signal: ctl.signal });
-      clearTimeout(timer);
-      source = r.ok ? 'gateway' : 'demo';
-    } catch {
-      source = 'demo';
+  probing = (async (): Promise<Source> => {
+    const mode = import.meta.env.VITE_DATA_SOURCE ?? (import.meta.env.DEV ? 'auto' : 'gateway');
+    if (!['auto', 'demo', 'gateway'].includes(mode)) {
+      throw new Error('VITE_DATA_SOURCE must be auto, demo or gateway.');
     }
-    return source;
+    if (mode === 'demo') return source = 'demo';
+    let report: unknown;
+    try {
+      report = await fetchJson('/cluster/report', PROBE_TIMEOUT_MS);
+    } catch (error) {
+      // An auth failure is never a reason to replace real data with fake data.
+      const message = error instanceof Error ? error.message : String(error);
+      if (mode !== 'auto' || /^(401|403)\b/.test(message)) throw error;
+      return source = 'demo';
+    }
+    checkReport(report);
+    return source = 'gateway';
   })();
-
-  return probing;
+  try {
+    return await probing;
+  } finally {
+    // A failed probe must be retryable after the gateway is fixed.
+    probing = null;
+  }
 }
 
 async function get<T>(path: string, fallback: () => T): Promise<T> {
   if ((await probe()) === 'demo') return fallback();
-  const r = await fetch(`${BASE}${path}`);
-  if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${BASE}${path}`);
-  return (await r.json()) as T;
+  return fetchJson<T>(path);
 }
 
 const q = encodeURIComponent;
 
 export const api = {
-  clusterReport: () => get<ClusterReport>('/cluster/report', demo.clusterReport),
+  clusterReport: async () => {
+    const report = await get<ClusterReport>('/cluster/report', demo.clusterReport);
+    checkReport(report);
+    return report;
+  },
 
   nodes: () => get<NodeReport[]>('/nodes', () => demo.clusterReport().nodes),
 
@@ -124,6 +150,7 @@ export const api = {
 export function subscribe(
   on: (event: string, data: unknown) => void,
   intervalMs = 2000,
+  onError: (error: Error) => void = () => {},
 ): () => void {
   let stopped = false;
   let cleanup = () => {};
@@ -134,8 +161,13 @@ export function subscribe(
     if (s === 'gateway') {
       const es = new EventSource(`${BASE}/events`);
       for (const name of ['node_state', 'block_health', 'throughput', 'job_update', 'alert']) {
-        es.addEventListener(name, (e) => on(name, JSON.parse((e as MessageEvent).data)));
+        es.addEventListener(name, (e) => {
+          try { on(name, JSON.parse((e as MessageEvent).data)); }
+          catch { onError(new Error(`Invalid ${name} event from gateway.`)); }
+        });
       }
+      es.onopen = () => on('connected', null);
+      es.onerror = () => onError(new Error('Live connection lost. Reconnecting; displayed data may be stale.'));
       cleanup = () => es.close();
       return;
     }
@@ -145,6 +177,8 @@ export function subscribe(
       on('throughput', demo.clusterReport());
     }, intervalMs);
     cleanup = () => clearInterval(timer);
+  }).catch((e) => {
+    if (!stopped) onError(e instanceof Error ? e : new Error(String(e)));
   });
 
   return () => {

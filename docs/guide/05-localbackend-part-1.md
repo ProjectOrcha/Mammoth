@@ -37,8 +37,8 @@ crates/mammoth-core/src/backend.rs      the seven signatures you are implementin
 
 ### Who this is for
 
-On a three-person team this is **Ana's track**
-([the plan](TEAM-PLAN.md#who-does-what)). It blocks both other tracks, so it
+On a four-person team this is **Ana's track**
+([the plan](TEAM-PLAN.md#who-does-what)). Its implementation is needed by the CLI and gateway tracks, so it
 gets the strongest Rust person and the first review whenever it needs one.
 
 The moment this chapter's code *compiles* — even with five methods still

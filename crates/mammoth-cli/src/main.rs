@@ -31,5 +31,7 @@ fn run(_cli: cli::Cli) -> mammoth_core::Result<()> {
     // M1: wire each subcommand to a `Backend` (LocalBackend first).
     // Every command takes `&dyn Backend`, so none of them change when
     // `ClusterBackend` lands in M5.
-    unimplemented!("command dispatch — see docs/ROADMAP.md, milestone M1")
+    Err(mammoth_core::Error::NotImplemented(
+        "command execution — see docs/ROADMAP.md, milestone M1",
+    ))
 }

@@ -1,152 +1,44 @@
 ---
 title: Mammoth
-description: A Hadoop-class distributed storage engine in Rust. The elephant, but faster, and without the JVM.
+description: Explore Mammoth, an open-source distributed storage project in Rust. Try the demo dashboard, learn the essentials, and build with us.
 template: splash
 hero:
-  tagline: The elephant, but faster, and without the JVM.
-  image:
-    html: '<img src="/logo.svg" alt="Mammoth" width="360">'
-  actions:
-    - text: 5-minute cluster
-      link: /intro/quickstart/
-      icon: right-arrow
-    - text: Hadoop in 10 minutes
-      link: /intro/hadoop-primer/
-      variant: minimal
-    - text: Source
-      link: https://github.com/ProjectOrcha/Mammoth
-      variant: minimal
-      icon: github
+    tagline: Big data. A clearer view.
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import Homepage from '../../components/Homepage.astro';
 
-<p class="mm-eyebrow">Open source · MIT or Apache-2.0 · Pre-release</p>
+<Homepage>
+  <Tabs>
+    <TabItem label="Dashboard demo">
+      Requires **Node.js 22.12+ (22.x)** and Git.
 
-Mammoth stores very large files across many machines, keeps redundant copies so
-machine death is survivable, and tells you exactly where every byte landed.
-That is HDFS's job. Mammoth does it as **one Rust binary** and **one TOML file**,
-and it speaks the **S3 API** — so Spark, DuckDB, Polars, Trino and ClickHouse
-work against it unchanged.
+      ```bash
+      git clone https://github.com/ProjectOrcha/Mammoth.git
+      cd Mammoth/ui
+      npm ci
+      npm run dev
+      ```
 
-<p class="mm-eyebrow">Install via terminal</p>
+      Open the local URL printed in your terminal (usually
+      [localhost:5173](http://localhost:5173)). Look for **Demo workspace**;
+      all values are simulated. No Rust build is needed for this step.
+    </TabItem>
+    <TabItem label="First Rust example">
+      Requires **stable Rust (1.85+)** and Git.
 
-```bash
-git clone https://github.com/ProjectOrcha/Mammoth
-cd Mammoth && cargo build --release -p mammoth-cli
-./target/release/mammoth quickstart
-```
+      ```bash
+      git clone https://github.com/ProjectOrcha/Mammoth.git
+      cd Mammoth
+      cargo run -p mammoth-parts --example 01-ownership
+      cargo run -p mammoth-cli -- --help
+      ```
 
-The first release has not been cut yet, so building from source is the only path
-that works today. Packages, `brew`, and the `curl | sh` one-liner land with
-`v0.1.0` — see [Install](/intro/install/).
+      Already cloned the project? Start from your existing `Mammoth` folder
+      and run the two `cargo` commands. The example introduces ownership;
+      `--help` shows the planned command tree.
+    </TabItem>
 
-## What you get
-
-<CardGrid stagger>
-  <Card title="One binary" icon="rocket">
-    `mammoth serve --role master|worker|gateway|all`. One TOML file. No XML, no
-    ZooKeeper, no JournalNodes, no ZKFC — HA is built-in Raft.
-  </Card>
-  <Card title="Speaks S3" icon="cloud-download">
-    Spark, DuckDB, Polars, Trino, ClickHouse, Iceberg and Delta Lake work on day
-    one with a one-line config change.
-  </Card>
-  <Card title="You can see your data" icon="chart">
-    `mammoth viz` and the distribution page show you where every block actually
-    landed — heatmaps, rack topology, skew and live flow, not a table of numbers.
-  </Card>
-  <Card title="No GC pauses" icon="approve-check">
-    Lock-free metadata reads over an immutable namespace behind `ArcSwap`.
-    Readers never block. Ever.
-  </Card>
-  <Card title="Small files stay small" icon="document">
-    Files under 1 MiB are inlined into their metadata. A million tiny files no
-    longer costs a million block-map entries.
-  </Card>
-  <Card title="Errors that teach" icon="warning">
-    Every failure names the cause, the fix, and the command that applies it —
-    then links to the page that explains why.
-  </Card>
-  <Card title="Reads skip the master" icon="forward-slash">
-    Placement is computed from the block ID, not looked up. `open` hands back a
-    lease for the whole file, so a warm read costs **zero** metadata round trips.
-  </Card>
-  <Card title="Writes go out at once" icon="seti:pipeline">
-    Not a three-hop chain — erasure-coded fragments scattered in parallel and
-    acked on a quorum. Network depth 1, and 1.67× storage instead of 3×.
-  </Card>
-  <Card title="Restarts take seconds" icon="seti:clock">
-    The block map is memory-mapped back, not rebuilt from reports. Each worker
-    confirms four million blocks with one 32-byte Merkle root.
-  </Card>
-</CardGrid>
-
-<p class="mm-eyebrow">The four fast paths</p>
-
-| | Hadoop | Mammoth |
-| --- | --- | --- |
-| Open + read | 2 round trips, every time | **0–1 round trip** |
-| Write a block | 3 serial hops, serial acks | **1 parallel hop**, quorum ack |
-| Rebuild a dead node | one source, one sink, chained | **every node**, in parallel |
-| Master restart | 30+ min rebuilding the block map | **seconds**, no rebuild at all |
-
-[The four fast paths](/concepts/fast-paths/) is the design for all four —
-what Hadoop does, what it costs, and what replaces it.
-
-## The shape of a cluster
-
-<figure class="mermaid-figure not-content"><pre class="mermaid">{`flowchart TB
-    clients["clients<br/>CLI · SDK · any S3 tool"]
-    gw["gateway<br/>S3 :9000 · Web UI :8080"]
-    masters["masters ×3 · Raft — the index<br/>1 leader, 2 followers<br/>namespace · block map<br/>leases · scheduler<br/>HA by default"]
-    workers["workers ×N — the shelves,<br/>and the muscle<br/>block storage<br/>task execution · shuffle"]
-
-    clients --> gw
-    gw -->|"metadata only"| masters
-    masters -->|"block placement"| workers
-    gw ==>|"data — never touches the master"| workers
-    workers -.->|"heartbeats every 3s<br/>+ block digests"| masters`}</pre></figure>
-
-Every role is the same executable, selected at boot with `--role`. The CLI, the
-gateway and the SDK all speak to one `Backend` trait, so a single-machine
-simulation and a real cluster are indistinguishable to callers.
-[Read the architecture](/concepts/architecture/).
-
-## If you know Hadoop
-
-| Hadoop says | Mammoth says | Plain English |
-| --- | --- | --- |
-| NameNode | **master** | the index |
-| DataNode | **worker** | the shelves |
-| ZooKeeper / JournalNode / ZKFC | *(gone)* | HA plumbing, replaced by built-in Raft |
-| ResourceManager | **master** (scheduler) | the job scheduler |
-| Container | **slot** | a CPU + RAM reservation |
-| `hdfs dfs -ls /` | `mammoth ls /` | list a directory |
-
-The [full translation table](/intro/what/) covers the rest. Never used
-Hadoop? Start with [Hadoop in 10 minutes](/intro/hadoop-primer/) — blocks,
-replication, the write pipeline and YARN, without the JVM.
-
-## Where to go next
-
-<CardGrid>
-  <Card title="Run a cluster" icon="seti:powershell">
-    [5-minute cluster](/intro/quickstart/) brings up six simulated
-    workers on one machine, with sample data and the UI open.
-  </Card>
-  <Card title="Learn the model" icon="open-book">
-    [What is Mammoth?](/intro/what/) ·
-    [Architecture](/concepts/architecture/) ·
-    [The four fast paths](/concepts/fast-paths/) ·
-    [Performance](/concepts/performance/)
-  </Card>
-  <Card title="Move your data" icon="random">
-    [Migration](/migration/) plans, runs, verifies and cuts over from
-    HDFS or S3 — resumable, and dry-run first.
-  </Card>
-  <Card title="Operate it" icon="setting">
-    [Operations](/ops/) and [Configuration](/ops/configuration/)
-    — one TOML file, validated before it is applied.
-  </Card>
-</CardGrid>
+  </Tabs>
+</Homepage>

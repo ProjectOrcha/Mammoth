@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { unified } from '@astrojs/markdown-remark';
 import remarkMermaid from './plugins/remark-mermaid.mjs';
 import rehypeBaseLinks from './plugins/rehype-base-links.mjs';
 
@@ -30,8 +31,10 @@ export default defineConfig({
   // README and in docs/guide/. The plugin hands them to the client-side
   // renderer wired up in src/components/Head.astro.
   markdown: {
-    remarkPlugins: [remarkMermaid],
-    rehypePlugins: [rehypeBaseLinks(base)],
+    processor: unified({
+      remarkPlugins: [remarkMermaid],
+      rehypePlugins: [rehypeBaseLinks(base)],
+    }),
   },
   integrations: [
     starlight({
@@ -41,7 +44,7 @@ export default defineConfig({
       // pipeline and only accepts paths under src/.
       favicon: '/logo.svg',
       description: 'A Hadoop-class distributed storage engine in Rust.',
-      social: { github: 'https://github.com/ProjectOrcha/Mammoth' },
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/ProjectOrcha/Mammoth' }],
       components: {
         Head: './src/components/Head.astro',
         Hero: './src/components/Hero.astro',
@@ -78,16 +81,17 @@ export default defineConfig({
           items: [
             { label: 'What is Mammoth?', link: '/intro/what/' },
             { label: 'Hadoop in 10 minutes', link: '/intro/hadoop-primer/' },
+            { label: 'Start contributing', link: '/contributing/' },
             { label: 'Install', link: '/intro/install/' },
             { label: '5-minute cluster', link: '/intro/quickstart/' },
           ],
         },
-        { label: 'Concepts', autogenerate: { directory: 'concepts' } },
-        { label: 'CLI', autogenerate: { directory: 'cli' } },
-        { label: 'Data Guide', autogenerate: { directory: 'data' } },
-        { label: 'Operations', autogenerate: { directory: 'ops' } },
-        { label: 'Migration', autogenerate: { directory: 'migration' } },
-        { label: 'API', autogenerate: { directory: 'api' } },
+        { label: 'Concepts', items: [{ autogenerate: { directory: 'concepts' } }] },
+        { label: 'CLI', items: [{ autogenerate: { directory: 'cli' } }] },
+        { label: 'Data Guide', items: [{ autogenerate: { directory: 'data' } }] },
+        { label: 'Operations', items: [{ autogenerate: { directory: 'ops' } }] },
+        { label: 'Migration', items: [{ autogenerate: { directory: 'migration' } }] },
+        { label: 'API', items: [{ autogenerate: { directory: 'api' } }] },
       ],
     }),
   ],

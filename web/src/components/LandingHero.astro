@@ -1,0 +1,143 @@
+---
+import { withBase } from '../lib/links';
+import '../styles/homepage.css'; // Shared by the hero and the homepage sections.
+
+const racks = [
+    {
+        name: 'Rack A',
+        nodes: [
+            { id: 'w1', fill: 71 },
+            { id: 'w2', fill: 58 },
+            { id: 'w3', fill: 94 },
+            { id: 'w4', fill: 38 },
+        ],
+    },
+    {
+        name: 'Rack B',
+        nodes: [
+            { id: 'w5', fill: 63 },
+            { id: 'w6', fill: 64 },
+            { id: 'w7', fill: 69 },
+            { id: 'w8', fill: 24 },
+        ],
+    },
+    {
+        name: 'Rack C',
+        nodes: [
+            { id: 'w9', fill: 61 },
+            { id: 'w10', fill: 68 },
+            { id: 'w11', fill: 62 },
+            { id: 'w12', fill: 0 },
+        ],
+    },
+];
+---
+
+<section class="mm-home-hero not-content" aria-labelledby="_top">
+    <div class="mm-hero-copy">
+        <p class="mm-label">
+            <span class="mm-status-dot"></span> Open source · Built in Rust
+        </p>
+        <h1 id="_top" data-page-title>
+            Big data.<br /><span>A clearer view.</span>
+        </h1>
+        <p class="mm-hero-description">
+            Meet Mammoth. A distributed storage engine being built to make
+            large-scale data easier to store, understand, and explore.
+        </p>
+        <div class="mm-actions">
+            <a class="mm-button mm-button-primary" href="#try-it"
+                >Try the dashboard <span aria-hidden="true">→</span></a
+            >
+            <a
+                class="mm-button mm-button-secondary"
+                href={withBase('/contributing/')}
+                >Start learning <span aria-hidden="true">↗</span></a
+            >
+        </div>
+        <p class="mm-hero-note">
+            New to Rust or distributed systems? You’re in the right place.
+        </p>
+    </div>
+
+    <figure class="mm-cluster-preview">
+        <div class="mm-preview-top">
+            <span
+                ><img
+                    src={withBase('/logo.svg')}
+                    alt=""
+                    width="24"
+                    height="24"
+                /> Mammoth / Overview</span
+            ><span class="mm-preview-tag">Demo</span>
+        </div>
+        <div class="mm-preview-body">
+            <div class="mm-preview-heading">
+                <div>
+                    <p class="mm-label">Inside your cluster</p><p
+                        class="mm-preview-title"
+                    >
+                        Every byte has a place.
+                    </p>
+                </div><span class="mm-orbit" aria-hidden="true">◈</span>
+            </div>
+            <div class="mm-preview-stats">
+                <div><strong>12</strong><span>workers</span></div><div>
+                    <strong>3</strong><span>racks</span>
+                </div><div><strong>1</strong><span>offline worker</span></div>
+            </div>
+            <div
+                class="mm-racks"
+                aria-label="Three racks, each with four example workers"
+            >
+                {
+                    racks.map((rack) => (
+                        <div class="mm-rack">
+                            <p>{rack.name}</p>
+                            {rack.nodes.map((node) => (
+                                <div
+                                    class:list={[
+                                        'mm-worker',
+                                        {
+                                            'mm-worker-warn':
+                                                node.id === 'w3' ||
+                                                node.id === 'w7',
+                                            'mm-worker-offline':
+                                                node.id === 'w12',
+                                        },
+                                    ]}
+                                >
+                                    <span>{node.id}</span>
+                                    <div
+                                        class="mm-worker-track"
+                                        aria-hidden="true"
+                                    >
+                                        <i style={`width: ${node.fill}%`} />
+                                    </div>
+                                    <span>
+                                        {node.id === 'w12'
+                                            ? 'off'
+                                            : `${node.fill}%`}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ))
+                }
+            </div>
+            <div class="mm-preview-repair">
+                <span class="mm-repair-icon" aria-hidden="true">↻</span><div>
+                    <strong>One worker offline. Repair in progress.</strong><p>
+                        Healthy workers rebuild the missing fragments.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <figcaption>Illustrative dashboard preview · Simulated data</figcaption>
+    </figure>
+</section>
+<div class="mm-principles not-content" aria-label="Project direction">
+    <span>Designed for clarity</span><span>One Rust codebase</span><span
+        >Visible block placement</span
+    ><span>MIT / Apache-2.0</span>
+</div>

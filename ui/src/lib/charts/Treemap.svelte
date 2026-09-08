@@ -2,6 +2,7 @@
      directory. Answers "what is eating my disk" in one glance, which is the
      question a table of sizes never quite manages. -->
 <script lang="ts">
+  import { escapeHtml } from '$lib/html';
   import type { TreemapNode } from '$lib/types';
   import { bytes, count } from '$lib/format';
   import { chart, palette, tooltipStyle, type ChartOption } from './echarts';
@@ -78,7 +79,7 @@
         formatter: (params: unknown) => {
           const d = (params as { data: Datum }).data;
           return [
-            `<b>${d.path || '/'}</b>`,
+            `<b>${escapeHtml(d.path || '/')}</b>`,
             `${bytes(d.value)}`,
             `${d.age} days old · ${count(d.reads)} reads`,
           ].join('<br/>');
@@ -109,7 +110,7 @@
             fontSize: 11,
             formatter: (params: unknown) => {
               const d = (params as { data: Datum }).data;
-              return `${d.name}\n${bytes(d.value)}`;
+              return `${escapeHtml(d.name)}\n${bytes(d.value)}`;
             },
           },
           itemStyle: { borderColor: p.panel, borderWidth: 2, gapWidth: 2 },

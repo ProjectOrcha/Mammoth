@@ -2,9 +2,9 @@
      whether to list a directory or open a file, so /files and
      /files/[...path] cannot drift apart. -->
 <script lang="ts">
-  import { api } from '$lib/api';
+  import { api, currentSource } from '$lib/api';
   import type { BlockLayout, FileStatus } from '$lib/types';
-  import { ago, bibytes, bytes, count, joinPath, segments } from '$lib/format';
+  import { ago, bibytes, bytes, count, fileHref, joinPath, segments } from '$lib/format';
   import Panel from '$lib/components/Panel.svelte';
   import BlockMatrix from '$lib/charts/BlockMatrix.svelte';
 
@@ -20,32 +20,37 @@
   let error = $state<string | null>(null);
   let loading = $state(true);
 
-  // Re-runs whenever `path` changes, which is what makes deep links work.
+  // Cleanup invalidates every result, including a second request and A → B → A navigation.
   $effect(() => {
     const wanted = path;
+    let active = true;
     loading = true;
     error = null;
+    status = null;
     entries = null;
     layout = null;
 
-    (async () => {
+    void (async () => {
       try {
-        const s = await api.stat(wanted);
-        if (wanted !== path) return;
-        status = s;
-        if (!s) {
-          error = `no such path: ${wanted}`;
-        } else if (s.is_dir) {
-          entries = await api.list(wanted);
-        } else {
-          layout = await api.blocks(wanted);
-        }
+        const nextStatus = await api.stat(wanted);
+        if (!active) return;
+        if (!nextStatus) throw new Error(`No such path: ${wanted}`);
+        const result = nextStatus.is_dir
+          ? { entries: await api.list(wanted), layout: null }
+          : { entries: null, layout: await api.blocks(wanted) };
+        if (!active) return;
+        if (!nextStatus.is_dir && !result.layout) throw new Error(`No block layout: ${wanted}`);
+        status = nextStatus;
+        entries = result.entries;
+        layout = result.layout;
       } catch (e) {
-        error = e instanceof Error ? e.message : String(e);
+        if (active) error = e instanceof Error ? e.message : String(e);
       } finally {
-        if (wanted === path) loading = false;
+        if (active) loading = false;
       }
     })();
+
+    return () => { active = false; };
   });
 
   const crumbs = $derived.by(() => {
@@ -55,7 +60,7 @@
       { name: '/', href: '/files' },
       ...parts.map((p) => {
         acc = joinPath(acc || '/', p);
-        return { name: p, href: `/files${acc}` };
+        return { name: p, href: fileHref(acc) };
       }),
     ];
   });
@@ -101,16 +106,18 @@
 {#if loading}
   <p class="quiet mono">reading {path}…</p>
 {:else if error}
-  <Panel title="Not found">
-    <p class="err mono">{error}</p>
+  <Panel title="Unable to load path">
+    <p class="err mono" role="alert">{error}</p>
+    {#if currentSource() === 'demo'}
     <p class="quiet">
       The demo namespace has <code class="mono">/warehouse</code>,
       <code class="mono">/logs</code>, <code class="mono">/data</code>,
       <code class="mono">/tmp</code> and <code class="mono">/user</code>.
     </p>
+    {/if}
   </Panel>
 {:else if entries}
-  <Panel title={path} note={`${entries.length} entries`}>
+  <Panel title={path} note={`${entries.length} entries (up to 200)`}>
     {#if entries.length === 0}
       <p class="quiet">Empty.</p>
     {:else}
@@ -129,7 +136,7 @@
           {#each entries as e (e.path)}
             <tr>
               <td>
-                <a href={`/files${e.path}`} class="mono">
+                <a href={fileHref(e.path)} class="mono">
                   <span class="icon" aria-hidden="true">{e.is_dir ? '▸' : '·'}</span>{e.name}{e.is_dir
                     ? '/'
                     : ''}
@@ -179,7 +186,7 @@
             <div><dt>fragments per block</dt><dd class="mono">{readPlan.fragments}</dd></div>
             <div>
               <dt>block 1 reads from</dt>
-              <dd class="mono">{readPlan.preferred.node} · {readPlan.preferred.rack.split('/').pop()}</dd>
+              <dd class="mono">{#if readPlan.preferred}{readPlan.preferred.node} · {readPlan.preferred.rack.split('/').pop()}{:else}No fragments available{/if}</dd>
             </div>
             <div>
               <dt>metadata round trips</dt>
@@ -266,7 +273,7 @@
   }
   .cols {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
     gap: var(--gap);
     margin-bottom: var(--gap);
   }

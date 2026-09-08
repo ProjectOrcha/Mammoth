@@ -1,6 +1,6 @@
 # Chapter 0 — Set up your machine
 
-**What you'll build:** a working copy of Mammoth that compiles and runs.
+**What you'll build:** a working checkout that compiles, shows CLI help, and runs teaching examples.
 
 **Time:** about 30 minutes, most of it waiting for downloads.
 
@@ -21,9 +21,9 @@ onwards).
 
 | Tool | Why | Needed by |
 | --- | --- | --- |
-| **Rust** 1.82+ | the whole engine is written in it | everyone |
+| **Rust** 1.85+ | the whole engine is written in it | everyone |
 | **Git** | version control | everyone |
-| **Node.js** 20+ | only for the web UI and the docs site | chapters 9–10 |
+| **Node.js** 22.x | only for the web UI and the docs site | chapters 9–10 |
 | A code editor | VS Code is the easiest start | everyone |
 
 ## 1 · Install Rust
@@ -53,7 +53,7 @@ rustc --version
 cargo --version
 ```
 
-You should see something like `rustc 1.82.0` or newer. If you see
+You should see something like `rustc 1.85.0` or newer. If you see
 `command not found`, your terminal has not picked up the new `PATH` — close it
 and open a new one.
 
@@ -90,14 +90,12 @@ git config --global user.email "you@example.com"
 
 Skip this for now if you like; you can come back to it.
 
-Get the **LTS** version from [nodejs.org](https://nodejs.org/), or on macOS:
+Install **Node 22.x** from [nodejs.org](https://nodejs.org/). If you already use
+nvm, run `nvm install 22` and `nvm use 22`. After cloning, `.nvmrc` lets you run
+`nvm install` and `nvm use` from the repository root.
 
 ```bash
-brew install node
-```
-
-```bash
-node --version   # should be v20 or higher
+node --version   # should be v22.x
 npm --version
 ```
 
@@ -143,14 +141,10 @@ rest. Try a subcommand:
 **Most of these commands do not do anything yet.** The command *tree* is built,
 the command *bodies* are not. That is what you are here to build.
 
-If you run one, you will get:
-
-```
-thread 'main' panicked at crates/mammoth-cli/src/main.rs:26:5:
-not implemented: command dispatch — see docs/ROADMAP.md, milestone M1
-```
-
-That panic is deliberate. It is the project telling you where to start.
+For example, `cargo run -p mammoth-cli -- quickstart` exits with status 1 and
+prints a friendly `error[E0002]: not implemented yet` plus next steps. This is
+an unfinished feature, not an installation failure. Use `--help`, `--version`
+and the runnable examples below to verify setup.
 
 ## 7 · Set up your editor
 
@@ -213,7 +207,7 @@ rather than in chapter 8 — see
 Tick every box before moving on. Chapter 1 assumes all of these are true.
 
 ```markdown
-- [ ] `rustc --version` prints 1.82.0 or newer
+- [ ] `rustc --version` prints 1.85.0 or newer
 - [ ] `cargo --version` prints a version
 - [ ] `git config --global user.name` prints my name
 - [ ] The repo is cloned and `pwd` ends in `/Mammoth`
@@ -229,7 +223,7 @@ Tick every box before moving on. Chapter 1 assumes all of these are true.
 - [ ] (chapters 9–10 only) `node --version` prints v20 or higher
 ```
 
-**On a team:** all three of you do this on the same day. Setup problems are
+**On a team:** all four of you do this on the same day. Setup problems are
 easier to solve together, and nobody wants to be the person still installing a
 linker in week two.
 
@@ -263,3 +257,6 @@ committed unformatted code. Fix it with `cargo fmt --all` and mention it.
 ---
 
 **Next:** [Chapter 1 — The 30-minute Rust you actually need](01-rust-you-need.md)
+
+The docs website requires Node **22.12.0 or newer within the 22.x line**.
+Use the latest Node 22 patch release to satisfy both frontend apps.

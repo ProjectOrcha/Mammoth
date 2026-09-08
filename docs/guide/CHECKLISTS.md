@@ -20,15 +20,15 @@ about to push something broken.
 
 ## Day one — each person, once
 
-Every one of the three of you does this on the same day, before anyone writes
+Every one of the four of you does this on the same day, before anyone writes
 real code. It takes a morning and it gets all the awkward parts — toolchains,
 permissions, the merge button — out of the way while nothing is at stake.
 
 ```markdown
 ### Setup (chapter 0)
-- [ ] Rust installed — `rustc --version` prints 1.82 or newer
+- [ ] Rust installed — `rustc --version` prints 1.85 or newer
 - [ ] Git installed and `git config --global user.name` / `user.email` set
-- [ ] Node.js 20+ installed (skip if you are not on chapters 9–10)
+- [ ] Node.js 22.x installed (skip if you are not on chapters 9–10)
 - [ ] Repo cloned, and `pwd` ends in `/Mammoth`
 - [ ] `cargo build --workspace` succeeds
 - [ ] `cargo test --workspace` succeeds
@@ -116,7 +116,7 @@ chmod +x .git/hooks/pre-commit
 
 Two things to know about it:
 
-- Git hooks are **not** committed to the repo, so each of the three of you has
+- Git hooks are **not** committed to the repo, so each of the four of you has
   to run those commands once, on your own machine.
 - If you ever genuinely need to skip it, `git commit --no-verify`. Use that
   roughly never.
@@ -153,7 +153,7 @@ Chapter <n> — <title>
 ````
 
 **Keep PRs small.** A PR that changes one file gets reviewed in ten minutes. A
-PR that changes twelve files sits for a week, and on a three-person team a PR
+PR that changes twelve files sits for a week, and on a four-person team a PR
 sitting for a week is a third of the project stopped.
 
 ---
@@ -182,7 +182,7 @@ happened:
 > I ran `mammoth ls /nope` and got a panic rather than an error message —
 > line 84's `.unwrap()` looks like the cause. Could that be a `?` instead?
 
-**Turnaround.** With three people, agree on a rule: **every PR gets a first
+**Turnaround.** With four people, agree on a rule: **every PR gets a first
 response within one working day.** Not necessarily an approval — a response.
 Blocking a teammate for two days costs the project more than any bug in the PR.
 
@@ -213,7 +213,7 @@ and right now you are the only one who can say so.
 ## The whole guide — progress tracker
 
 Copy this into a pinned GitHub issue called **"Guide progress"** and let all
-three of you tick your own rows. It is the cheapest project-management tool you
+four of you tick your own rows. It is the cheapest project-management tool you
 will ever set up.
 
 ```markdown
@@ -268,7 +268,7 @@ bottom of it.
 - [ ] I tried `cargo clean && cargo build` (slow, but it fixes stale-state weirdness)
 ```
 
-Still stuck after all eight? **Ask, and ask early.** On a three-person team,
+Still stuck after all eight? **Ask, and ask early.** On a four-person team,
 someone quietly stuck for four hours is a real cost. When you ask, include:
 
 1. What you were trying to do

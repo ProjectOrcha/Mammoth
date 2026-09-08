@@ -2,7 +2,7 @@
      Hadoop's UI shows you tables of numbers. This shows you where your data
      actually is, and what moved it there. (Part VII §7.2) -->
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { api } from '$lib/api';
   import { live } from '$lib/live.svelte';
   import type {
@@ -55,40 +55,74 @@
   const report = $derived(minutesAgo > 0 ? past : live.report);
   const travelling = $derived(minutesAgo > 0);
 
-  // The three report-shaped views replay with the slider; the namespace views
-  // (treemap, skew) do not, because the namespace is not what the incident
-  // changed. The slider label says so rather than pretending otherwise.
+  let historyError = $state<string | null>(null);
+  let matrixError = $state<string | null>(null);
+  let namespaceError = $state<string | null>(null);
+  let historyLoading = $state(false);
+
+  let refreshHistory = () => {};
+
+  // Selection changes invalidate old responses. Live ticks reuse the current
+  // loader, so a slow request is not discarded/restarted on every report tick.
   $effect(() => {
     const m = minutesAgo;
     const met = metric;
+    let active = true;
+    let busy = false;
+    historyError = null;
+    heat = null; flow = null; topology = null; past = null;
+    const load = async () => {
+      if (busy || !active) return;
+      busy = true;
+      historyLoading = true;
+      try {
+        const [h, f, t, p] = await Promise.all([
+          api.heat(met, m), api.flow(m), api.topology(m),
+          m > 0 ? api.reportAt(m) : Promise.resolve(null),
+        ]);
+        if (!active) return;
+        heat = h; flow = f; topology = t; past = p;
+        historyError = null;
+      } catch (e) {
+        if (active) historyError = e instanceof Error ? e.message : String(e);
+      } finally {
+        busy = false;
+        if (active) historyLoading = false;
+      }
+    };
+    refreshHistory = () => { void load(); };
+    refreshHistory();
+    return () => { active = false; };
+  });
+
+  $effect(() => {
     void live.updatedAt;
-    (async () => {
-      const [h, f, t, p] = await Promise.all([
-        api.heat(met, m),
-        api.flow(m),
-        api.topology(m),
-        m > 0 ? api.reportAt(m) : Promise.resolve(null),
-      ]);
-      heat = h;
-      flow = f;
-      topology = t;
-      past = p;
-    })();
+    untrack(() => refreshHistory());
   });
 
   $effect(() => {
     const path = matrixPath;
-    api.blocks(path).then((m) => (matrix = m));
+    let active = true;
+    matrix = null;
+    matrixError = null;
+    void api.blocks(path).then((m) => {
+      if (!active) return;
+      matrix = m;
+      if (!m) matrixError = `No block layout: ${path}`;
+    }).catch((e) => {
+      if (active) matrixError = e instanceof Error ? e.message : String(e);
+    });
+    return () => { active = false; };
   });
 
-  // `onMount` can return a cleanup OR be async, never both — so attach
-  // synchronously and kick the one-shot loads off beside it.
   onMount(() => {
+    let active = true;
     void Promise.all([api.treemap('/', 3), api.skew('/warehouse/events')]).then(([t, s]) => {
-      tree = t;
-      skew = s;
+      if (active) { tree = t; skew = s; }
+    }).catch((e) => {
+      if (active) namespaceError = e instanceof Error ? e.message : String(e);
     });
-    return live.attach();
+    return () => { active = false; };
   });
 
   const repair = $derived(report?.repair ?? null);
@@ -100,11 +134,15 @@
   <p class="eyebrow">six views · where every byte actually is</p>
 </header>
 
+{#each [historyError, matrixError, namespaceError].filter(Boolean) as message}
+  <p class="load-error" role="alert">Unable to load data: {message}</p>
+{/each}
+
 <section class="timemachine">
   <div class="tm-head">
     <p class="eyebrow">Time machine</p>
     <p class="tm-state mono" class:travelling>
-      {travelling ? `viewing T−${duration(minutesAgo * 60)}` : 'now · live'}
+      {historyLoading ? 'loading · ' : ''}{travelling ? `viewing T−${duration(minutesAgo * 60)}` : 'now · live'}
     </p>
   </div>
   <input
@@ -189,9 +227,9 @@
       </div>
     {/snippet}
     {#if heat}
-      <HeatGrid cells={heat} {metric} onselect={(n) => (window.location.href = `/nodes#${n}`)} />
+      <HeatGrid cells={heat} {metric} onselect={(n) => (window.location.href = `/nodes#${encodeURIComponent(n)}`)} />
     {:else}
-      <p class="quiet mono">reading…</p>
+      <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
   </Panel>
 
@@ -208,7 +246,7 @@
     {:else if matrix}
       <BlockMatrix layout={matrix} maxRows={10} />
     {:else}
-      <p class="quiet mono">reading…</p>
+      <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
   </Panel>
 
@@ -222,7 +260,7 @@
     {#if tree}
       <Treemap root={tree} {colourBy} />
     {:else}
-      <p class="quiet mono">reading…</p>
+      <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
   </Panel>
 
@@ -230,7 +268,7 @@
     {#if topology}
       <RackTopology {topology} />
     {:else}
-      <p class="quiet mono">reading…</p>
+      <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
   </Panel>
 
@@ -249,7 +287,7 @@
         {/if}
       </p>
     {:else}
-      <p class="quiet mono">reading…</p>
+      <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
   </Panel>
 
@@ -269,7 +307,7 @@
         />
       {/if}
     {:else}
-      <p class="quiet mono">reading…</p>
+      <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
   </Panel>
 </div>
@@ -282,7 +320,7 @@
           report.read_path.lease_hits + report.read_path.resolve_hits + report.read_path.master_hits}
         <div class="seg-row">
           <span class="k">{seg.k}</span>
-          <Meter value={(seg.v / total) * 100} tone={seg.tone as 'ok'} height="0.4rem" />
+          <Meter value={seg.v} max={total} tone={seg.tone as 'ok'} height="0.4rem" />
           <span class="v mono">{count(seg.v)} · {pct(seg.v, total, 1)}</span>
         </div>
       {/each}
@@ -297,6 +335,7 @@
 {/if}
 
 <style>
+  .load-error { color: var(--danger); overflow-wrap: anywhere; }
   .page {
     display: flex;
     align-items: baseline;
@@ -341,9 +380,7 @@
     letter-spacing: 0.1em;
   }
   .reset {
-    position: absolute;
-    top: 0.55rem;
-    right: 0.9rem;
+    margin-top: 0.5rem;
     font-size: 0.68rem;
   }
 

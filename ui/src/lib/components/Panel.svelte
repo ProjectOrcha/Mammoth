@@ -44,6 +44,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    flex-wrap: wrap;
     padding: 0.6rem 0.9rem;
     border-bottom: 1px solid var(--rule);
     min-height: 2.35rem;
@@ -57,11 +58,14 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    flex-wrap: wrap;
+    min-width: 0;
   }
   .body {
     padding: 0.9rem;
     min-width: 0;
     flex: 1;
+    overflow-x: auto;
   }
   .body.scroll {
     overflow: auto;

@@ -1,5 +1,11 @@
 # Testing
 
+**Current status:** the distributed, fault-injection, property and compatibility
+harnesses below are planned. Their folders currently contain design notes.
+Do not treat the seed command as runnable until a `sim` test target exists.
+Rust checks run with `cargo test --workspace`; dashboard regressions run with
+`npm test` in `ui/`. See [CONTRIBUTING.md](../CONTRIBUTING.md) for all checks.
+
 Distributed systems fail in ways unit tests never find.
 
 | Layer | Tool | Catches |

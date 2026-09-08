@@ -1,5 +1,5 @@
 //! Command tree (Part V §5.2). Kept in its own module so `xtask docs` can
-//! reflect over it with `clap_markdown` and regenerate the CLI reference.
+//! render its clap help and regenerate the CLI reference.
 
 use std::path::PathBuf;
 

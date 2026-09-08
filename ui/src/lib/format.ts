@@ -7,7 +7,7 @@ const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB'];
 export function bytes(n: number, digits = 1): string {
   if (!Number.isFinite(n)) return '—';
   if (n === 0) return '0 B';
-  const i = Math.min(Math.floor(Math.log10(Math.abs(n)) / 3), BYTE_UNITS.length - 1);
+  const i = Math.max(0, Math.min(Math.floor(Math.log10(Math.abs(n)) / 3), BYTE_UNITS.length - 1));
   const v = n / 1000 ** i;
   return `${v.toFixed(i === 0 ? 0 : v >= 100 ? 0 : digits)} ${BYTE_UNITS[i]}`;
 }
@@ -20,7 +20,7 @@ const BIBYTE_UNITS = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
 export function bibytes(n: number, digits = 0): string {
   if (!Number.isFinite(n)) return '—';
   if (n === 0) return '0 B';
-  const i = Math.min(Math.floor(Math.log2(Math.abs(n)) / 10), BIBYTE_UNITS.length - 1);
+  const i = Math.max(0, Math.min(Math.floor(Math.log2(Math.abs(n)) / 10), BIBYTE_UNITS.length - 1));
   const v = n / 1024 ** i;
   return `${v.toFixed(i === 0 || Number.isInteger(v) ? 0 : digits)} ${BIBYTE_UNITS[i]}`;
 }
@@ -53,9 +53,11 @@ export function pctValue(part: number, whole: number): number {
 export function duration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '—';
   if (seconds < 1) return `${Math.round(seconds * 1000)}ms`;
-  if (seconds < 60) return `${seconds < 10 ? seconds.toFixed(1) : Math.round(seconds)}s`;
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
+  if (seconds < 10) return `${seconds.toFixed(1)}s`;
+  const rounded = Math.round(seconds);
+  if (rounded < 60) return `${rounded}s`;
+  const m = Math.floor(rounded / 60);
+  const s = rounded % 60;
   if (m < 60) return s ? `${m}m ${s}s` : `${m}m`;
   const h = Math.floor(m / 60);
   return `${h}h ${m % 60}m`;
@@ -88,6 +90,12 @@ export function clock(epochMs: number): string {
 /** "/warehouse/events/dt=2026-08-03" → ["warehouse", "events", "dt=2026-08-03"] */
 export function segments(path: string): string[] {
   return path.split('/').filter(Boolean);
+}
+
+/** Encode each filename, preserving directory separators and literal %/#/?. */
+export function fileHref(path: string): string {
+  const encoded = segments(path).map(encodeURIComponent).join('/');
+  return encoded ? `/files/${encoded}` : '/files';
 }
 
 export function parentOf(path: string): string {

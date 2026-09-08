@@ -1,34 +1,37 @@
 # The Mammoth web UI
 
-The admin dashboard, served by the `mammoth` binary itself. SvelteKit, built to
-static files and embedded with `rust-embed`, so there is one artifact to ship
-and no separate web server.
+The Svelte 5 admin dashboard. It runs independently with simulated data today.
+Serving and embedding it in the Rust binary is planned; `mammoth-gateway` is
+still a scaffold. Beginner walkthrough: [chapter 9](../docs/guide/09-web-ui.md).
 
 ## Run it
 
+Use Node **22.x**. From `ui/`:
+
 ```bash
-npm install
+npm ci
 npm run dev            # http://localhost:5173
 ```
 
-**It works before the gateway does.** `src/lib/api.ts` probes
-`/api/v1/cluster/report` on first load; if nothing answers it falls back to the
-simulated cluster in `src/lib/demo.ts` — twelve workers, one dead, a repair in
-flight, a namespace with real skew — and says so in a banner. So the front end
-can be built and reviewed while the Rust half is still being written.
+Development probes `/api/v1/cluster/report` through Vite's port-8080 proxy. If
+no gateway answers, it shows a labelled demo: twelve workers, one dead, and a
+repair in progress. The Rust `serve` command does not start a gateway yet.
 
-To point it at a real cluster, start the gateway in another terminal; `vite`
-proxies `/api` to port 8080 and the banner disappears.
+Production builds require a compatible gateway by default. To preview a
+standalone demo, put `VITE_DATA_SOURCE=demo` in `ui/.env.local`, then build and
+preview. This local file is ignored by Git. Remove it and rebuild for real API
+integration. To test integration in dev, use `VITE_DATA_SOURCE=gateway`.
+Vite reads settings at startup/build time; do not put secrets in them.
 
-```bash
-cargo run -p mammoth-cli -- serve --role gateway
-```
+[API-CONTRACT.md](../docs/guide/API-CONTRACT.md) documents all modes and endpoints.
+The core Rust types and dashboard types differ; they need an explicit adapter.
 
 | Script | Does |
 | --- | --- |
 | `npm run dev` | dev server with hot reload |
 | `npm run check` | `svelte-check` over every file — keep it at zero |
-| `npm run build` | static output to `ui/build/`, which is what `rust-embed` reads |
+| `npm test` | regression tests for requests, navigation and formatting |
+| `npm run build` | static output to `ui/build/`, for future embedding |
 | `npm run preview` | serve that build locally |
 
 `cargo xtask build-ui` runs `npm ci && npm run build` for you.
@@ -64,10 +67,12 @@ src/
 
 ## Conventions worth keeping
 
-**Read from `live`, not from `api`.** `live.svelte.ts` holds one subscription
+**Read shared cluster reports from `live`.** Page-specific data such as files
+and history uses `api`; do not make a second cluster subscription for it.
+ `live.svelte.ts` holds one subscription
 with a reference count — the first component to `attach()` starts it, the last
-to detach stops it, and every page reads the same `$state`. Six pages polling
-the same endpoint independently is how a dashboard becomes the cluster's busiest
+to detach stops it, and every page reads the same `$state`. Multiple pages polling
+the same report endpoint independently is how a dashboard becomes the cluster's busiest
 client.
 
 **Colour comes from the value, not from the caller.** `Meter` picks its own
@@ -79,6 +84,9 @@ the gold middle of a heat scale is not readable.
 right for state and wrong for category: `--accent` and `--info` are gold and
 pale blue in the dark theme and two shades of navy in the light one, so a legend
 keyed off them stops working the moment somebody flips the toggle.
+
+**API text in HTML tooltips must use `escapeHtml`.** Svelte escapes ordinary
+markup, but ECharts HTML formatter strings are outside that protection.
 
 **ECharts is imported from `echarts/core`.** Only the four registered chart
 types ship. Adding a fifth means adding it to the `use()` call in
@@ -92,3 +100,7 @@ micro-labels are the docs site's, in `src/app.css` as `--mm-*` tokens. No
 webfont is linked: this UI is served from inside a cluster where
 `fonts.googleapis.com` is usually unreachable and always slow, so every stack
 names the faces we want first and a system fallback after.
+
+The `cookie` override selects the patched 0.7 line while SvelteKit still requests
+0.6. Recheck upstream's dependency before removing it. `npm audit` reports no
+known advisories for the reviewed UI lockfile; keep reviewing dependency updates.

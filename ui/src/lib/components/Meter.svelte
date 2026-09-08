@@ -12,7 +12,9 @@
 
   let { value, max = 100, tone = 'auto', height = '0.5rem', label }: Props = $props();
 
-  const fraction = $derived(Math.max(0, Math.min(1, max ? value / max : 0)));
+  const ceiling = $derived(Number.isFinite(max) && max > 0 ? max : 1);
+  const current = $derived(Number.isFinite(value) && max > 0 ? Math.max(0, Math.min(ceiling, value)) : 0);
+  const fraction = $derived(current / ceiling);
   const resolved = $derived(
     tone !== 'auto' ? tone : fraction >= 0.9 ? 'danger' : fraction >= 0.75 ? 'warn' : 'ok',
   );
@@ -22,9 +24,9 @@
   class="meter"
   style="height: {height}"
   role="meter"
-  aria-valuenow={value}
+  aria-valuenow={current}
   aria-valuemin={0}
-  aria-valuemax={max}
+  aria-valuemax={ceiling}
   aria-label={label ?? 'usage'}
 >
   <div class="fill" data-tone={resolved} style="width: {fraction * 100}%"></div>

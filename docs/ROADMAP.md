@@ -15,7 +15,7 @@ that release decides whether M7 is worth ten weeks.
 | M7 · Compute | 25–34 | TeraSort beats Hadoop MapReduce |
 | M8 · Migration + EC | 35–42 | migrate a real HDFS cluster |
 
-## Crate status
+## Planned crate responsibilities
 
 | Crate | Milestone | Job |
 | --- | --- | --- |
@@ -35,6 +35,18 @@ that release decides whether M7 is worth ten weeks.
 | `mammoth-scheduler` | M7 | queues, placement, locality |
 | `mammoth-compute` | M7 | DAG engine, shuffle |
 | `mammoth-migrate` | M8 | HDFS/S3 migration |
+
+## Implemented in this checkout
+
+The CLI parses help/version and reports unsupported commands without a panic.
+Core types/errors and 16 teaching examples exist. The dashboard runs with demo
+data; the docs site builds. `cargo xtask` builds the UI, generates the CLI
+reference, copies logos and delegates release builds. Storage, gateway serving
+and the distributed harnesses remain placeholders. See the detailed
+[current-status table](guide/START-HERE.md#1-know-what-works-today).
+
+The week estimates above are planning targets, not a promise for a beginner team.
+Use the [four-person plan](guide/TEAM-PLAN.md) to progress by tested handoffs.
 
 ## Building it
 

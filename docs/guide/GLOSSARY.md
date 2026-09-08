@@ -356,7 +356,7 @@ teammate reads it, approves, and it merges.
 ### `main`
 
 **The branch everyone shares.** Keeping it green (building, tests passing) is
-the single most important team rule — a broken `main` blocks all three of you.
+the single most important team rule — a broken `main` blocks all four of you.
 
 ### Conventional Commits
 

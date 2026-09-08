@@ -5,6 +5,12 @@ sidebar:
   order: 4
 ---
 
+:::caution[Planned walkthrough]
+The commands and output below describe the intended product. `quickstart` and
+`serve` do not run a cluster in this scaffold. To try working code today, follow
+[contributor setup](/contributing/) and run the standalone demo dashboard.
+:::
+
 ```console
 $ mammoth quickstart
 

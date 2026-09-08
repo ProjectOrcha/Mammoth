@@ -4,6 +4,7 @@
      out to every healthy node at once. A narrow repair band means placement is
      not spreading the loss, and the rebuild will take hours. -->
 <script lang="ts">
+  import { escapeHtml } from '$lib/html';
   import type { FlowReport } from '$lib/types';
   import { rate } from '$lib/format';
   import { chart, palette, tooltipStyle, type ChartOption } from './echarts';
@@ -26,8 +27,8 @@
         ...tooltipStyle(p),
         formatter: (params: unknown) => {
           const q = params as { dataType: string; data: { source?: string; target?: string; value?: number; name?: string } };
-          if (q.dataType === 'edge') return `${q.data.source} → ${q.data.target}<br/>${rate(q.data.value ?? 0)}`;
-          return q.data.name ?? '';
+          if (q.dataType === 'edge') return `${escapeHtml(q.data.source)} → ${escapeHtml(q.data.target)}<br/>${rate(q.data.value ?? 0)}`;
+          return escapeHtml(q.data.name);
         },
       },
       series: [

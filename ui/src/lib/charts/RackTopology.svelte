@@ -2,6 +2,7 @@
      is capacity, colour is health, and the rack-to-rack edges carry the
      cross-rack traffic that placement is trying to keep small. -->
 <script lang="ts">
+  import { escapeHtml } from '$lib/html';
   import type { TopologyReport } from '$lib/types';
   import { bytes, pct, rate } from '$lib/format';
   import { chart, palette, tooltipStyle, type ChartOption } from './echarts';
@@ -87,10 +88,10 @@
             return q.data.value ? `cross-rack · ${rate(q.data.value as number)}` : 'rack member';
           }
           const d = q.data;
-          if (d.category === 0) return `<b>${d.name}</b>`;
+          if (d.category === 0) return `<b>${escapeHtml(d.name)}</b>`;
           return [
-            `<b>${d.name}</b> · ${d.state}`,
-            `${d.rack}`,
+            `<b>${escapeHtml(d.name)}</b> · ${escapeHtml(d.state)}`,
+            `${escapeHtml(d.rack)}`,
             `${bytes(d.value as number)} of ${bytes(d.capacity as number)} · ${pct(
               d.value as number,
               d.capacity as number,

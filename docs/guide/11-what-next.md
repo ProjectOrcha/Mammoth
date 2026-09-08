@@ -8,12 +8,12 @@
 
 ```markdown
 - [ ] Chapters 0–10 are merged, or you know which ones you skipped
-- [ ] All three of you are reading this together
+- [ ] All four of you are reading this together
 ```
 
 **Read this as a team, and end with a decision.** This chapter's job is not to
 teach you anything — it is to stop the project drifting once the guided part
-runs out. The failure mode after chapter 10 is three people each quietly picking
+runs out. The failure mode after chapter 10 is four people each quietly picking
 a different next thing.
 
 ---
@@ -208,17 +208,17 @@ Written down now, because everyone learns them the expensive way:
 ## Done when
 
 This chapter produces no code. It produces a decision, and the decision needs to
-be written down somewhere all three of you will see it again.
+be written down somewhere all four of you will see it again.
 
 ```markdown
-- [ ] All three of us have read this chapter
+- [ ] All four of us have read this chapter
 - [ ] We agree on what comes next — one of: finish M2, real block storage (M4),
       or make it distributed (M5)
 - [ ] That decision is written down: a pinned issue, a milestone, or a
       [short ADR](../adr/0002-backend-trait.md) saying what we chose and why
 - [ ] The next chunk of work is broken into issues small enough to finish in a day
 - [ ] Each issue has an owner
-- [ ] If M5 is next, all three of us have read [chapter 12](12-the-fast-paths.md)
+- [ ] If M5 is next, all four of us have read [chapter 12](12-the-fast-paths.md)
       **before** anyone starts `mammoth-master`
 - [ ] We have kept the habits: standup, the Friday demo, the review rota
 ```

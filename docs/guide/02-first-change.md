@@ -197,9 +197,9 @@ cargo build -p mammoth-cli
 ```
 
 ```
- name     mammoth 
- version  0.1.0   
- rust     1.82    
+ name     mammoth
+ version  0.1.0
+ rust     1.85
 ```
 
 ```bash
@@ -209,7 +209,7 @@ cargo build -p mammoth-cli
 ```json
 {
   "name": "mammoth",
-  "rust_version": "1.82",
+  "rust_version": "1.85",
   "version": "0.1.0"
 }
 ```
@@ -222,9 +222,9 @@ and then piped into another command:
 ```
 
 ```
- name     mammoth 
- version  0.1.0   
- rust     1.82    
+ name     mammoth
+ version  0.1.0
+ rust     1.85
 ```
 
 ```bash
@@ -234,7 +234,7 @@ and then piped into another command:
 ```json
 {
   "name": "mammoth",
-  "rust_version": "1.82",
+  "rust_version": "1.85",
   "version": "0.1.0"
 }
 ```

@@ -12,7 +12,7 @@ at M5.
 
 ```markdown
 - [ ] Chapters 5–6 are merged — you have a `LocalBackend` to add §0 to
-- [ ] All three of you are reading this together
+- [ ] All four of you are reading this together
 - [ ] Nobody has started writing `mammoth-master` or `mammoth-worker` yet
 ```
 
@@ -745,7 +745,7 @@ For the code half (§0):
 For the design half (§1–§4), as a team:
 
 ```markdown
-- [ ] All three of us have read §1–§4
+- [ ] All four of us have read §1–§4
 - [ ] Each of us can explain **one** of the four fast paths to the other two
 - [ ] We agree which of the four we are building first
 - [ ] We know which are cheap now and expensive later (all four)

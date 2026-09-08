@@ -2,6 +2,7 @@
      the top right is the task that sets your job's runtime, and this is the
      fastest way to find it. Log scale on x, because skew is multiplicative. -->
 <script lang="ts">
+  import { escapeHtml } from '$lib/html';
   import type { SkewReport } from '$lib/types';
   import { bytes, count } from '$lib/format';
   import { chart, palette, tooltipStyle, type ChartOption } from './echarts';
@@ -28,7 +29,7 @@
         formatter: (params: unknown) => {
           const d = (params as { value: [number, number, string, number] }).value;
           return [
-            `<b>${d[2]}</b>`,
+            `<b>${escapeHtml(d[2])}</b>`,
             `${bytes(d[0])} · ${(d[0] / median).toFixed(1)}× median`,
             `${count(d[1])} reads · ${count(d[3])} writes`,
           ].join('<br/>');

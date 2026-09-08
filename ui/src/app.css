@@ -53,7 +53,7 @@
 
   --fg: #e9eff6;
   --fg-dim: var(--mm-steel);
-  --fg-faint: #5b7f9f;
+  --fg-faint: #86a0b8;
   --fg-display: var(--mm-lemon);
 
   --rule: rgba(140, 171, 199, 0.18);
@@ -83,7 +83,7 @@
 
   --fg: #0c2439;
   --fg-dim: #3d6688;
-  --fg-faint: #6b8fad;
+  --fg-faint: #456a87;
   --fg-display: var(--mm-blue);
 
   --rule: rgba(22, 73, 130, 0.16);
@@ -92,8 +92,8 @@
   --accent: var(--mm-blue-deep);
   --accent-quiet: #b6cbdd;
 
-  --ok: #1f8a4c;
-  --warn: #a8791a;
+  --ok: #1c7b43;
+  --warn: #876015;
   --danger: #b7302a;
   --dead: #7c93a6;
   --info: #1c5f96;
@@ -265,3 +265,7 @@ td.num {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Page headings and controls remain usable on narrow screens. */
+.page { flex-wrap: wrap; }
+select { max-width: 100%; }

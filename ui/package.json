@@ -7,21 +7,30 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.0",
     "@sveltejs/kit": "^2.0.0",
-    "@sveltejs/vite-plugin-svelte": "^4.0.0",
+    "@sveltejs/vite-plugin-svelte": "^5.1.1",
     "@types/d3": "^7.4.3",
     "@types/node": "^22.20.1",
+    "jsdom": "^26.1.0",
     "svelte": "^5.0.0",
     "svelte-check": "^4.0.0",
     "typescript": "^5.5.0",
-    "vite": "^5.4.0"
+    "vite": "^6.4.3",
+    "vitest": "^3.2.7"
   },
   "dependencies": {
     "d3": "^7.9.0",
-    "echarts": "^5.5.0"
+    "echarts": "^6.1.0"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "overrides": {
+    "cookie": "^0.7.2"
   }
 }

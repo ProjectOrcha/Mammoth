@@ -1,34 +1,43 @@
 ---
-// Starlight component override: the stock hero, with `base` applied.
-//
-// The landing page's logo and call-to-action links live in index.mdx
-// frontmatter, which never reaches the markdown pipeline — so
-// plugins/rehype-base-links.mjs cannot see them. Every other link on the site
-// is handled there; this covers the three that are not.
-import type { Props } from '@astrojs/starlight/props';
+// Use the custom landing hero on Mammoth's homepage. Other splash pages retain
+// Starlight's hero. Component and frontmatter URLs bypass the Markdown plugin,
+// so both paths use withBase() to work at / and at /Mammoth/.
 import Default from '@astrojs/starlight/components/Hero.astro';
+import LandingHero from './LandingHero.astro';
+import { withBase } from '../lib/links';
 
-const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
-
-const withBase = (url: string) =>
-  base && url.startsWith('/') && !url.startsWith('//') ? base + url : url;
-
-const { entry } = Astro.props;
+const { entry } = Astro.locals.starlightRoute;
 const { hero } = entry.data;
 
 const rebased = hero && {
-  ...hero,
-  actions: hero.actions?.map((action) => ({ ...action, link: withBase(action.link) })),
-  image:
-    hero.image && 'html' in hero.image
-      ? { ...hero.image, html: hero.image.html.replace(/src="(\/[^"]*)"/g, (_, url) => `src="${withBase(url)}"`) }
-      : hero.image,
+    ...hero,
+    actions: hero.actions?.map((action) => ({
+        ...action,
+        link: withBase(action.link),
+    })),
+    image:
+        hero.image && 'html' in hero.image
+            ? {
+                  ...hero.image,
+                  html: hero.image.html.replace(
+                      /src="(\/[^"]*)"/g,
+                      (_, url) => `src="${withBase(url)}"`,
+                  ),
+              }
+            : hero.image,
 };
 
-const props: Props = {
-  ...Astro.props,
-  entry: { ...entry, data: { ...entry.data, hero: rebased } },
+// Starlight 0.42 reads route data from locals rather than component props.
+Astro.locals.starlightRoute.entry = {
+    ...entry,
+    data: { ...entry.data, hero: rebased },
 };
 ---
 
-<Default {...props} />
+{
+    entry.data.template === 'splash' && entry.data.title === 'Mammoth' ? (
+        <LandingHero />
+    ) : (
+        <Default />
+    )
+}

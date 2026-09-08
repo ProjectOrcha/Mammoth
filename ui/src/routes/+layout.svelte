@@ -24,7 +24,8 @@
   let dismissedBanner = $state(false);
 
   onMount(() => {
-    theme = (document.documentElement.dataset.theme as 'dark' | 'light') ?? 'dark';
+    theme =
+      (document.documentElement.dataset.theme as 'dark' | 'light') ?? 'dark';
     return live.attach();
   });
 
@@ -40,10 +41,13 @@
 
   const report = $derived(live.report);
   const active = $derived((href: string) =>
-    href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href),
+    href === '/'
+      ? page.url.pathname === '/'
+      : page.url.pathname.startsWith(href),
   );
 </script>
 
+<a class="skip-link" href="#main-content">Skip to content</a>
 <div class="shell">
   <nav class="rail" aria-label="Sections">
     <a class="brand" href="/">
@@ -54,8 +58,12 @@
     <ul>
       {#each NAV as item (item.href)}
         <li>
-          <a href={item.href} aria-current={active(item.href) ? 'page' : undefined}>
-            <span class="glyph" aria-hidden="true">{item.glyph}</span>{item.label}
+          <a
+            href={item.href}
+            aria-current={active(item.href) ? 'page' : undefined}
+          >
+            <span class="glyph" aria-hidden="true">{item.glyph}</span
+            >{item.label}
           </a>
         </li>
       {/each}
@@ -69,7 +77,9 @@
           {bytes(report.used)} / {bytes(report.capacity)}
         </p>
         <p class="eyebrow" style="margin-top: 0.9rem">Placement</p>
-        <p class="mono foot-line">{report.placement} · epoch {report.topology_epoch}</p>
+        <p class="mono foot-line">
+          {report.placement} · epoch {report.topology_epoch}
+        </p>
       {:else}
         <Meter value={0} />
         <p class="mono foot-line">—</p>
@@ -93,17 +103,42 @@
       </div>
 
       <div class="right">
+        <button
+          class="mobile-theme"
+          onclick={toggleTheme}
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? '☾' : '☀'}
+        </button>
         {#if live.updatedAt}
-          <span class="mono dim">{clock(live.updatedAt)}</span>
+          <span class="mono dim updated">Updated {clock(live.updatedAt)}</span>
         {/if}
+        <span class="source-label" data-source={live.source}>
+          <span
+            class="dot"
+            class:paused={live.paused ||
+              !!live.error ||
+              live.source === 'unknown'}
+          ></span>
+          {live.error
+            ? 'Disconnected'
+            : live.source === 'unknown'
+              ? 'Connecting'
+              : live.source === 'gateway'
+                ? 'Live'
+                : 'Demo'}
+        </span>
         <button
           class="pill"
           data-source={live.source}
-          onclick={() => (live.paused = !live.paused)}
+          onclick={() => {
+            live.paused = !live.paused;
+            if (!live.paused) void live.refresh();
+          }}
+          aria-pressed={live.paused}
           title={live.paused ? 'Resume live updates' : 'Pause live updates'}
         >
-          <span class="dot" class:paused={live.paused}></span>
-          {live.paused ? 'paused' : live.source === 'gateway' ? 'live' : 'simulated'}
+          {live.paused ? 'Resume updates' : 'Pause updates'}
         </button>
       </div>
     </header>
@@ -111,29 +146,37 @@
     {#if live.source === 'demo' && !dismissedBanner}
       <div class="banner" role="status">
         <div>
-          <strong>No gateway answered on <code class="mono">/api/v1</code>.</strong>
-          Everything below is a simulated cluster from
-          <code class="mono">src/lib/demo.ts</code> — twelve workers, one of them dead, a
-          repair in flight. Start the real thing with
-          <code class="mono">mammoth serve --role gateway</code> and reload.
+          <strong>Demo workspace.</strong>
+          Explore a simulated cluster, including an offline worker and a repair in
+          progress. All values are example data.
         </div>
-        <button onclick={() => (dismissedBanner = true)} aria-label="Dismiss">✕</button>
+        <button
+          onclick={() => (dismissedBanner = true)}
+          aria-label="Dismiss demo notice">✕</button
+        >
       </div>
     {/if}
 
     {#if live.error}
       <div class="banner danger" role="alert">
-        <div><strong>API error.</strong> {live.error}</div>
+        <div>
+          <strong>API error.</strong>
+          {live.error} Displayed values may be stale.
+        </div>
+        <button onclick={() => window.location.reload()}>Reconnect</button>
       </div>
     {/if}
 
-    <main>
+    <main id="main-content">
       {@render children()}
     </main>
   </div>
 </div>
 
 <style>
+  .mobile-theme {
+    display: none;
+  }
   .shell {
     display: grid;
     grid-template-columns: var(--rail) minmax(0, 1fr);
@@ -176,7 +219,7 @@
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1.2rem;
     color: var(--fg-dim);
     border-left: 2px solid transparent;
   }
@@ -266,11 +309,17 @@
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    font-size: 0.72rem;
+    min-height: 34px;
+    border-radius: 4px;
     color: var(--fg-dim);
+  }
+  .source-label {
+    display: inline-flex;
+    gap: 0.45rem;
+    align-items: center;
+    color: var(--fg-dim);
+    font-size: 0.72rem;
   }
   .dot {
     width: 0.45rem;
@@ -279,7 +328,7 @@
     background: var(--ok);
     animation: pulse 2s ease-in-out infinite;
   }
-  .pill[data-source='demo'] .dot {
+  .source-label[data-source='demo'] .dot {
     background: var(--warn);
   }
   .dot.paused {
@@ -287,8 +336,13 @@
     animation: none;
   }
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
+    }
   }
 
   .banner {
@@ -305,25 +359,57 @@
   .banner.danger {
     color: var(--danger);
   }
-  .banner code {
-    color: var(--accent);
-  }
   .banner button {
     border: none;
-    padding: 0 0.3rem;
+    min-width: 30px;
+    min-height: 30px;
     color: var(--fg-faint);
   }
 
   main {
-    padding: 1.25rem;
+    padding: 1.6rem;
     min-width: 0;
   }
 
+  .skip-link {
+    position: fixed;
+    top: -5rem;
+    left: 1rem;
+    z-index: 20;
+    padding: 0.75rem;
+    background: var(--bg-panel);
+  }
+  .skip-link:focus {
+    top: 0.5rem;
+  }
+  @media (max-width: 600px) {
+    .updated {
+      display: none;
+    }
+    .topbar {
+      height: auto;
+      min-height: var(--header);
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding: 0.6rem;
+    }
+    .cluster {
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    main {
+      padding: 1rem;
+    }
+  }
   @media (max-width: 900px) {
     .shell {
       grid-template-columns: 1fr;
     }
+    .mobile-theme {
+      display: inline-block;
+    }
     .rail {
+      min-width: 0;
       position: static;
       height: auto;
     }

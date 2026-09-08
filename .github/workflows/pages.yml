@@ -29,7 +29,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       # web/src/content/docs/cli/reference.md is committed. `cargo xtask docs`
-      # regenerates it from the clap tree, but it is a stub until M2 — so the
+      # regenerates it from the clap tree; it is committed so the
       # site build needs no Rust toolchain at all.
       - name: Build site
         working-directory: web

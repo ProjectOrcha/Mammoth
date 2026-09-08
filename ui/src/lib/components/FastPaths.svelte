@@ -18,7 +18,9 @@
   const repair = $derived(report.repair);
   const start = $derived(report.start);
 
-  const readTotal = $derived(read.lease_hits + read.resolve_hits + read.master_hits);
+  const readTotal = $derived(
+    read.lease_hits + read.resolve_hits + read.master_hits,
+  );
 
   const cards = $derived([
     {
@@ -72,10 +74,18 @@
           ? ([
               ['blocks left', count(repair.queued)],
               ['of', count(repair.total)],
-              ['rate', repair.blocks_per_sec ? `${count(repair.blocks_per_sec)} blk/s` : 'holding'],
+              [
+                'rate',
+                repair.blocks_per_sec
+                  ? `${count(repair.blocks_per_sec)} blk/s`
+                  : 'holding',
+              ],
               ['eta', repair.eta_s ? duration(repair.eta_s) : '—'],
               ['budget in use', `${repair.budget_pct}% of idle`],
-              ['worst block', `${repair.worst_remaining} of ${repair.total_fragments} fragments`],
+              [
+                'worst block',
+                `${repair.worst_remaining} of ${repair.total_fragments} fragments`,
+              ],
               ['cause', repair.cause ?? '—'],
             ] as [string, string][])
           : ([['queue', 'empty']] as [string, string][]),
@@ -88,12 +98,18 @@
       hadoop: `HDFS: ~${duration(start.rebuild_equivalent_ms / 1000)} rebuilding from reports`,
       detail: [
         ['block map', start.block_map],
-        ['merkle roots matched first try', `${start.roots_matched} of ${start.roots_total}`],
+        [
+          'merkle roots matched first try',
+          `${start.roots_matched} of ${start.roots_total}`,
+        ],
         [
           'buckets streamed',
           `${start.buckets_streamed} of ${(start.merkle_fanout * start.roots_total).toLocaleString()}`,
         ],
-        ['shards ready', `${start.shards.filter((s) => s.state === 'ready').length} of ${start.shards.length}`],
+        [
+          'shards ready',
+          `${start.shards.filter((s) => s.state === 'ready').length} of ${start.shards.length}`,
+        ],
       ],
     },
   ]);
@@ -113,12 +129,17 @@
         <p class="value">{card.value}</p>
         <p class="unit">{card.unit}</p>
         <p class="hadoop">{card.hadoop}</p>
-        <span class="chevron" aria-hidden="true">{open === card.key ? '−' : '+'}</span>
+        <span class="chevron" aria-hidden="true"
+          >{open === card.key ? '−' : '+'}</span
+        >
       </button>
       {#if open === card.key}
         <dl>
           {#each card.detail as [k, v] (k)}
-            <div><dt>{k}</dt><dd class="mono">{v}</dd></div>
+            <div>
+              <dt>{k}</dt>
+              <dd class="mono">{v}</dd>
+            </div>
           {/each}
         </dl>
       {/if}
@@ -137,6 +158,8 @@
     border: 1px solid var(--rule);
     display: flex;
     flex-direction: column;
+    border-radius: 6px;
+    overflow: hidden;
   }
   .card.open {
     border-color: var(--rule-strong);
@@ -144,7 +167,7 @@
   .head {
     position: relative;
     border: none;
-    padding: 0.75rem 0.9rem 0.85rem;
+    padding: 1rem 1.1rem;
     text-align: left;
     width: 100%;
   }
@@ -152,8 +175,8 @@
     background: var(--bg-hover);
   }
   .value {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-family: var(--font-ui);
+    font-size: 1.65rem;
     line-height: 1.1;
     margin: 0.35rem 0 0;
     color: var(--fg-display);
@@ -170,7 +193,7 @@
     border-top: 1px dashed var(--rule);
     font-family: var(--font-mono);
     font-size: 0.66rem;
-    color: var(--fg-faint);
+    color: var(--fg-dim);
   }
   .chevron {
     position: absolute;

@@ -2,7 +2,8 @@
      data locality, and the one task that is taking eight times as long as the
      rest. -->
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
+  import { live } from '$lib/live.svelte';
   import { api } from '$lib/api';
   import type { Job, Task } from '$lib/types';
   import { ago, duration, pct } from '$lib/format';
@@ -12,11 +13,34 @@
   let jobs = $state<Job[] | null>(null);
   let selectedId = $state<string | null>(null);
 
-  onMount(() => {
-    void api.jobs().then((j) => {
+  let error = $state<string | null>(null);
+  let active = false;
+  let busy = false;
+
+  async function loadJobs() {
+    if (!active || busy) return;
+    busy = true;
+    try {
+      const j = await api.jobs();
+      if (!active) return;
       jobs = j;
-      selectedId ??= j.find((x) => x.state === 'running')?.id ?? j[0]?.id ?? null;
-    });
+      if (!j.some((item) => item.id === selectedId)) {
+        selectedId = j.find((item) => item.state === 'running')?.id ?? j[0]?.id ?? null;
+      }
+      error = null;
+    } catch (e) {
+      if (active) error = e instanceof Error ? e.message : String(e);
+    } finally { busy = false; }
+  }
+
+  onMount(() => {
+    active = true;
+    void loadJobs();
+    return () => { active = false; };
+  });
+  $effect(() => {
+    void live.updatedAt;
+    untrack(() => { void loadJobs(); });
   });
 
   const job = $derived(jobs?.find((j) => j.id === selectedId) ?? null);
@@ -42,7 +66,7 @@
 
   const span = $derived.by(() => {
     if (!job?.tasks.length) return 1;
-    return Math.max(...job.tasks.map((t) => t.start_s + t.dur_s));
+    return Math.max(1, ...job.tasks.map((t) => t.start_s + t.dur_s));
   });
 
   const straggler = $derived.by(() => {
@@ -50,7 +74,7 @@
     const durations = [...job.tasks].sort((a, b) => a.dur_s - b.dur_s);
     const median = durations[Math.floor(durations.length / 2)].dur_s;
     const worst = durations[durations.length - 1];
-    return worst.dur_s > median * 3 ? { task: worst, ratio: worst.dur_s / median } : null;
+    return median > 0 && worst.dur_s > median * 3 ? { task: worst, ratio: worst.dur_s / median } : null;
   });
 
   const byStage = $derived.by(() => {
@@ -74,10 +98,16 @@
   <p class="eyebrow">{jobs ? `${jobs.length} recent` : 'loading'}</p>
 </header>
 
+{#if error}<p class="load-error" role="alert">Unable to load jobs: {error}</p>{/if}
+
 <div class="cols">
   <Panel title="Recent" scroll>
-    {#if !jobs}
+    {#if !jobs && error}
+      <p class="quiet">Job data unavailable.</p>
+    {:else if !jobs}
       <p class="quiet mono">reading…</p>
+    {:else if jobs.length === 0}
+      <p class="quiet">No jobs yet.</p>
     {:else}
       <ul class="joblist">
         {#each jobs as j (j.id)}
@@ -182,6 +212,7 @@
 {/if}
 
 <style>
+  .load-error { color: var(--danger); overflow-wrap: anywhere; }
   .page {
     display: flex;
     align-items: baseline;

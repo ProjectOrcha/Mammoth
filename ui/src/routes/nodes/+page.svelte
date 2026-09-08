@@ -2,6 +2,7 @@
      Sortable, filterable, and grouped by rack when you ask for it, because
      "which rack is the problem" is the question this page exists to answer. -->
 <script lang="ts">
+  import { page } from '$app/state';
   import { live } from '$lib/live.svelte';
   import { bytes, count, pct, pctValue, rate } from '$lib/format';
   import type { NodeReport } from '$lib/types';
@@ -19,9 +20,14 @@
   let selected = $state<string | null>(null);
 
   const report = $derived(live.report);
+  $effect(() => {
+    const hash = page.url.hash.slice(1);
+    try { selected = hash ? decodeURIComponent(hash) : null; }
+    catch { selected = null; }
+  });
 
   function value(n: NodeReport, k: Key): number | string {
-    return k === 'usage' ? n.used / n.capacity : n[k];
+    return k === 'usage' ? pctValue(n.used, n.capacity) : n[k];
   }
 
   const rows = $derived.by(() => {
@@ -30,10 +36,10 @@
     const filtered = q
       ? ns.filter(
           (n) =>
-            n.id.includes(q) ||
+            n.id.toLowerCase().includes(q) ||
             n.rack.toLowerCase().includes(q) ||
             n.state.includes(q) ||
-            n.address.includes(q),
+            n.address.toLowerCase().includes(q),
         )
       : ns;
     return [...filtered].sort((a, b) => {
@@ -128,9 +134,9 @@
             <tr
               id={n.id}
               class:selected={selected === n.id}
-              onclick={() => (selected = selected === n.id ? null : n.id)}
             >
-              <td><span class="mono link">{n.id}</span></td>
+              <td><button class="mono link" aria-expanded={selected === n.id}
+                onclick={() => (selected = selected === n.id ? null : n.id)}>{n.id}</button></td>
               <td class="mono dim">{n.rack}</td>
               <td><StateDot state={n.state} /></td>
               <td style="width: 10rem">

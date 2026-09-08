@@ -42,3 +42,7 @@ target/distrib/
 
 # --- macOS ---
 .DS_Store
+
+# Local frontend settings (never commit credentials)
+.env.local
+.env.*.local

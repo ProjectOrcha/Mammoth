@@ -12,12 +12,12 @@
 - [ ] Chapter 1 is read — especially §5, "Traits: the shape of a thing"
 - [ ] [CONCEPTS.md](CONCEPTS.md) is read, and its eight questions answered as a
       group — this chapter is the *code* boundary; that one is the *problem*
-- [ ] All three of you are in the same room, or on the same call
+- [ ] All four of you are in the same room, or on the same call
 ```
 
 **Read this one together.** It is thirty minutes and it is the only chapter that
-is worth doing as a group. The `Backend` trait is the contract between all three
-tracks — storage, CLI, web — and if two of you have different mental models of
+is worth doing as a group. The `Backend` trait is the contract between all four
+tracks — storage, CLI, dashboard and gateway — and if two of you have different mental models of
 it, you will not find out until week four, at a merge conflict.
 
 ### What you will have open
@@ -360,7 +360,7 @@ Individually:
 As a team:
 
 ```markdown
-- [ ] All three of us agree the trait as written is the one we are building against
+- [ ] All four of us agree the trait as written is the one we are building against
 - [ ] Anything we want to change is an open issue **now**, not a conversation in week 4
 - [ ] We know which methods chapter 5 implements (`list`, `stat`) and which wait
       for chapter 6 (the other five)
