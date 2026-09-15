@@ -4,8 +4,8 @@
 <script lang="ts">
   import { escapeHtml } from '$lib/html';
   import type { TreemapNode } from '$lib/types';
-  import { bytes, count } from '$lib/format';
-  import { chart, palette, tooltipStyle, type ChartOption } from './echarts';
+  import { bytes, count, fileHref } from '$lib/format';
+  import { chart, palette, tooltipStyle, type ChartOption } from './echarts.svelte';
 
   interface Props {
     root: TreemapNode;
@@ -14,13 +14,33 @@
 
   let { root, colourBy = 'age' }: Props = $props();
 
+  // Keep navigation in Svelte: ECharts discards its internal zoom whenever
+  // live data replaces the tree, even if the same directories are still there.
+  let selectedPath = $state('');
+  function trail(node: TreemapNode, path: string): TreemapNode[] | null {
+    if (node.path === path) return [node];
+    for (const child of node.children ?? []) {
+      const found = trail(child, path);
+      if (found) return [node, ...found];
+    }
+    return null;
+  }
+  const ancestors = $derived(trail(root, selectedPath) ?? [root]);
+  const current = $derived(ancestors[ancestors.length - 1]);
+  const entries = $derived(current.children ?? [current]);
+  function open(params: unknown) {
+    const path = (params as { data?: { path?: string } }).data?.path;
+    const node = entries.find(entry => entry.path === path);
+    if (node?.children?.length) selectedPath = node.path;
+  }
+
   interface Datum {
     name: string;
     path: string;
     value: number;
     heat: number;
     age: number;
-    reads: number;
+    reads: number | null;
     children?: Datum[];
     itemStyle?: { color: string };
     label?: { color: string };
@@ -52,11 +72,11 @@
   function build(n: TreemapNode): Datum {
     // Old and cold both read as "you could move this"; hot and new read as
     // "leave it alone".
-    const heat = colourBy === 'age' ? Math.min(1, n.age_days / 120) : Math.min(1, n.reads / 90_000);
+    const heat = colourBy === 'age' ? Math.min(1, n.age_days / 120) : Math.min(1, (n.reads ?? 0) / 90_000);
     const rgb = ramp(heat);
     const fg = ink(rgb);
     return {
-      name: n.name,
+      name: n.name || '/',
       path: n.path,
       value: n.value,
       heat,
@@ -64,14 +84,12 @@
       reads: n.reads,
       itemStyle: { color: `rgb(${rgb.join(', ')})` },
       label: { color: fg },
-      children: n.children?.map(build),
     };
   }
 
   const option = $derived((): ChartOption => {
     const p = palette();
-    const built = build(root);
-    const data = built.children ?? [built];
+    const data = entries.map(build);
     return {
       backgroundColor: 'transparent',
       tooltip: {
@@ -81,22 +99,21 @@
           return [
             `<b>${escapeHtml(d.path || '/')}</b>`,
             `${bytes(d.value)}`,
-            `${d.age} days old · ${count(d.reads)} reads`,
+            `${d.age.toFixed(1)} days old${d.reads === null ? '' : ` · ${count(d.reads)} reads`}`,
           ].join('<br/>');
         },
       },
       series: [
         {
           type: 'treemap',
+          id: 'namespace',
           data,
           roam: false,
-          // One level at a time, click to descend. Drawing the whole tree at
-          // once in a panel this size stacks a parent's header label on top of
-          // its children's, and neither ends up readable.
-          leafDepth: 1,
-          nodeClick: 'zoomToNode',
+          animation: false,
+          nodeClick: false,
+          left: 0, right: 0, top: 0, bottom: 0,
           breadcrumb: {
-            show: true,
+            show: false,
             height: 20,
             itemStyle: {
               color: p.plate,
@@ -110,7 +127,7 @@
             fontSize: 11,
             formatter: (params: unknown) => {
               const d = (params as { data: Datum }).data;
-              return `${escapeHtml(d.name)}\n${bytes(d.value)}`;
+              return `${d.name}\n${bytes(d.value)}`;
             },
           },
           itemStyle: { borderColor: p.panel, borderWidth: 2, gapWidth: 2 },
@@ -124,10 +141,32 @@
   });
 </script>
 
-<div class="chart" use:chart={option}></div>
+<nav class="crumbs" aria-label="Treemap location">
+  {#each ancestors as node, index (node.path)}
+    {#if index > 0}<span aria-hidden="true">/</span>{/if}
+    <button onclick={() => selectedPath = node.path} aria-current={node.path === current.path ? 'location' : undefined}>{node.name || '/'}</button>
+  {/each}
+</nav>
+<div class="chart" role="img" aria-label={`Namespace sizes in ${current.path}: ${bytes(current.value)} total`} use:chart={{ option, onClick: open }}></div>
 <p class="legend eyebrow">
   area = bytes · colour = {colourBy === 'age' ? 'age (blue new → red old)' : 'read heat'}
 </p>
+<p class="hint quiet">Select a folder to see its contents. Use the path above to go back.</p>
+<details>
+  <summary>View all entries ({entries.length})</summary>
+  <ul class="entries">
+    {#each entries as entry (entry.path)}
+      <li>
+        {#if entry.children?.length}
+          <button onclick={() => selectedPath = entry.path}>{entry.name || '/'}</button>
+        {:else}
+          <a href={fileHref(entry.path)}>{entry.name || '/'}</a>
+        {/if}
+        <span class="mono">{bytes(entry.value)}</span>
+      </li>
+    {/each}
+  </ul>
+</details>
 
 <style>
   .chart {
@@ -137,4 +176,12 @@
   .legend {
     margin: 0.6rem 0 0;
   }
+  .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: .6rem; }
+  .crumbs button[aria-current] { color: var(--fg); font-weight: bold; }
+  .hint { margin: .5rem 0; font-size: .75rem; }
+  summary { cursor: pointer; font-size: .8rem; }
+  .entries { list-style: none; padding: 0; max-height: 12rem; overflow: auto; }
+  .entries li { display: flex; justify-content: space-between; align-items: center; gap: .5rem; padding: .3rem 0; }
+  .entries a, .entries button { overflow-wrap: anywhere; min-width: 0; text-align: left; }
+  .entries span { white-space: nowrap; }
 </style>

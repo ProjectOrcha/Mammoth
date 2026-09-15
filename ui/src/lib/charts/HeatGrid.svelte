@@ -85,7 +85,7 @@
     if (c.state === 'dead') return '—';
     switch (metric) {
       case 'usage':
-        return `${Math.round(c.usage)}%`;
+        return `${c.usage > 0 && c.usage < 1 ? c.usage.toFixed(2) : Math.round(c.usage)}%`;
       case 'fragments':
         return count(c.fragments);
       case 'read_qps':
@@ -104,7 +104,7 @@
   {#each racks as [rack, nodes] (rack)}
     {@const used = nodes.reduce((a, n) => a + n.usage, 0) / nodes.length}
     <div class="rack">
-      <p class="eyebrow">{rack} · {pct(used, 100)} avg</p>
+      <p class="eyebrow">{rack} · {pct(used, 100, used > 0 && used < 1 ? 2 : 0)} avg</p>
       <div class="tiles">
         {#each nodes as c (c.node)}
           <button
@@ -132,21 +132,23 @@
 
 <style>
   .racks {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
   }
   .rack {
     min-width: 0;
   }
   .tiles {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.35rem;
     margin-top: 0.45rem;
   }
   .tile {
     position: relative;
-    width: 4.1rem;
+    width: 100%;
+    min-width: 0;
     height: 3.4rem;
     border: 1px solid var(--rule);
     background: var(--heat);
@@ -197,4 +199,5 @@
     width: 9rem;
     background: linear-gradient(90deg, rgb(22, 73, 130), rgb(219, 197, 96), rgb(226, 86, 77));
   }
+  @media (max-width: 800px) { .racks { grid-template-columns: 1fr; } .tiles { max-width: 24rem; } }
 </style>

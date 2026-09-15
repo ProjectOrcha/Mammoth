@@ -11,15 +11,58 @@ Separate master/worker roles remain future work. See docs/IMPLEMENTATION-STATUS.
 ## `mammoth`
 
 ```text
+                                                             ░▒░░▓▒░▒▒
+                                         ░▒░░   ░░░        ▒▒▓▓▓▓▓▓▒▓▓▒
+                                     ░▓▓▓▓▒▒▒░▒▒▒▓▒▒▒    ░▓▓▓▒▒▓▓██▓███▒
+                                  ▒▓▓▓▓▓█▓▒▒░▒░░░▒▒▒▓▓▓▒▓▓▓░▒▓█▓██████
+                              ▒▒▓▓▓▓▓▓▓▓▒▒▒▒▒░░▒▒░▒▒▒▓▓▓▓█▒▓████▒▓▓▓▓▓                       ░░░░
+                         ░▓▓▓▒▓▓▓▓▓▓▓▓▒▓▓▓▒▓░▓░▓▒▓▓▓▓▓▓▓▓▓▓██████▓▓▓▓▓▓                        ░░░
+                      ▒▓▓▓▒▓▒▒▒▓▓▓▓▓▓▓▒▒▒▒▓▒▓▓▒▒▓▓▓▓▓██▓█▓▓▓████▓▓▓▓▓▒▒▒▓               ▒▓     ░░░
+                   ░▓▓▒▒░░▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▒▒▒▒▓▓▓▓▓▓██████▓█████▓▓▓█▓▓▓█▒             ▒▓▓     ░░▒
+                ▒▓▒▒▒▒▒░▒▒▓▒▒▒▓▓▓▓▒▓▓▓▓▓▓▒▓▒▒▓▒▒▓▒▓▓█▓█████▓███████▓▓▓▓▓█▓▒            ▒▓     ▒░░▒
+             ▒▒░▒▒▒▒▒▒▒▒▒▒▒▒▒░▓▒▒▓▓▓▓▓▓▓▒▒▒▓▓▓▒▓▓▓▓▓▓▓█▓███▓█████▓██▓█▓▓▓▒▓▒░         ▒▒▓     ░░▒
+          ░▒▒▒▒▓▒▒▒▒▒▒▒▒▒▒▓▒▒▓▒▒▓▒▓▒▓▓▓▒▒▒▒▓▒▓▓▓▓▓▓▓▓▓████▓█▓█▓▓██████▓▓▒▒▓▒▓▓       ▒▒▒     ░░▒▒
+        ░▒▒▒▒▒▒▓▒▒░▒▒▒▒▓▓▒▓▓▒░▒▒▒▒▓▒▒▓▓▒▒▒▓▒▒▒▒▒░▒▒▓▓████▓▓▓█████████▓▓▓▓▓▓▓▓▓▒░     ▒▒▓    ░▒▒▓
+      ░▒▓▒▒▒▒▒▒▒▒▒▒▓▒▓▒▒▒▓▒▒▒▓▒▒▒▒▒▒▓▒▓▓▓▓▒▓▓▓▓▒▓▓▒▓▓████████████████████▓▓▒▒▓▓▓▒   ▒▒▒   ▒░▒▓▒
+      ▒░▒▒▒▒▒▒▒▒░▒▒▒▒▓▓▓▒▓▓▓▓▒▓▒▓▒▒▒▓▓▓▒▓▓▓▓▓▓▓▒▓▓▓█▓▓▓▓███████████████▓▓▓█▒▒░░▒▒▓ ▒░▒▒ ░░▒▒▓
+    ░▒▒▒▓▒▓▒▒▒░░▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▒▒▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▓▓█████████████████▓▓▒▒▒░░░░░░▒▒▒▒▒▓
+   ▒▓▓▓▓▒▒▒▒▓▒▒▓▒▒▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▓▓▓▓▓▓▒▓█████▒▒    ███████▓▓▓█▓▓▒▒▒▒▓▓▓
+  ░▓▒▓▓▒▓▒▓▒▒▒▒▒▓▓▓▓▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓█▓▓▓▓▓▓▒▒▒▒▒▒▓▓▓▓▓▓▓▓██░         ▒▓░▒▓▓▓▓▓███▒▓
+  ▓▓▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▓▒▒▓▒▓▓▓▓▓▓▓▓▓▓                ▓▓▓▓▒▓▓▓▓▒
+ ░▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓███▓▓█▓▓▓▓▒▓▒▒▒▓▓▓▓▓▓▓▓▓▓▓                █▓▓▓▓▓▓▓▓
+ ▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓███▓▓▓▓▓▓▓▓███▓██▓▓▓▒▓▒▓▒▓▓▒▓▓▓▓▓▓▓▓▓▓               ▓▓▓▓▒▒▓▓▓
+ ▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██▓█▓▓▓█▓█▓▓█▓▓▓██▓▓▓██▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░             ▓▓▓▓▓▓▓▓░
+ ░▒▓▓▓▓▓▓▓▓▓▓▓█▓▓▓█▓▓▓█████▓█▓▓█▓▓▓██▓▓▓▓▓▓▓▓▓▓▓▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓            ▓▓▓▓▓▓▓▓▓
+  ░▓▓▓▓▓▓▓▓█▓▓▓██▓█▓▓███▓█▓▓▓▓▓▓▓▓▓▓▓▓▓▓█▓▓▓▓▓▓▓▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓      ▓▓▓▓▓▓▓▒▓▓▓▓▓
+  ░▓▓▓▓▓▓▓▓▓▓▓▓███▓▓▓▓█▓█▓▓▓▓█▓▓▓▓▓▓▓██████▓████▓▓▓▓█▓▓▓█▓▓▓▓▓▓▓   ▒▓▓▓▓▓█▓▓▓▓▓▓▓
+   ░▓▓▓▓▓▓▓▓▓▓▓███▓▓▓█▓▓█▓█▓█▓▓███████████████████▓██▓█▓▓▓▓▓▓▓█▓   █▓▓▓▓█████▓
+    ▒▓▓▓▓▓▓▓▓▓▓▓██▓▓▓███▓███████▓████████████████ ▓▓▓▓█▓█▓▓▓█▓█   ░█▓▓█
+    ▒▓▓▓▓▓█▓█████████████████▓▓█████████████████▓░▓▓▓▓████████▓   ████▓
+     ▒▓▓▓████████████████████▓▓█████████████████ ▓▓██▓███████▒    ▓███
+      ▓▓█▓▓▓▓▓██████▓▓██████████████▓██████████▓ ▓▓▓▓▓▓█████▒    █████
+       ▓▓▓▓▓▓▓█████░ ░▒▓▓█████▓▓▒░▒░███████████  ▓▓▓▓▓▓██▓▓█     ▒███
+       ▓▓▓▓▓▓▓▓████    ░ ▒░▒░      ▒██████████▓▓▓▓▓▓▓█▓█▓██░
+       ▓█▓██▓▓▓▓▓█▓                 ██████████▓▓▓▓▓▓▓▓▓▓▓██
+       ▒▓▓▓▓▓▓▓▓██▒                ░███▓▓█████ ▓▓▓█▓▓▓▓▓▓█
+        ▓▓▓▓▓▓▓▓██▒                 █▓▓▓▓████▓  ▓▓▓▓▓███▓
+        ▓▓▓▓▓▓█▓██▓▓               ▓█▓▓▓▓█▓▓▓▓▒   ▓▓▓▓▓▓
+        ▓▓▓▓▓▓▓▓▓▓██▓              ▓▓▓▓▓▓▓▓██▓▓    ░▓█▓
+        ▓▓▓▓▓▓▓▓▓▓█▓█                    ░▓▒
+
+
 Durable storage with a local cluster, CLI, dashboard and S3 API
 
 Usage: mammoth [OPTIONS] <COMMAND>
 
 Commands:
   version      Version and build information
+  logo         Print the Mammoth terminal logo
+  commands     List every command and subcommand with descriptions
   init         Initialize the local store and write a starter config
   quickstart   Start the local dashboard and S3 server with sample data
   serve        Run the local service in the foreground
+  status       Inspect the service running with this local store
+  stop         Stop this local store's dashboard and S3 service, retaining its files [alias: shutdown]
   ui           Print the configured dashboard address
   doctor       Validate configuration and inspect local storage health
   ls           List direct children of a directory
@@ -28,27 +71,27 @@ Commands:
   cat          Write raw file bytes to stdout
   tail         Print the final N lines
   head         Print the first N lines
-  mkdir
-  rm
-  mv
-  cp
-  stat
-  du
-  df
-  find
+  mkdir        Create a directory; -p also creates its parents
+  rm           Remove a file or directory; -r includes its descendants
+  mv           Move or rename a stored path
+  cp           Copy a file or directory; -r copies a directory tree
+  stat         Inspect a path's size, permissions, checksum and storage layout
+  du           Total logical file bytes under a path
+  df           Show stored replica bytes and worker capacities
+  find         Find files and directories, optionally filtering names
   chmod        Set descriptive POSIX mode bits (local mode does not enforce ACLs)
-  chown
-  setrep
+  chown        Set descriptive ownership as owner or owner:group
+  setrep       Set the number of whole-file replicas
   checksum     Verify contents and display their CRC32C
-  viz
+  viz          Terminal charts: blocks, capacity, topology, skew, size tree and health
   top          Interactive cluster dashboard. Press q to quit
-  node
-  cluster
-  admin
+  node         List and inspect worker directories, or repair their replicas
+  cluster      Inspect cluster capacity and replica health
+  admin        Report health, repair replicas, collect unused blocks and inspect safemode
   job          Execute a local data-processing job
   migrate      Import or export a directory tree
   bench        Measure a local write/read round trip, then remove the benchmark file
-  config
+  config       Show, validate or generate a configuration
   completions  Generate a shell completion script
   compat       Translate basic hdfs dfs commands into Mammoth commands
   help         Print this message or the help of the given subcommand(s)
@@ -74,6 +117,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -82,6 +131,40 @@ Options:
 
   -V, --version
           Print version
+
+Nested commands:
+  viz blocks               Block-by-worker matrix with primary, replica and corruption markers
+  viz cluster              Worker capacity bars and health (also called heatmap) (alias: heatmap)
+  viz topology             Rack and worker tree
+  viz skew                 File-size bars, median, p99 and maximum; optionally group by partition
+  viz treemap              Namespace size tree with proportional bars and directory totals
+  viz health               Replica-health bars; --live refreshes in place
+  viz flow                 Report network-flow availability (unavailable in local mode)
+  node list                List all workers and their capacities
+  node inspect             Inspect one worker by ID, such as w1
+  node repair              Restore damaged or missing replicas from verified copies
+  cluster status           Show cluster capacity, workers and replica health
+  admin report             Show the cluster report
+  admin repair             Restore damaged or missing replicas from verified copies
+  admin gc                 Remove unreferenced block data
+  admin safemode           Inspect the current read-only safemode state
+  job wordcount            Count UTF-8 words and save the counts to a stored file
+  job sort                 Sort UTF-8 lines and save them to a stored file
+  migrate import           Import a local file or directory into Mammoth
+  migrate export           Export a stored file or directory to the local filesystem
+  config show              Print the effective configuration
+  config validate          Check configuration values
+  config template          Print a starter TOML configuration
+
+Examples:
+  mammoth ls /
+  mammoth viz treemap / --depth 2
+  mammoth viz cluster
+  mammoth top
+  mammoth status
+
+Use mammoth <command> --help for options, or mammoth commands for the full list.
+Docs: https://projectorcha.github.io/Mammoth/cli/
 ```
 
 ## `mammoth version`
@@ -111,6 +194,94 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
+  -v, --verbose...
+
+
+  -h, --help
+          Print help
+```
+
+## `mammoth logo`
+
+```text
+Print the Mammoth terminal logo
+
+Usage: mammoth logo [OPTIONS]
+
+Options:
+  -c, --config <CONFIG>
+          [env: MAMMOTH_CONFIG=]
+
+      --masters <MASTERS>
+          HTTP gateway address for remote filesystem access
+
+          [env: MAMMOTH_MASTERS=]
+
+      --local-root <LOCAL_ROOT>
+          Local store directory. Defaults to ~/.mammoth/local
+
+          [env: MAMMOTH_LOCAL_ROOT=]
+
+      --output <OUTPUT>
+          [default: auto]
+          [possible values: auto, table, json, yaml, csv]
+
+      --json
+
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
+  -v, --verbose...
+
+
+  -h, --help
+          Print help
+```
+
+## `mammoth commands`
+
+```text
+List every command and subcommand with descriptions
+
+Usage: mammoth commands [OPTIONS]
+
+Options:
+  -c, --config <CONFIG>
+          [env: MAMMOTH_CONFIG=]
+
+      --masters <MASTERS>
+          HTTP gateway address for remote filesystem access
+
+          [env: MAMMOTH_MASTERS=]
+
+      --local-root <LOCAL_ROOT>
+          Local store directory. Defaults to ~/.mammoth/local
+
+          [env: MAMMOTH_LOCAL_ROOT=]
+
+      --output <OUTPUT>
+          [default: auto]
+          [possible values: auto, table, json, yaml, csv]
+
+      --json
+
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -146,6 +317,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -193,6 +370,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -242,6 +425,99 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
+  -v, --verbose...
+
+
+  -h, --help
+          Print help
+```
+
+## `mammoth status`
+
+```text
+Inspect the service running with this local store
+
+Usage: mammoth status [OPTIONS]
+
+Options:
+  -c, --config <CONFIG>
+          [env: MAMMOTH_CONFIG=]
+
+      --masters <MASTERS>
+          HTTP gateway address for remote filesystem access
+
+          [env: MAMMOTH_MASTERS=]
+
+      --local-root <LOCAL_ROOT>
+          Local store directory. Defaults to ~/.mammoth/local
+
+          [env: MAMMOTH_LOCAL_ROOT=]
+
+      --output <OUTPUT>
+          [default: auto]
+          [possible values: auto, table, json, yaml, csv]
+
+      --json
+
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
+  -v, --verbose...
+
+
+  -h, --help
+          Print help
+```
+
+## `mammoth stop`
+
+```text
+Stop this local store's dashboard and S3 service, retaining its files
+
+Usage: mammoth stop [OPTIONS]
+
+Options:
+  -c, --config <CONFIG>
+          [env: MAMMOTH_CONFIG=]
+
+      --timeout <TIMEOUT>
+          Seconds to wait for active requests and jobs to finish
+
+          [default: 30]
+
+      --masters <MASTERS>
+          HTTP gateway address for remote filesystem access
+
+          [env: MAMMOTH_MASTERS=]
+
+      --local-root <LOCAL_ROOT>
+          Local store directory. Defaults to ~/.mammoth/local
+
+          [env: MAMMOTH_LOCAL_ROOT=]
+
+      --output <OUTPUT>
+          [default: auto]
+          [possible values: auto, table, json, yaml, csv]
+
+      --json
+
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -276,6 +552,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -318,6 +600,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -356,6 +644,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -405,6 +699,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -450,6 +750,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -488,6 +794,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -531,6 +843,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -573,6 +891,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -583,6 +907,8 @@ Options:
 ## `mammoth mkdir`
 
 ```text
+Create a directory; -p also creates its parents
+
 Usage: mammoth mkdir [OPTIONS] <PATH>
 
 Arguments:
@@ -613,6 +939,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -623,6 +955,8 @@ Options:
 ## `mammoth rm`
 
 ```text
+Remove a file or directory; -r includes its descendants
+
 Usage: mammoth rm [OPTIONS] <PATH>
 
 Arguments:
@@ -653,6 +987,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -663,6 +1003,8 @@ Options:
 ## `mammoth mv`
 
 ```text
+Move or rename a stored path
+
 Usage: mammoth mv [OPTIONS] <SRC> <DST>
 
 Arguments:
@@ -693,6 +1035,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -703,6 +1051,8 @@ Options:
 ## `mammoth cp`
 
 ```text
+Copy a file or directory; -r copies a directory tree
+
 Usage: mammoth cp [OPTIONS] <SRC> <DST>
 
 Arguments:
@@ -736,6 +1086,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -746,6 +1102,8 @@ Options:
 ## `mammoth stat`
 
 ```text
+Inspect a path's size, permissions, checksum and storage layout
+
 Usage: mammoth stat [OPTIONS] <PATH>
 
 Arguments:
@@ -773,6 +1131,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -783,6 +1147,8 @@ Options:
 ## `mammoth du`
 
 ```text
+Total logical file bytes under a path
+
 Usage: mammoth du [OPTIONS] [PATH]
 
 Arguments:
@@ -810,6 +1176,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -820,6 +1192,8 @@ Options:
 ## `mammoth df`
 
 ```text
+Show stored replica bytes and worker capacities
+
 Usage: mammoth df [OPTIONS]
 
 Options:
@@ -843,6 +1217,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -853,6 +1233,8 @@ Options:
 ## `mammoth find`
 
 ```text
+Find files and directories, optionally filtering names
+
 Usage: mammoth find [OPTIONS] [PATH]
 
 Arguments:
@@ -882,6 +1264,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -925,6 +1313,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -935,6 +1329,8 @@ Options:
 ## `mammoth chown`
 
 ```text
+Set descriptive ownership as owner or owner:group
+
 Usage: mammoth chown [OPTIONS] <OWNER> <PATH>
 
 Arguments:
@@ -965,6 +1361,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -975,6 +1377,8 @@ Options:
 ## `mammoth setrep`
 
 ```text
+Set the number of whole-file replicas
+
 Usage: mammoth setrep [OPTIONS] <REPLICATION> <PATH>
 
 Arguments:
@@ -1004,6 +1408,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -1044,6 +1454,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1054,16 +1470,18 @@ Options:
 ## `mammoth viz`
 
 ```text
+Terminal charts: blocks, capacity, topology, skew, size tree and health
+
 Usage: mammoth viz [OPTIONS] <COMMAND>
 
 Commands:
-  blocks
-  cluster
-  topology
-  skew
-  treemap
-  health
-  flow
+  blocks    Block-by-worker matrix with primary, replica and corruption markers
+  cluster   Worker capacity bars and health (also called heatmap) [alias: heatmap]
+  topology  Rack and worker tree
+  skew      File-size bars, median, p99 and maximum; optionally group by partition
+  treemap   Namespace size tree with proportional bars and directory totals
+  health    Replica-health bars; --live refreshes in place
+  flow      Report network-flow availability (unavailable in local mode)
   help      Print this message or the help of the given subcommand(s)
 
 Options:
@@ -1087,6 +1505,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1097,6 +1521,8 @@ Options:
 ## `mammoth viz blocks`
 
 ```text
+Block-by-worker matrix with primary, replica and corruption markers
+
 Usage: mammoth viz blocks [OPTIONS] <PATH>
 
 Arguments:
@@ -1124,6 +1550,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1134,6 +1566,8 @@ Options:
 ## `mammoth viz cluster`
 
 ```text
+Worker capacity bars and health (also called heatmap)
+
 Usage: mammoth viz cluster [OPTIONS]
 
 Options:
@@ -1157,6 +1591,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1167,6 +1607,8 @@ Options:
 ## `mammoth viz topology`
 
 ```text
+Rack and worker tree
+
 Usage: mammoth viz topology [OPTIONS]
 
 Options:
@@ -1190,6 +1632,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1200,6 +1648,8 @@ Options:
 ## `mammoth viz skew`
 
 ```text
+File-size bars, median, p99 and maximum; optionally group by partition
+
 Usage: mammoth viz skew [OPTIONS] [PATH]
 
 Arguments:
@@ -1230,6 +1680,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1240,6 +1696,8 @@ Options:
 ## `mammoth viz treemap`
 
 ```text
+Namespace size tree with proportional bars and directory totals
+
 Usage: mammoth viz treemap [OPTIONS] [PATH]
 
 Arguments:
@@ -1270,6 +1728,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1280,6 +1744,8 @@ Options:
 ## `mammoth viz health`
 
 ```text
+Replica-health bars; --live refreshes in place
+
 Usage: mammoth viz health [OPTIONS]
 
 Options:
@@ -1306,6 +1772,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1316,6 +1788,8 @@ Options:
 ## `mammoth viz flow`
 
 ```text
+Report network-flow availability (unavailable in local mode)
+
 Usage: mammoth viz flow [OPTIONS]
 
 Options:
@@ -1338,6 +1812,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -1377,6 +1857,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1387,12 +1873,14 @@ Options:
 ## `mammoth node`
 
 ```text
+List and inspect worker directories, or repair their replicas
+
 Usage: mammoth node [OPTIONS] <COMMAND>
 
 Commands:
-  list
-  inspect
-  repair
+  list     List all workers and their capacities
+  inspect  Inspect one worker by ID, such as w1
+  repair   Restore damaged or missing replicas from verified copies
   help     Print this message or the help of the given subcommand(s)
 
 Options:
@@ -1416,6 +1904,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1426,6 +1920,8 @@ Options:
 ## `mammoth node list`
 
 ```text
+List all workers and their capacities
+
 Usage: mammoth node list [OPTIONS]
 
 Options:
@@ -1449,6 +1945,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1459,6 +1961,8 @@ Options:
 ## `mammoth node inspect`
 
 ```text
+Inspect one worker by ID, such as w1
+
 Usage: mammoth node inspect [OPTIONS] <ID>
 
 Arguments:
@@ -1486,6 +1990,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1496,6 +2006,8 @@ Options:
 ## `mammoth node repair`
 
 ```text
+Restore damaged or missing replicas from verified copies
+
 Usage: mammoth node repair [OPTIONS]
 
 Options:
@@ -1519,6 +2031,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1529,10 +2047,12 @@ Options:
 ## `mammoth cluster`
 
 ```text
+Inspect cluster capacity and replica health
+
 Usage: mammoth cluster [OPTIONS] <COMMAND>
 
 Commands:
-  status
+  status  Show cluster capacity, workers and replica health
   help    Print this message or the help of the given subcommand(s)
 
 Options:
@@ -1556,6 +2076,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1566,6 +2092,8 @@ Options:
 ## `mammoth cluster status`
 
 ```text
+Show cluster capacity, workers and replica health
+
 Usage: mammoth cluster status [OPTIONS]
 
 Options:
@@ -1589,6 +2117,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1599,13 +2133,15 @@ Options:
 ## `mammoth admin`
 
 ```text
+Report health, repair replicas, collect unused blocks and inspect safemode
+
 Usage: mammoth admin [OPTIONS] <COMMAND>
 
 Commands:
-  report
-  repair
-  gc
-  safemode
+  report    Show the cluster report
+  repair    Restore damaged or missing replicas from verified copies
+  gc        Remove unreferenced block data
+  safemode  Inspect the current read-only safemode state
   help      Print this message or the help of the given subcommand(s)
 
 Options:
@@ -1629,6 +2165,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1639,6 +2181,8 @@ Options:
 ## `mammoth admin report`
 
 ```text
+Show the cluster report
+
 Usage: mammoth admin report [OPTIONS]
 
 Options:
@@ -1662,6 +2206,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1672,6 +2222,8 @@ Options:
 ## `mammoth admin repair`
 
 ```text
+Restore damaged or missing replicas from verified copies
+
 Usage: mammoth admin repair [OPTIONS]
 
 Options:
@@ -1695,6 +2247,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1705,6 +2263,8 @@ Options:
 ## `mammoth admin gc`
 
 ```text
+Remove unreferenced block data
+
 Usage: mammoth admin gc [OPTIONS]
 
 Options:
@@ -1728,6 +2288,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1738,6 +2304,8 @@ Options:
 ## `mammoth admin safemode`
 
 ```text
+Inspect the current read-only safemode state
+
 Usage: mammoth admin safemode [OPTIONS]
 
 Options:
@@ -1761,6 +2329,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1776,8 +2350,8 @@ Execute a local data-processing job
 Usage: mammoth job [OPTIONS] <COMMAND>
 
 Commands:
-  wordcount
-  sort
+  wordcount  Count UTF-8 words and save the counts to a stored file
+  sort       Sort UTF-8 lines and save them to a stored file
   help       Print this message or the help of the given subcommand(s)
 
 Options:
@@ -1801,6 +2375,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1811,6 +2391,8 @@ Options:
 ## `mammoth job wordcount`
 
 ```text
+Count UTF-8 words and save the counts to a stored file
+
 Usage: mammoth job wordcount [OPTIONS] <INPUT> <OUTPUT_PATH>
 
 Arguments:
@@ -1841,6 +2423,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1851,6 +2439,8 @@ Options:
 ## `mammoth job sort`
 
 ```text
+Sort UTF-8 lines and save them to a stored file
+
 Usage: mammoth job sort [OPTIONS] <INPUT> <OUTPUT_PATH>
 
 Arguments:
@@ -1881,6 +2471,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1896,8 +2492,8 @@ Import or export a directory tree
 Usage: mammoth migrate [OPTIONS] <COMMAND>
 
 Commands:
-  import
-  export
+  import  Import a local file or directory into Mammoth
+  export  Export a stored file or directory to the local filesystem
   help    Print this message or the help of the given subcommand(s)
 
 Options:
@@ -1921,6 +2517,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1931,6 +2533,8 @@ Options:
 ## `mammoth migrate import`
 
 ```text
+Import a local file or directory into Mammoth
+
 Usage: mammoth migrate import [OPTIONS] <SOURCE> <DESTINATION>
 
 Arguments:
@@ -1961,6 +2565,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -1971,6 +2581,8 @@ Options:
 ## `mammoth migrate export`
 
 ```text
+Export a stored file or directory to the local filesystem
+
 Usage: mammoth migrate export [OPTIONS] <SOURCE> <DESTINATION>
 
 Arguments:
@@ -2000,6 +2612,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -2039,6 +2657,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -2049,12 +2673,14 @@ Options:
 ## `mammoth config`
 
 ```text
+Show, validate or generate a configuration
+
 Usage: mammoth config [OPTIONS] <COMMAND>
 
 Commands:
-  show
-  validate
-  template
+  show      Print the effective configuration
+  validate  Check configuration values
+  template  Print a starter TOML configuration
   help      Print this message or the help of the given subcommand(s)
 
 Options:
@@ -2078,6 +2704,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -2088,6 +2720,8 @@ Options:
 ## `mammoth config show`
 
 ```text
+Print the effective configuration
+
 Usage: mammoth config show [OPTIONS]
 
 Options:
@@ -2111,6 +2745,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -2121,6 +2761,8 @@ Options:
 ## `mammoth config validate`
 
 ```text
+Check configuration values
+
 Usage: mammoth config validate [OPTIONS]
 
 Options:
@@ -2144,6 +2786,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -2154,6 +2802,8 @@ Options:
 ## `mammoth config template`
 
 ```text
+Print a starter TOML configuration
+
 Usage: mammoth config template [OPTIONS]
 
 Options:
@@ -2176,6 +2826,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 
@@ -2216,6 +2872,12 @@ Options:
       --json
 
 
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
+
   -v, --verbose...
 
 
@@ -2254,6 +2916,12 @@ Options:
 
       --json
 
+
+      --color <COLOR>
+          Color for human output; auto respects NO_COLOR and redirected output
+
+          [default: auto]
+          [possible values: auto, always, never]
 
   -v, --verbose...
 

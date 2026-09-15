@@ -14,3 +14,4 @@ owo-colors = { workspace = true }
 ratatui = { workspace = true }
 tokio = { workspace = true }
 crossterm = "0.28"
+unicode-width = "0.2"

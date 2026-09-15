@@ -24,6 +24,42 @@ to stop it. Use `target/release/mammoth.exe` on Windows.
 Build the UI **before** the Rust binary so it embeds the production dashboard.
 Without UI assets the gateway serves a setup page.
 
+## Use mammoth from any folder
+
+On **macOS or Linux**, add a shortcut to the release binary. Run this once from
+the `Mammoth` project folder after building:
+
+```bash
+mkdir -p "$HOME/.local/bin"
+ln -sfn "$PWD/target/release/mammoth" "$HOME/.local/bin/mammoth"
+export PATH="$HOME/.local/bin:$PATH"
+mammoth --help
+```
+
+To keep the command available in new terminals, add this line to `~/.zshrc` for
+zsh or `~/.bashrc` for Bash:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+You can now use `mammoth` instead of `./target/release/mammoth`. The shortcut
+points to this checkout, so release rebuilds update the command automatically.
+If you move the project folder, create the shortcut again from its new location.
+
+From the project folder:
+
+```bash
+mammoth logo
+mammoth --local-root .mammoth status
+mammoth --local-root .mammoth stop
+```
+
+`shutdown` is an alias for `stop`. Stopping closes the dashboard and S3 service
+after active work finishes and preserves your files. The command works from any
+folder, but `.mammoth` is a relative storage path: use an absolute `--local-root`
+path when working elsewhere, or set `MAMMOTH_LOCAL_ROOT` to that absolute path.
+
 ## Docker
 
 From the repository root:

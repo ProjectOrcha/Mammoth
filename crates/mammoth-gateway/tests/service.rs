@@ -209,3 +209,129 @@ async fn bad_s3_digest_preserves_the_previous_object_and_sse_emits_json() {
     assert!(text.contains("block_health"));
     assert!(text.contains("{\"refresh\":true}"));
 }
+
+#[tokio::test]
+async fn dashboard_jobs_complete_report_failures_and_protect_existing_outputs() {
+    let dir = tempfile::tempdir().unwrap();
+    let be = Arc::new(LocalBackend::open(dir.path()).unwrap());
+    be.write(Path::new("/words"), body("z a z\n")).await.unwrap();
+    let app = mammoth_gateway::router(be.clone());
+    let (status, _, bytes) = request(
+        app.clone(),
+        "POST",
+        "/api/v1/jobs?kind=wordcount&input=/words&output=/counts",
+        b"",
+    )
+    .await;
+    assert_eq!(status, StatusCode::ACCEPTED);
+    let accepted: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    let mut finished = None;
+    for _ in 0..100 {
+        let (_, _, bytes) = request(app.clone(), "GET", "/api/v1/jobs", b"").await;
+        let jobs: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        if jobs[0]["state"] != "running" {
+            finished = Some(jobs[0].clone());
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+    let finished = finished.expect("job must finish");
+    assert_eq!(finished["id"], accepted["id"]);
+    assert_eq!(finished["state"], "succeeded");
+    assert_eq!(finished["stages"][0]["done"], 1);
+    assert_eq!(finished["tasks"][0]["state"], "done");
+    assert!(finished["tasks"][0]["dur_s"].as_f64().unwrap() >= 0.0);
+    assert_eq!(
+        request(app.clone(), "GET", "/api/v1/fs/data?path=/counts", b"").await.2,
+        b"a\t1\nz\t2\n"
+    );
+    assert_eq!(
+        request(app.clone(), "POST", "/api/v1/jobs?kind=sort&input=/words&output=/counts", b"")
+            .await
+            .0,
+        StatusCode::CONFLICT
+    );
+    assert_eq!(
+        request(app.clone(), "POST", "/api/v1/jobs?kind=sort&input=/words&output=/words", b"")
+            .await
+            .0,
+        StatusCode::BAD_REQUEST
+    );
+    be.write(Path::new("/binary"), body(vec![255])).await.unwrap();
+    assert_eq!(
+        request(
+            app.clone(),
+            "POST",
+            "/api/v1/jobs?kind=sort&input=/binary&output=/counts&overwrite=true",
+            b""
+        )
+        .await
+        .0,
+        StatusCode::ACCEPTED
+    );
+    for _ in 0..100 {
+        let (_, _, bytes) = request(app.clone(), "GET", "/api/v1/jobs", b"").await;
+        let jobs: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        if jobs[0]["state"] != "running" {
+            assert_eq!(jobs[0]["state"], "failed");
+            assert_eq!(jobs[0]["tasks"][0]["state"], "failed");
+            assert!(jobs[0]["error"].as_str().unwrap().contains("UTF-8"));
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+    assert_eq!(
+        request(app.clone(), "GET", "/api/v1/fs/data?path=/counts", b"").await.2,
+        b"a\t1\nz\t2\n"
+    );
+}
+
+#[tokio::test]
+async fn file_filters_apply_before_pagination_and_management_changes_real_data() {
+    let dir = tempfile::tempdir().unwrap();
+    let be = Arc::new(LocalBackend::open(dir.path()).unwrap());
+    let app = mammoth_gateway::router(be.clone());
+    for name in ["a", "match-b", "match-c", "z"] {
+        be.write(Path::new(&format!("/files/{name}")), body(name)).await.unwrap();
+    }
+    let (_, _, bytes) =
+        request(app.clone(), "GET", "/api/v1/fs?path=/files&name=MATCH&offset=1&limit=1", b"")
+            .await;
+    let rows: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(rows.as_array().unwrap().len(), 1);
+    assert_eq!(rows[0]["name"], "match-c");
+    assert_eq!(
+        request(
+            app.clone(),
+            "POST",
+            "/api/v1/fs/rename?path=/files/match-c&to=/files/renamed",
+            b""
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        request(
+            app.clone(),
+            "POST",
+            "/api/v1/fs/attributes?path=/files/renamed&mode=416&owner=alice&group=team",
+            b""
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let status = be.stat(Path::new("/files/renamed")).await.unwrap();
+    assert_eq!(status.owner, "alice");
+    assert_eq!(status.mode, 0o640);
+    assert_eq!(
+        request(app.clone(), "DELETE", "/api/v1/fs?path=/files", b"").await.0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        request(app.clone(), "DELETE", "/api/v1/fs?path=/files&recursive=true", b"").await.0,
+        StatusCode::OK
+    );
+    assert!(be.stat(Path::new("/files")).await.is_err());
+}

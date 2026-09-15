@@ -2,6 +2,7 @@
 // data; production requires a gateway unless VITE_DATA_SOURCE=demo is set.
 
 import * as demo from './demo';
+import { chosenWorkspace } from './workspace';
 import type {
   BlockLayout,
   ClusterReport,
@@ -20,6 +21,18 @@ export * from './types';
 const BASE = '/api/v1';
 const REQUEST_TIMEOUT_MS = 10_000;
 const PROBE_TIMEOUT_MS = 1500;
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number, public code?: string) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+async function responseError(response: Response): Promise<ApiError> {
+  const detail = await response.json().catch(() => null);
+  return new ApiError(detail?.message ?? `${response.status} ${response.statusText}`, response.status, detail?.code);
+}
 
 export type Source = 'unknown' | 'gateway' | 'demo';
 let source: Source = 'unknown';
@@ -59,8 +72,11 @@ async function fetchJson<T>(path: string, timeout = REQUEST_TIMEOUT_MS): Promise
   const timer = setTimeout(() => ctl.abort(), timeout);
   try {
     const r = await fetch(`${BASE}${path}`, { signal: ctl.signal, headers: { Accept: 'application/json' } });
-    if (!r.ok) throw new Error(`${r.status} ${r.statusText} — ${BASE}${path}`);
+    if (!r.ok) throw await responseError(r);
     return await r.json() as T;
+  } catch (error) {
+    if (ctl.signal.aborted) throw new Error('The server took too long to respond. Please try again.');
+    throw error;
   } finally {
     // Also release timers on HTTP failures, bad JSON and network errors.
     clearTimeout(timer);
@@ -71,7 +87,7 @@ async function probe(): Promise<Source> {
   if (source !== 'unknown') return source;
   if (probing) return probing;
   probing = (async (): Promise<Source> => {
-    const mode = import.meta.env.VITE_DATA_SOURCE ?? (import.meta.env.DEV ? 'auto' : 'gateway');
+    const mode = chosenWorkspace() ?? import.meta.env.VITE_DATA_SOURCE ?? (import.meta.env.DEV ? 'auto' : 'gateway');
     if (!['auto', 'demo', 'gateway'].includes(mode)) {
       throw new Error('VITE_DATA_SOURCE must be auto, demo or gateway.');
     }
@@ -82,7 +98,7 @@ async function probe(): Promise<Source> {
     } catch (error) {
       // An auth failure is never a reason to replace real data with fake data.
       const message = error instanceof Error ? error.message : String(error);
-      if (mode !== 'auto' || /^(401|403)\b/.test(message)) throw error;
+      if (mode !== 'auto' || (error instanceof ApiError && [401, 403].includes(error.status)) || /^(401|403)\b/.test(message)) throw error;
       return source = 'demo';
     }
     checkReport(report);
@@ -103,20 +119,37 @@ async function get<T>(path: string, fallback: () => T): Promise<T> {
 
 const q = encodeURIComponent;
 
-async function mutate(path: string, method: string, body?: BodyInit): Promise<void> {
+async function mutate<T = void>(path: string, method: string, body?: BodyInit): Promise<T> {
   if ((await probe()) !== 'gateway') throw new Error('File changes require a live gateway.');
   const response = await fetch(`${BASE}${path}`, { method, body });
   if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    throw new Error(error?.message ?? `${response.status} ${response.statusText}`);
+    throw await responseError(response);
   }
+  return response.status === 204 ? undefined as T : response.json();
 }
 
 export const api = {
   upload: (path: string, file: File) => mutate(`/fs/data?path=${q(path)}`, 'PUT', file),
   mkdir: (path: string) => mutate(`/fs/directory?path=${q(path)}`, 'PUT'),
-  remove: (path: string) => mutate(`/fs?path=${q(path)}`, 'DELETE'),
+  remove: (path: string, recursive = false) => mutate(`/fs?path=${q(path)}&recursive=${recursive}`, 'DELETE'),
+  rename: (path: string, to: string) => mutate(`/fs/rename?path=${q(path)}&to=${q(to)}`, 'POST'),
+  attributes: (path: string, mode: number, owner: string, group: string) => mutate(`/fs/attributes?path=${q(path)}&mode=${mode}&owner=${q(owner)}&group=${q(group)}`, 'POST'),
+  setReplication: (path: string, replication: number) => mutate(`/fs/replication?path=${q(path)}&replication=${replication}`, 'POST'),
+  repair: () => mutate<{ repaired: number }>('/admin/repair', 'POST'),
   downloadUrl: (path: string) => `${BASE}/fs/data?path=${q(path)}`,
+  preview: async (path: string) => {
+    if ((await probe()) !== 'gateway') return null;
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${BASE}/fs/data?path=${q(path)}&start=0&end=65536`, { signal: ctl.signal });
+      if (!response.ok) throw await responseError(response);
+      const data = new Uint8Array(await response.arrayBuffer());
+      if (data.includes(0)) return null;
+      try { return new TextDecoder('utf-8', { fatal: true }).decode(data, { stream: data.length === 65536 }); }
+      catch { return null; }
+    } finally { clearTimeout(timer); }
+  },
 
   clusterReport: async () => {
     const report = await get<ClusterReport>('/cluster/report', demo.clusterReport);
@@ -131,8 +164,8 @@ export const api = {
       demo.clusterReport().nodes.find((n) => n.id === id),
     ),
 
-  list: (path: string, limit = 200, offset = 0) =>
-    get<FileStatus[]>(`/fs?path=${q(path)}&limit=${limit}&offset=${offset}`, () => demo.list(path).slice(offset, offset + limit)),
+  list: (path: string, limit = 200, offset = 0, name = '') =>
+    get<FileStatus[]>(`/fs?path=${q(path)}&limit=${limit}&offset=${offset}&name=${q(name)}`, () => demo.list(path).filter(file => file.name.toLowerCase().includes(name.toLowerCase())).slice(offset, offset + limit)),
 
   files: () => get<FileStatus[]>('/fs/search', () => []),
 
@@ -163,6 +196,8 @@ export const api = {
     get<FlowReport>(`/distribution/flow?minutes_ago=${minutesAgo}`, () => demo.flowAt(minutesAgo)),
 
   jobs: () => get<Job[]>('/jobs', demo.jobs),
+  submitJob: (kind: 'wordcount' | 'sort', input: string, output: string, overwrite = false) =>
+    mutate<Job>(`/jobs?kind=${kind}&input=${q(input)}&output=${q(output)}&overwrite=${overwrite}`, 'POST'),
 
   /** The cluster as it was N minutes ago, for the distribution page's slider. */
   reportAt: async (minutesAgo: number) => {

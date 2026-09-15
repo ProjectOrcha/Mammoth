@@ -1,268 +1,114 @@
 ---
 title: Visualization
-description: Every `viz` subcommand and `top` — the flags, and what each screen is actually telling you.
+description: Inspect block placement, worker capacity, file-size skew, and replica health.
 sidebar:
   order: 3
 ---
 
-:::note[Design reference]
-This page describes the full project design, including future distributed
-features and command options. For the working local application on `AI_coded`,
-follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
-See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
-for supported behavior and remaining milestones.
-:::
-
-
-Seven commands that answer seven questions, all in the terminal, all over SSH,
-none of them needing a browser.
-
-| Command | Answers |
-| --- | --- |
-| [`viz blocks`](#viz-blocks) | Where did *this file* land? |
-| [`viz cluster`](#viz-cluster) | Which node is full, and which is empty? |
-| [`viz topology`](#viz-topology) | What is the shape of the cluster? |
-| [`viz skew`](#viz-skew) | Why is my job slow? |
-| [`viz treemap`](#viz-treemap) | What is eating my disk? |
-| [`viz health`](#viz-health) | Is anything at risk right now? |
-| [`viz flow`](#viz-flow) | What is moving, and where? |
-| [`top`](#top) | All of it, on one live screen. |
-
-Every one takes `--json`, so the same numbers a human reads are the numbers a
-script gets. The [full gallery of sample output is on the
-visualization page](/concepts/visualization/); this page is the
-per-command detail.
+The terminal and dashboard both read the same stored files and replica layout.
+Use the same local root or HTTP gateway as the service. These are the current
+commands; the [generated reference](/cli/reference/) lists their options.
+Run `mammoth commands` for the full command catalog, or `mammoth viz --help`
+for all visualization commands. Interactive terminals select colored charts
+automatically. Redirected output defaults to JSON; use `--output table` to
+keep the human view when saving it or using a pager.
 
 ## `viz blocks`
 
+```bash
+mammoth viz blocks /sample/blocks.bin --output table
+mammoth viz blocks /sample/blocks.bin --json
 ```
-mammoth viz blocks <PATH> [--limit N] [--wide] [--json]
-```
 
-| Flag | Does |
-| --- | --- |
-| `--limit N` | Rows to draw. Default 20 — a 60,000-block file is not a chart. |
-| `--wide` | One column per *volume* rather than per node. Finds a bad disk. |
-
-Draws a block × node matrix. Each cell is one fragment, labelled by what it is:
-`d0`–`d5` data, `l0`–`l1` local parity, `p0`–`p1` global parity.
-
-**What to look for, in order:**
-
-1. **A row bunched into one rack band.** That block does not survive that rack.
-2. **A column that is empty.** That node is full, draining, or dead — writes are
-   skipping it and it will drift further out of balance.
-3. **`◌` cells.** Fragments being rebuilt. Reads still work; they reconstruct.
+Rows are blocks and columns identify workers. Symbols distinguish the primary,
+replicas, damaged copies and absent placements. Wide worker sets split into
+column groups so every placement remains visible. An inline or empty file has no block
+placement. In the dashboard, open a file or choose one on **Distribution**.
+Hover, tap, or focus a matrix cell for its details. Large layouts are paginated.
 
 ## `viz cluster`
 
-```
-mammoth viz cluster [--metric usage|fragments|read|write|latency] [--sort] [--json]
-```
-
-Per-node bars, grouped by rack, with the imbalance coefficient underneath.
-
-**The number that matters is `σ`** — the standard deviation of per-node usage. A
-healthy cluster sits under 10%. Above that, some nodes are doing more work than
-others simply because they hold more data, and the balancer should run:
-
 ```bash
-mammoth admin balancer start --threshold 10
+mammoth viz cluster --output table
+mammoth viz heatmap
+mammoth viz topology
 ```
 
-`--metric latency` is the one people forget. A node at 340 ms p99 is worse than
-a dead node: a dead node gets routed around in seconds, a slow one quietly makes
-everything slow.
-
-## `viz topology`
-
-```
-mammoth viz topology [--depth N] [--show-empty] [--json]
-```
-
-The rack tree with per-rack and per-node capacity. Use it to confirm that
-`node.rack` is actually set on every machine — a node with the default rack is
-in *no* failure domain as far as placement is concerned, and it will quietly
-break the rack rule for every block it holds.
-
-```console
-$ mammoth viz topology --output json | jq -r '.nodes[] | select(.rack == "/default-rack") | .id'
-w17
-```
-
-That empty output is what you want.
+Cluster output uses capacity bars, readable byte units and health colors.
+`viz heatmap` is an alias for `viz cluster`. Topology draws a rack-and-worker
+tree with health and replica counts. Local workers are directories on one machine; their
+capacities are reference values, not separate physical disks or quotas.
 
 ## `viz skew`
 
-```
-mammoth viz skew [PATH] [--by-partition] [--top N] [--metric size|reads|writes] [--json]
-```
-
-| Flag | Does |
-| --- | --- |
-| `--by-partition` | Group by partition directory (`dt=…`) rather than by file. |
-| `--top N` | Show the N worst. Default 5. |
-| `--metric` | What "worst" means. Default `size`. |
-
-**The single most useful command in the tool for anyone debugging a slow job.**
-A job's runtime is set by its slowest task, and its slowest task is whichever
-one drew the biggest partition. This is how you find that partition in one
-command:
-
-```console
-$ mammoth viz skew /warehouse/events --by-partition
-
-  PARTITION SIZE DISTRIBUTION            1,024 files · 4.2 TB
-
-    dt=2026-08-03  ████████████████████ 89.0 GB  ⚠ 68× median
-    dt=2026-08-02  ██                    1.3 GB
-    dt=2026-08-01  ██                    1.2 GB
-    ... 1,021 more
-
-  median 1.3 GB   p99 4.1 GB   max 89.0 GB
-  ⚠ severe skew — one task processes 89 GB while 1,023 process ~1 GB.
-    your job's runtime is set by that one task.
+```bash
+mammoth viz skew /sample
+mammoth viz skew /sample --by-partition
 ```
 
-The fix is almost never in the cluster; it is in how the data was partitioned.
-Re-partition on a higher-cardinality key, or split the hot partition.
+The terminal draws file-size bars sorted largest first, plus median, p99,
+maximum and total bytes. A nonzero value always gets a visible marker; its size
+is printed beside it. `--by-partition` totals
+each direct child's subtree. The dashboard plots every file, including zero-byte
+files. In local mode the vertical axis identifies files because read counts are
+not collected.
 
 ## `viz treemap`
 
-```
-mammoth viz treemap [PATH] [--depth N] [--min-size S] [--by age|size|reads] [--json]
+```bash
+mammoth viz treemap / --depth 2
 ```
 
-`--depth` defaults to 2. `--by age` is the one that finds money:
-
-```console
-$ mammoth viz treemap / --depth 2 --by age
-
-  /tmp       ██░░░░░░░░░░░░░░░░░░░░░░░░    71 TB   6%  ⚠ 94% older than 30 days
-```
+This draws a namespace tree with logical sizes and proportional bars up to the
+chosen depth. Directory sizes include all descendants, including those below
+the displayed depth. Percentages refer to the selected root. The dashboard shows
+a treemap whose area represents bytes. Click a directory to inspect its contents.
+Empty files and directories have no area.
 
 ## `viz health`
 
+```bash
+mammoth viz health
+mammoth viz health --live
 ```
-mammoth viz health [--live] [--refresh SECONDS] [--path PATH] [--json]
-```
 
-| Flag | Does |
-| --- | --- |
-| `--live` | Redraw until interrupted. `q` quits. |
-| `--refresh N` | Seconds between redraws. Default 2. |
-| `--path P` | Only blocks under this path. |
-
-Counts every block by how much redundancy it has left. For `lrc-6-2-2` that is
-fragments out of ten; for a mirrored file it is replicas out of three.
-
-**Read `critical`, not `degraded`.** `9/10` means one fragment is gone and the
-block is fine — it reads by reconstructing from its local group, and repair will
-get to it. `7/10` is the last safe state for `lrc-6-2-2`: three losses are
-survivable, a fourth is not. A non-zero `critical` count is the line that should
-make you stop what you are doing.
-
-The screen also prints the repair queue, its rate, how many nodes are
-participating, and the ETA. If `participating` is much lower than your healthy
-node count, repair is not declustering properly and the rebuild will take far
-longer than it should.
-
-[Full sample output, and the erasure-coding-width warning it prints →](/concepts/visualization/)
+In a terminal, live mode refreshes the same screen every two seconds. Use the
+arrow keys or **j/k** to scroll and **q**, Escape or Ctrl-C to exit. A single
+snapshot uses labeled health bars, including zero-count categories. Inspect under-replicated,
+critical, corrupt, or missing blocks before running `mammoth admin repair`.
+The dashboard shows the same health categories on Overview, Distribution, and Cluster.
 
 ## `viz flow`
 
-```
-mammoth viz flow [--window SECONDS] [--live] [--json]
-```
-
-Bytes per second from each source category — clients, repair, balancer, shuffle
-— to the nodes receiving them, plus cross-rack link utilisation.
-
-**Watch the width of the repair row, not its rate.** Declustered repair should
-reach *every* healthy node. A narrow repair fan means the surviving fragments
-are not spread out, and the rebuild is bottlenecked on a few disks.
-
-**Watch cross-rack too.** It is the expensive link and the one that saturates
-first. `lrc-6-2-2` keeps single-fragment repair inside one rack precisely so
-this row stays small during an incident.
+The local service has no network-flow measurements. `mammoth viz flow` returns
+`available: false`. The local dashboard shows replica health in this space.
+Distributed flow and historical replay are demonstrated only in the explicitly
+labelled standalone demo.
 
 ## `top`
 
-```
-mammoth top [--refresh SECONDS] [--sort COLUMN] [--filter EXPR]
-```
-
-The live TUI. One screen, works over SSH, built with
-[`ratatui`](https://ratatui.rs/).
-
-| Key | Does |
-| --- | --- |
-| `1` `2` `3` `4` | nodes · blocks · jobs · flow |
-| `b` | start the balancer |
-| `d` | decommission the selected node |
-| `/` | filter |
-| `q` | quit |
-
-```
-┌ mammoth top ─ prod-01 ─────────────────────── 12 nodes ─ leader m1 ─ 14:22:07 ┐
-│ CAPACITY  1.1/2.0 PB  ███████████░░░░░ 56%   READ 3.9 GB/s  WRITE 1.2 GB/s   │
-├───────────────────────────────────────────────────────────────────────────────┤
-│ NODE  RACK    STATE      USED         FRAGS   READ      WRITE   DISK p99      │
-│ w1    rack-a  ● healthy  ███████░ 71%   5.1M  378 MB/s  120 MB/s    8ms       │
-│ w3    rack-a  ⚠ full     ████████ 94%   6.7M  355 MB/s    0 B/s    12ms       │
-│ w7    rack-b  ⚠ slow     ██████░░ 69%   4.9M  127 MB/s   40 MB/s   340ms  ⚠   │
-│ w12   rack-c  ✕ dead     ░░░░░░░░  0%      —       —         —       —        │
-├───────────────────────────────────────────────────────────────────────────────┤
-│ ⚠ 4.2M blocks degraded · rebuilding on 11 nodes · ETA 3h 56m                  │
-│ [1]nodes [2]blocks [3]jobs [4]flow  [b]alance [d]ecommission [q]uit           │
-└───────────────────────────────────────────────────────────────────────────────┘
+```bash
+mammoth top
+mammoth top --once
 ```
 
-## Terminal rendering
-
-| Visual | Crate / technique |
-| --- | --- |
-| Bars | Unicode blocks `█▉▊▋▌▍▎▏` — 1/8 resolution per cell |
-| Sparklines | Braille `⣀⣤⣶⣿` or blocks `▁▂▃▄▅▆▇█` |
-| Tables | `comfy-table` |
-| Colour | `owo-colors`, gated on `is_terminal()` — never ANSI into a pipe. See [Colour](#colour) |
-| Interactive | `ratatui` + `crossterm` |
-| Fallback | `--color never` for CI logs and dumb terminals; every symbol still carries its meaning |
+In a terminal, `top` refreshes the cluster dashboard. Use the arrow keys or
+**j/k** to scroll; Home/End select the first/last row. Press **q**, Escape, or
+Ctrl-C to exit. `--once` prints capacity and health charts. Explicit structured
+output such as `top --json` prints a snapshot. The planned node-management keyboard
+shortcuts are not available.
 
 ## Colour
 
-Every `viz` screen and `mammoth top` draw from one palette of six meanings, not
-from colour names:
-
-| Tone | Colour | Symbol | Means |
-| --- | --- | --- | --- |
-| `ok` | green | `●` | healthy · at target replication · node up |
-| `warn` | yellow | `◐` | under-replicated · node ≥75% full · decommissioning |
-| `critical` | red | `✕` | corrupt · missing · node dead · write refused |
-| `accent` | cyan | `▸` | totals, the selected row, the number that matters |
-| `heading` | white | `─` | column titles, section rules |
-| `muted` | grey | `·` | units, hints, absent values |
-
-Three properties follow from that, and they are worth relying on:
-
-- **The symbol always carries the meaning too.** Pipe the output, print it, or
-  read it with a red/green colour deficiency — nothing is lost. Colour is the
-  second channel, never the only one.
-- **The thresholds are decided once.** "Nearly full" is ≥75% and "critical" is
-  ≥90% in the CLI, in `mammoth top` and in the web dashboard, because all three
-  ask the same function.
-- **The basic sixteen ANSI colours are used deliberately**, so the output follows
-  your terminal's own theme and renders identically over SSH, in tmux, in a
-  Windows console and in a CI log.
-
-Colour is on when stdout is a terminal, and off otherwise. Override it:
+Terminal charts, listings, errors and help support `--color auto|always|never`:
 
 ```bash
-mammoth viz cluster --color never        # plain, even on a terminal
-mammoth viz cluster --color always | less -R   # keep it through a pipe
-NO_COLOR=1 mammoth viz cluster           # honoured, as on no-color.org
+mammoth viz treemap / --color always --output table
+mammoth viz health --color never
+mammoth --color always --help
 ```
 
-Progress bars follow the same rule and are drawn on **stderr**, so
-`mammoth put ./big.log /data/ > receipt.txt` leaves a clean receipt and still
-shows a human the bar.
+`auto` uses color in a terminal and respects `NO_COLOR` and `TERM=dumb`.
+`always` forces color for human output, including redirects; `never` disables
+it. Symbols and labels keep the views understandable without color. JSON, YAML
+and CSV exports contain no styling, and `cat`, `head` and `tail` preserve file bytes.

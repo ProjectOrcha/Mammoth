@@ -4,12 +4,14 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { live } from '$lib/live.svelte';
-  import { bytes, count, pct, pctValue, rate } from '$lib/format';
+  import { bytes, count, pct, pctValue, rate, ms } from '$lib/format';
   import type { NodeReport } from '$lib/types';
   import Panel from '$lib/components/Panel.svelte';
   import Meter from '$lib/components/Meter.svelte';
   import StateDot from '$lib/components/StateDot.svelte';
   import Sparkline from '$lib/components/Sparkline.svelte';
+  import Stat from '$lib/components/Stat.svelte';
+  import StorageRacks from '$lib/components/StorageRacks.svelte';
 
   type Key = 'id' | 'rack' | 'state' | 'usage' | 'fragments' | 'read_bps' | 'write_bps' | 'disk_p99_ms';
 
@@ -82,6 +84,7 @@
     { key: 'write_bps', label: 'write', num: true },
     { key: 'disk_p99_ms', label: 'disk p99', num: true },
   ];
+  const columns = $derived(COLUMNS.filter(column => !report?.capabilities?.local || !['read_bps', 'write_bps', 'disk_p99_ms'].includes(column.key)));
 </script>
 
 <svelte:head><title>Nodes · Mammoth</title></svelte:head>
@@ -96,6 +99,14 @@
   </p>
 </header>
 
+{#if report}
+  <div class="node-stats">
+    <Stat label="Healthy" value={String(report.nodes.filter(node => node.state === 'healthy').length)} note={`${report.nodes.length} workers total`} tone="ok" />
+    <Stat label="Stored data" value={bytes(report.used)} note="Across worker directories" />
+    <Stat label="Replica copies" value={count(report.nodes.reduce((total, node) => total + node.fragments, 0))} note={`${new Set(report.nodes.map(node => node.rack)).size} racks`} />
+  </div>
+  {#if report.capabilities?.local}<div class="rack-summary"><StorageRacks {report} /></div>{/if}
+{/if}
 <Panel title="Workers">
   {#snippet actions()}
     <input type="search" placeholder="filter…" bind:value={query} aria-label="Filter nodes" />
@@ -104,18 +115,21 @@
 
   {#if !report}
     <p class="quiet mono">reading…</p>
+  {:else if rows.length === 0}
+    <p class="quiet">{query ? 'No workers match this filter.' : 'No workers are available.'}</p>
+    {#if query}<button onclick={() => query = ''}>Clear filter</button>{/if}
   {:else}
     <table>
       <thead>
         <tr>
-          {#each COLUMNS as c (c.key)}
-            <th class:num={c.num}>
+          {#each columns as c (c.key)}
+            <th class:num={c.num} aria-sort={sort === c.key ? (desc ? 'descending' : 'ascending') : 'none'}>
               <button class="sorter" onclick={() => head(c.key)}>
                 {c.label}{#if sort === c.key}<span aria-hidden="true">{desc ? ' ↓' : ' ↑'}</span>{/if}
               </button>
             </th>
           {/each}
-          <th>trend</th>
+          {#if !report.capabilities?.local}<th>trend</th>{/if}
         </tr>
       </thead>
       {#each grouped as group (group.rack ?? 'all')}
@@ -124,7 +138,7 @@
             {@const used = group.nodes.reduce((a, n) => a + n.used, 0)}
             {@const cap = group.nodes.reduce((a, n) => a + n.capacity, 0)}
             <tr class="rackrow">
-              <td colspan="9">
+              <td colspan={report.capabilities?.local ? 5 : 9}>
                 <span class="mono rack">{group.rack}</span>
                 <span class="mono dim">
                   {bytes(used)} / {bytes(cap)} · {pct(used, cap)} · {group.nodes.length} nodes
@@ -148,12 +162,12 @@
                 </div>
               </td>
               <td class="num mono">{count(n.fragments)}</td>
-              <td class="num mono">{rate(n.read_bps)}</td>
+              {#if !report.capabilities?.local}<td class="num mono">{rate(n.read_bps)}</td>
               <td class="num mono">{rate(n.write_bps)}</td>
               <td class="num mono" class:bad={n.disk_p99_ms > 100}>
                 {n.disk_p99_ms ? `${n.disk_p99_ms} ms` : '—'}
               </td>
-              <td><Sparkline points={n.read_series} /></td>
+              <td><Sparkline points={n.read_series} /></td>{/if}
             </tr>
           {/each}
         </tbody>
@@ -165,6 +179,7 @@
 {#if detail}
   <div class="detail">
     <Panel title={`Node ${detail.id}`} note={detail.address}>
+      {#snippet actions()}<button onclick={() => selected = null}>Close details</button>{/snippet}
       <dl>
         <div><dt>state</dt><dd><StateDot state={detail.state} /></dd></div>
         {#if detail.note}<div><dt>note</dt><dd class="warnnote">{detail.note}</dd></div>{/if}
@@ -175,19 +190,21 @@
           <dd class="mono">{detail.fragments.toLocaleString()}</dd>
         </div>
         <div><dt>volumes</dt><dd class="mono">{detail.volumes}</dd></div>
-        <div><dt>disk p99</dt><dd class="mono">{detail.disk_p99_ms} ms</dd></div>
-        <div><dt>read · write</dt><dd class="mono">{rate(detail.read_bps)} · {rate(detail.write_bps)}</dd></div>
+        {#if !report?.capabilities?.local}<div><dt>disk p99</dt><dd class="mono">{ms(detail.disk_p99_ms)}</dd></div>
+        <div><dt>read · write</dt><dd class="mono">{rate(detail.read_bps)} · {rate(detail.write_bps)}</dd></div>{/if}
       </dl>
 
       <p class="hint">
+        {#if report?.capabilities?.local}This worker is a storage directory on this machine. Use Cluster → Repair replicas to restore damaged copies.{:else}
         Every fragment this node holds is also derivable without it: placement is a
-        function of the block id, so a decommission is a diff, not a lookup.
+        function of the block id.
+        {/if}
       </p>
 
       <div class="cmds">
         <p class="eyebrow">commands</p>
         <code class="mono">mammoth doctor --node {detail.id}</code>
-        <code class="mono">mammoth admin decommission {detail.id}</code>
+        <code class="mono">mammoth node inspect {detail.id}</code>
         <code class="mono">mammoth viz cluster</code>
       </div>
     </Panel>
@@ -195,6 +212,8 @@
 {/if}
 
 <style>
+  .node-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); margin-bottom: var(--gap); }
+  .rack-summary { margin-bottom: var(--gap); }
   .page {
     display: flex;
     align-items: baseline;
@@ -225,9 +244,7 @@
     margin-right: 0.75rem;
     font-size: 0.72rem;
   }
-  tbody tr:not(.rackrow) {
-    cursor: pointer;
-  }
+
   tr.selected td {
     background: var(--bg-hover);
     box-shadow: inset 2px 0 0 var(--accent);
@@ -276,6 +293,8 @@
   }
   dd {
     margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
     text-align: right;
   }
   .warnnote {

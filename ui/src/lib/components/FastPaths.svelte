@@ -153,7 +153,7 @@
 <style>
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--gap);
   }
   .card {
@@ -224,4 +224,6 @@
     color: var(--fg);
     text-align: right;
   }
+  @media (max-width: 1350px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
 </style>

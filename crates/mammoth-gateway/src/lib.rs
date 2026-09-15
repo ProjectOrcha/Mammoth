@@ -1,5 +1,6 @@
 //! HTTP filesystem API, dashboard adapters, SSE and an embedded dashboard.
 #![forbid(unsafe_code)]
+mod jobs;
 pub mod s3;
 use axum::{
     body::Body,
@@ -10,7 +11,7 @@ use axum::{
         IntoResponse, Response,
     },
     routing::{any, get},
-    Json, Router,
+    Extension, Json, Router,
 };
 use base64::Engine;
 use futures_util::StreamExt;
@@ -27,6 +28,7 @@ use std::{
 #[derive(Clone)]
 pub struct Gateway {
     pub backend: Arc<dyn Backend>,
+    pub jobs: jobs::JobStore,
 }
 include!(concat!(env!("OUT_DIR"), "/assets.rs"));
 
@@ -58,6 +60,14 @@ impl IntoResponse for ApiError {
 }
 
 pub fn router(backend: Arc<dyn Backend>) -> Router {
+    let (stop, _) = tokio::sync::watch::channel(false);
+    service_router(backend, jobs::JobStore::default(), stop)
+}
+fn service_router(
+    backend: Arc<dyn Backend>,
+    jobs: jobs::JobStore,
+    stop: tokio::sync::watch::Sender<bool>,
+) -> Router {
     Router::new()
         .route("/healthz", get(|| async { Json(json!({"status":"ok"})) }))
         .route("/api/v1/events", get(events))
@@ -66,7 +76,8 @@ pub fn router(backend: Arc<dyn Backend>) -> Router {
         .route("/api/*unknown", any(api_not_found))
         .fallback(static_file)
         .layer(DefaultBodyLimit::disable())
-        .with_state(Gateway { backend })
+        .layer(Extension(stop))
+        .with_state(Gateway { backend, jobs })
 }
 async fn api_not_found() -> Response {
     (StatusCode::NOT_FOUND, Json(json!({"code":"E0101","message":"unknown API endpoint"})))
@@ -80,7 +91,7 @@ async fn report(be: &dyn Backend) -> Result<Value> {
     let core = be.cluster_report().await?;
     let nodes: Vec<_> = core.nodes.iter().map(|n|json!({"id":n.id,"rack":n.rack,"address":n.address,"state":n.state,"used":n.used,"capacity":n.capacity,"fragments":n.blocks,"volumes":n.volumes,"disk_p99_ms":null,"read_bps":null,"write_bps":null,"read_series":[]})).collect();
     Ok(
-        json!({"name":core.name,"leader":core.leader,"safe_mode":core.safe_mode,"used":core.used,"capacity":core.capacity,"topology_epoch":1,"placement":"rendezvous","nodes":nodes,"health":core.health,"capabilities":{"local":true,"distributed_metrics":false,"history":false,"jobs":false},"read_path":null,"write_path":null,"repair":null,"start":null,"throughput":null,"alerts":[],"raft":[],"raft_index":null,"snapshot_age_s":null}),
+        json!({"name":core.name,"leader":core.leader,"safe_mode":core.safe_mode,"used":core.used,"capacity":core.capacity,"topology_epoch":1,"placement":"rendezvous","nodes":nodes,"health":core.health,"capabilities":{"local":true,"distributed_metrics":false,"history":false,"jobs":true},"read_path":null,"write_path":null,"repair":null,"start":null,"throughput":null,"alerts":[],"raft":[],"raft_index":null,"snapshot_age_s":null}),
     )
 }
 async fn blocks(be: &dyn Backend, path: &Path) -> Result<Value> {
@@ -195,6 +206,14 @@ async fn api(
             .list(&path)
             .await?
             .iter()
+            .filter(|s| {
+                s.path
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .to_lowercase()
+                    .contains(&param(&q, "name", "").to_lowercase())
+            })
             .skip(number(&q, "offset", 0)? as usize)
             .take(number(&q, "limit", 200)?.min(10000) as usize)
             .map(file_json)
@@ -286,12 +305,25 @@ async fn api(
         ("GET", "distribution/flow") => {
             json!({"available":false,"window_s":0,"nodes":[],"links":[]})
         }
-        ("GET", "jobs") => json!([]),
+        ("GET", "jobs") => json!(state.jobs.list().await),
+        ("POST", "jobs") => {
+            let job = jobs::submit(
+                &state,
+                param(&q, "kind", ""),
+                PathBuf::from(param(&q, "input", "")),
+                PathBuf::from(param(&q, "output", "")),
+                param(&q, "overwrite", "false") == "true",
+            )
+            .await?;
+            return Ok((StatusCode::ACCEPTED, Json(job)).into_response());
+        }
         _ => return Ok(api_not_found().await),
     };
     Ok(Json(value).into_response())
 }
-async fn events() -> Sse<impl futures_util::Stream<Item = std::result::Result<Event, Infallible>>> {
+async fn events(
+    Extension(stop): Extension<tokio::sync::watch::Sender<bool>>,
+) -> Sse<impl futures_util::Stream<Item = std::result::Result<Event, Infallible>>> {
     let stream = futures_util::stream::unfold(
         tokio::time::interval(Duration::from_secs(2)),
         |mut timer| async move {
@@ -299,9 +331,7 @@ async fn events() -> Sse<impl futures_util::Stream<Item = std::result::Result<Ev
             Some((Ok(Event::default().event("block_health").data("{\"refresh\":true}")), timer))
         },
     );
-    let stream = stream.take_until(async {
-        let _ = tokio::signal::ctrl_c().await;
-    });
+    let stream = stream.take_until(wait_for_stop(stop.subscribe()));
     Sse::new(stream).keep_alive(KeepAlive::default())
 }
 async fn static_file(uri: Uri) -> Response {
@@ -335,23 +365,57 @@ pub async fn serve(backend: Arc<dyn Backend>, ui: &str, s3: &str) -> Result<()> 
         ui.local_addr()?,
         s3_listener.local_addr()?
     );
+    serve_with_shutdown(backend, ui, s3_listener, shutdown_signal()).await
+}
+
+/// Ctrl-C and service-manager termination both drain the service cleanly.
+pub async fn shutdown_signal() {
+    #[cfg(unix)]
+    {
+        if let Ok(mut terminate) =
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+        {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => {},
+                _ = terminate.recv() => {},
+            }
+            return;
+        }
+    }
+    let _ = tokio::signal::ctrl_c().await;
+}
+
+async fn wait_for_stop(mut rx: tokio::sync::watch::Receiver<bool>) {
+    if !*rx.borrow() && rx.changed().await.is_err() {
+        // Standalone routers have no shutdown driver. Dropping a one-shot
+        // router must not end the streaming response it just returned.
+        std::future::pending::<()>().await;
+    }
+}
+
+/// Run pre-bound listeners with one shutdown notification for HTTP and SSE.
+/// Finish accepted requests and detached dashboard jobs before returning.
+pub async fn serve_with_shutdown(
+    backend: Arc<dyn Backend>,
+    ui: tokio::net::TcpListener,
+    s3_listener: tokio::net::TcpListener,
+    shutdown: impl std::future::Future<Output = ()> + Send + 'static,
+) -> Result<()> {
     let (stop, _) = tokio::sync::watch::channel(false);
     let a = stop.subscribe();
     let b = stop.subscribe();
+    let jobs = jobs::JobStore::default();
+    let app = service_router(backend.clone(), jobs.clone(), stop.clone());
     let signal = tokio::spawn(async move {
-        let _ = tokio::signal::ctrl_c().await;
+        shutdown.await;
         let _ = stop.send(true);
     });
-    let wait = |mut rx: tokio::sync::watch::Receiver<bool>| async move {
-        if !*rx.borrow() {
-            let _ = rx.changed().await;
-        }
-    };
     let result = tokio::try_join!(
-        axum::serve(ui, router(backend.clone())).with_graceful_shutdown(wait(a)),
-        axum::serve(s3_listener, s3::router(backend)).with_graceful_shutdown(wait(b))
+        axum::serve(ui, app).with_graceful_shutdown(wait_for_stop(a)),
+        axum::serve(s3_listener, s3::router(backend)).with_graceful_shutdown(wait_for_stop(b))
     );
     signal.abort();
     result?;
+    jobs.wait_idle().await;
     Ok(())
 }

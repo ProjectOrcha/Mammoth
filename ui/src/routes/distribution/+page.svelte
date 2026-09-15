@@ -3,6 +3,7 @@
      actually is, and what moved it there. (Part VII §7.2) -->
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { goto } from '$app/navigation';
   import { api } from '$lib/api';
   import { live } from '$lib/live.svelte';
   import type {
@@ -14,7 +15,7 @@
     TopologyReport,
     TreemapNode,
   } from '$lib/types';
-  import { bytes, count, duration, ms, pct, rate } from '$lib/format';
+  import { bytes, clock, count, duration, ms, pct, rate } from '$lib/format';
   import Panel from '$lib/components/Panel.svelte';
   import Meter from '$lib/components/Meter.svelte';
   import HeatGrid from '$lib/charts/HeatGrid.svelte';
@@ -23,6 +24,11 @@
   import SkewScatter from '$lib/charts/SkewScatter.svelte';
   import FlowSankey from '$lib/charts/FlowSankey.svelte';
   import BlockMatrix from '$lib/charts/BlockMatrix.svelte';
+
+  import { replicaFlow, snapshotHeat, snapshotTopology, type Snapshot } from '$lib/history';
+  import StoragePaths from '$lib/components/StoragePaths.svelte';
+
+  let localSnapshot = $state<Snapshot | null>(null);
 
   const METRICS: { key: HeatMetric; label: string }[] = [
     { key: 'usage', label: 'usage' },
@@ -44,6 +50,7 @@
   let colourBy = $state<'age' | 'reads'>('age');
   let matrixPath = $state('');
   let realFiles = $state<string[]>([]);
+  $effect(() => { if (live.report?.capabilities?.local) { if (!['usage', 'fragments'].includes(metric)) metric = 'usage'; colourBy = 'age'; minutesAgo = 0; } });
   const fileOptions = $derived(live.source === 'demo' ? FILES : realFiles);
 
   let heat = $state<HeatCell[] | null>(null);
@@ -54,8 +61,10 @@
   let past = $state<ClusterReport | null>(null);
   let matrix = $state<Awaited<ReturnType<typeof api.blocks>>>(null);
 
-  const report = $derived(minutesAgo > 0 ? past : live.report);
-  const travelling = $derived(minutesAgo > 0);
+  const report = $derived(localSnapshot?.report ?? (minutesAgo > 0 ? past : live.report));
+  const shownHeat = $derived(localSnapshot ? snapshotHeat(localSnapshot.report) : heat);
+  const shownTopology = $derived(localSnapshot ? snapshotTopology(localSnapshot.report) : topology);
+  const travelling = $derived(minutesAgo > 0 || localSnapshot !== null);
 
   let historyError = $state<string | null>(null);
   let matrixError = $state<string | null>(null);
@@ -80,13 +89,16 @@
       busy = true;
       historyLoading = true;
       try {
-        const [h, f, t, p] = await Promise.all([
+        const [h, f, t, p] = await Promise.allSettled([
           api.heat(met, m), api.flow(m), api.topology(m),
           m > 0 ? api.reportAt(m) : Promise.resolve(null),
         ]);
         if (!active) return;
-        heat = h; flow = f; topology = t; past = p;
-        historyError = null;
+        if (h.status === 'fulfilled') heat = h.value;
+        if (f.status === 'fulfilled') flow = f.value;
+        if (t.status === 'fulfilled') topology = t.value;
+        if (p.status === 'fulfilled') past = p.value;
+        historyError = [h, f, t, p].map((result, index) => result.status === 'rejected' ? `${['Heat grid', 'Flow', 'Topology', 'History'][index]}: ${result.reason instanceof Error ? result.reason.message : result.reason}` : '').filter(Boolean).join(' · ') || null;
       } catch (e) {
         if (active) historyError = e instanceof Error ? e.message : String(e);
       } finally {
@@ -133,13 +145,15 @@
       if (!active || busy || source === 'unknown') return;
       busy = true;
       try {
-        const [t, s, files] = await Promise.all([
+        const [t, s, files] = await Promise.allSettled([
           api.treemap('/', 3), api.skew('/'),
           source === 'gateway' ? api.files() : Promise.resolve([]),
         ]);
         if (!active) return;
-        tree = t; skew = s; namespaceError = null;
-        realFiles = files.map(f => f.path);
+        if (t.status === 'fulfilled') tree = t.value;
+        if (s.status === 'fulfilled') skew = s.value;
+        if (files.status === 'fulfilled') realFiles = files.value.map(f => f.path);
+        namespaceError = [t, s, files].map((result, index) => result.status === 'rejected' ? `${['Treemap', 'File sizes', 'File choices'][index]}: ${result.reason instanceof Error ? result.reason.message : result.reason}` : '').filter(Boolean).join(' · ') || null;
         const choices = source === 'demo' ? FILES : realFiles;
         const selected = untrack(() => matrixPath);
         if (!choices.includes(selected)) matrixPath = choices[0] ?? '';
@@ -153,7 +167,7 @@
   });
 
   const repair = $derived(report?.repair ?? null);
-  const skewRatio = $derived(skew ? skew.max / skew.median : 0);
+  const skewRatio = $derived(skew && skew.median > 0 ? skew.max / skew.median : 0);
 </script>
 
 <svelte:head><title>Distribution · Mammoth</title></svelte:head>
@@ -161,13 +175,24 @@
 <header class="page">
   <h1>Distribution</h1>
   <p class="eyebrow">six views · where every byte actually is</p>
+  <button onclick={() => { refreshHistory(); refreshNamespace(); refreshMatrix(); }}>Refresh views</button>
 </header>
 
 {#each [historyError, matrixError, namespaceError].filter(Boolean) as message}
   <p class="load-error" role="alert">Unable to load data: {message}</p>
 {/each}
 
-{#if live.report?.capabilities?.history !== false}
+{#if live.report?.capabilities?.local}
+  <section class="timemachine">
+    <div class="tm-head"><p class="eyebrow">Storage history</p><p class="tm-state mono" class:travelling>{localSnapshot ? `Snapshot · ${clock(localSnapshot.at)}` : 'Now · live'}</p></div>
+    <input type="range" min="0" max={Math.max(1, live.snapshots.length - 1)} value={localSnapshot ? Math.max(0, live.snapshots.findIndex(snapshot => snapshot.at === localSnapshot?.at)) : live.snapshots.length - 1} disabled={live.snapshots.length < 2} aria-label="Storage snapshot" style="direction: ltr" oninput={(event) => { const index = +event.currentTarget.value; localSnapshot = index === live.snapshots.length - 1 ? null : live.snapshots[index]; }} />
+    <div class="tm-foot"><span class="eyebrow">{live.snapshots[0] ? clock(live.snapshots[0].at) : 'Starting'}</span><span class="tm-note">{live.snapshots.length < 2 ? 'Collecting snapshots every 10 seconds…' : `${live.snapshots.length} snapshots · this tab · up to 30 minutes`}</span><span class="eyebrow">Now</span></div>
+    <p class="history-note">Replay worker usage, topology and replica health. File listings stay live. History clears when this page reloads.</p>
+    {#if localSnapshot}<button class="reset" onclick={() => localSnapshot = null}>Back to now</button>{/if}
+  </section>
+{/if}
+
+{#if live.report && live.report.capabilities?.history !== false}
 <section class="timemachine">
   <div class="tm-head">
     <p class="eyebrow">Time machine</p>
@@ -250,7 +275,7 @@
 {/if}
 
 <div class="grid">
-  <Panel title="1 · Node heat grid" note={travelling ? `T−${minutesAgo}m` : 'live'} span={2}>
+  <Panel title="1 · Node heat grid" note={localSnapshot ? clock(localSnapshot.at) : travelling ? `T−${minutesAgo}m` : 'live'} span={2}>
     {#snippet actions()}
       <div class="seg">
         {#each METRICS.filter(m => live.report?.capabilities?.local ? ['usage', 'fragments'].includes(m.key) : true) as m (m.key)}
@@ -258,8 +283,8 @@
         {/each}
       </div>
     {/snippet}
-    {#if heat}
-      <HeatGrid cells={heat} {metric} onselect={(n) => (window.location.href = `/nodes#${encodeURIComponent(n)}`)} />
+    {#if shownHeat}
+      <HeatGrid cells={shownHeat} {metric} onselect={(n) => { void goto(`/nodes#${encodeURIComponent(n)}`); }} />
     {:else}
       <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
@@ -277,8 +302,10 @@
       </p>
     {:else if matrix}
       <BlockMatrix layout={matrix} maxRows={10} />
+    {:else if fileOptions.length === 0 && live.source !== 'unknown'}
+      <p class="quiet">No files to display. <a href="/files">Upload a file</a> to inspect its blocks.</p>
     {:else}
-      <p class="quiet mono">Data unavailable or loading.</p>
+      <p class="quiet mono">Loading block placement…</p>
     {/if}
   </Panel>
 
@@ -289,16 +316,18 @@
         <button disabled={live.report?.capabilities?.local} aria-pressed={colourBy === 'reads'} onclick={() => (colourBy = 'reads')}>reads</button>
       </div>
     {/snippet}
-    {#if tree}
+    {#if tree && tree.value > 0}
       <Treemap root={tree} {colourBy} />
+    {:else if tree}
+      <p class="quiet">No file data yet. Empty files and folders have no area in the treemap. <a href="/files">Browse files</a>.</p>
     {:else}
       <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
   </Panel>
 
-  <Panel title="4 · Rack topology" note={topology ? `epoch ${topology.epoch}` : ''}>
-    {#if topology}
-      <RackTopology {topology} />
+  <Panel title="4 · Rack topology" note={shownTopology ? `epoch ${shownTopology.epoch}` : ''}>
+    {#if shownTopology}
+      <RackTopology topology={shownTopology} />
     {:else}
       <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
@@ -308,7 +337,7 @@
     title="5 · Skew scatter"
     note={skew ? `${skew.files.toLocaleString()} files · ${bytes(skew.total)}` : ''}
   >
-    {#if skew}
+    {#if skew && skew.files > 0}
       <SkewScatter report={skew} />
       <p class="finding" class:bad={skewRatio > 10}>
         median {bytes(skew.median)} · p99 {bytes(skew.p99)} · max {bytes(skew.max)}
@@ -318,12 +347,25 @@
           task is your job's runtime.
         {/if}
       </p>
+    {:else if skew}
+      <p class="quiet">No files to plot yet. <a href="/files">Add files</a> to compare their sizes.</p>
     {:else}
-      <p class="quiet mono">Data unavailable or loading.</p>
+      <p class="quiet mono">Loading file sizes…</p>
     {/if}
   </Panel>
 
-  <Panel title="6 · Flow" note={flow ? `last ${flow.window_s}s` : ''}>
+  <Panel title={report?.capabilities?.local ? '6 · Replica distribution' : '6 · Flow'} note={report?.capabilities?.local ? 'live' : flow ? `last ${flow.window_s}s` : ''}>
+    {#if report?.capabilities?.local}
+      {@const stored = replicaFlow(report)}
+      {#if stored.links.length}<FlowSankey flow={stored} unit="bytes" />{:else}<p class="quiet">Upload a file larger than the inline threshold to see replica placement.</p>{/if}
+      <p class="finding">Stored replica bytes, grouped by rack and worker.</p>
+      <div class="replica-health">
+        {#each Object.entries(report.health) as [state, total] (state)}
+          <div><span>{state.replaceAll('_', ' ')}</span><strong>{count(total)}</strong></div>
+        {/each}
+      </div>
+      <p class="finding"><a href="/cluster">Check and repair replicas →</a></p>
+    {:else}
     {#if flow}
       {#if report?.capabilities?.distributed_metrics === false}<p class="quiet">Network flow measurements are unavailable in local mode.</p>{:else}<FlowSankey {flow} />{/if}
       {#if report && report.capabilities?.distributed_metrics !== false}
@@ -341,8 +383,13 @@
     {:else}
       <p class="quiet mono">Data unavailable or loading.</p>
     {/if}
+    {/if}
   </Panel>
 </div>
+
+{#if report?.capabilities?.local}
+  <Panel title="Read, write & recovery" note="Explore the local data paths"><StoragePaths {report} /></Panel>
+{/if}
 
 {#if report && report.capabilities?.distributed_metrics !== false}
   <Panel title="Read path" note="what the one-shot read is actually doing">
@@ -367,6 +414,9 @@
 {/if}
 
 <style>
+  .history-note { font-size: .75rem; color: var(--fg-dim); }
+  .replica-health { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; margin-top: 1rem; }
+  .replica-health div { display: flex; justify-content: space-between; border-bottom: 1px solid var(--rule); padding-bottom: .6rem; text-transform: capitalize; }
   .load-error { color: var(--danger); overflow-wrap: anywhere; }
   .page {
     display: flex;
@@ -515,7 +565,7 @@
   }
   .seg-row {
     display: grid;
-    grid-template-columns: 11rem 1fr 9rem;
+    grid-template-columns: minmax(0, 11rem) minmax(2rem, 1fr) minmax(0, 9rem);
     align-items: center;
     gap: 0.7rem;
     font-size: 0.74rem;

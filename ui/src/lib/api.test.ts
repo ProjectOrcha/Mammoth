@@ -79,3 +79,39 @@ describe('local gateway contract', () => {
     expect(local.nodes).toEqual(report.nodes);
   });
 });
+
+describe('file management requests', () => {
+  it('previews bounded UTF-8 data and recognizes binary files', async () => {
+    vi.stubEnv('VITE_DATA_SOURCE', 'gateway');
+    const fetch = vi.fn().mockImplementation(async (url: string) => new Response(url.includes('cluster/report') ? JSON.stringify(clusterReport()) : 'hello 雪\n'));
+    vi.stubGlobal('fetch', fetch);
+    const { api } = await import('./api');
+    expect(await api.preview('/a #.txt')).toBe('hello 雪\n');
+    expect(fetch.mock.calls.at(-1)?.[0]).toBe('/api/v1/fs/data?path=%2Fa%20%23.txt&start=0&end=65536');
+    fetch.mockImplementation(async () => new Response(new Uint8Array([0, 255])));
+    expect(await api.preview('/binary')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it('encodes rename, recursive deletion and filter parameters', async () => {
+    vi.stubEnv('VITE_DATA_SOURCE', 'gateway');
+    const fetch = vi.fn().mockImplementation(async (url: string) =>
+      new Response(JSON.stringify(url.includes('cluster/report') ? clusterReport() : {})));
+    vi.stubGlobal('fetch', fetch);
+    const { api } = await import('./api');
+    await api.rename('/a #?.txt', '/b % 雪.txt');
+    await api.remove('/empty folder', true);
+    await api.list('/', 201, 200, 'a #');
+    expect(fetch.mock.calls.map(call => call[0])).toContain('/api/v1/fs/rename?path=%2Fa%20%23%3F.txt&to=%2Fb%20%25%20%E9%9B%AA.txt');
+    expect(fetch.mock.calls.map(call => call[0])).toContain('/api/v1/fs?path=%2Fempty%20folder&recursive=true');
+    expect(fetch.mock.calls.map(call => call[0])).toContain('/api/v1/fs?path=%2F&limit=201&offset=200&name=a%20%23');
+  });
+
+  it('keeps actionable server errors and their HTTP status', async () => {
+    vi.stubEnv('VITE_DATA_SOURCE', 'gateway');
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async (url: string) =>
+      url.includes('cluster/report') ? new Response(JSON.stringify(clusterReport())) :
+      new Response(JSON.stringify({ code: 'E0101', message: 'No such path: /gone' }), { status: 404 })));
+    const { api } = await import('./api');
+    await expect(api.stat('/gone')).rejects.toMatchObject({ message: 'No such path: /gone', status: 404, code: 'E0101' });
+  });
+});

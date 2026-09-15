@@ -2,7 +2,7 @@
 
 **Status on AI_coded:** the local gateway and its dashboard adapters are
 implemented. `GET /api/v1/cluster/report` returns `capabilities` with `local: true`,
-`distributed_metrics: false`, `history: false`, and `jobs: false`. Unavailable
+`distributed_metrics: false`, `history: false`, and `jobs: true`. Unavailable
 metric groups are JSON `null`; the frontend normalizes them to non-finite display
 values and hides their panels. Node rates and latency are also `null`. They must
 never be treated as measured zeroes. History requests return HTTP 501.
@@ -159,3 +159,21 @@ Reload after starting a gateway if the current page already selected demo mode.
 - [x] Gateway routes do not fall through to the SPA HTML for unknown `/api` URLs.
 - [x] Static assets and nested browser routes work after a hard reload.
 - [x] `npm run check`, `npm test` and `npm run build` pass.
+
+## Dashboard actions
+
+- `GET /fs?path=...&name=...&limit=201&offset=0` filters by a case-insensitive
+  name substring before pagination. The UI requests one extra row to determine
+  whether another page exists.
+- `POST /fs/rename?path=...&to=...` moves or renames a file or directory.
+- `DELETE /fs?path=...&recursive=true` removes a non-empty directory.
+- `POST /fs/attributes?path=...&mode=416&owner=...&group=...` sets metadata;
+  mode is a decimal representation of the octal bits (416 is 0640).
+- `POST /fs/replication?path=...&replication=3` changes whole replica copies.
+- `POST /admin/repair` reports the number of restored replicas.
+- `POST /jobs?kind=wordcount|sort&input=...&output=...&overwrite=false` accepts
+  a local UTF-8 job and returns HTTP 202 with its running job record. Existing
+  output files are rejected unless `overwrite=true`. Up to two jobs run at once.
+- `GET /jobs` returns the latest 100 dashboard submissions for this service
+  session, including state, input/output, elapsed time and any error. CLI jobs
+  are not tracked here. The history resets when the service restarts.

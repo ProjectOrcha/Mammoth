@@ -6,6 +6,7 @@
 // it, and every page reads the same `$state`.
 
 import { api, subscribe, currentSource, type ClusterReport, type Source } from './api';
+import { recordSnapshot, type Snapshot } from './history';
 
 class Live {
   report = $state<ClusterReport | null>(null);
@@ -13,6 +14,7 @@ class Live {
   source = $state<Source>('unknown');
   updatedAt = $state<number>(0);
   paused = $state(false);
+  snapshots = $state.raw<Snapshot[]>([]);
 
   #refs = 0;
   #refresh: Promise<void> | null = null;
@@ -40,6 +42,7 @@ class Live {
         if (!this.paused && this.#refs > 0) {
           this.report = report;
           this.updatedAt = Date.now();
+          this.snapshots = recordSnapshot(this.snapshots, report, this.updatedAt);
           this.error = null;
         }
       } catch (e) {

@@ -186,6 +186,9 @@ button:hover {
   background: var(--bg-hover);
   border-color: var(--rule-strong);
 }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button, input, select { min-height: 2.25rem; }
+input[type='checkbox'], input[type='range'] { min-height: auto; }
 button[aria-pressed='true'],
 button.on {
   background: var(--accent-quiet);
@@ -195,6 +198,7 @@ button.on {
 
 input[type='search'],
 input[type='text'],
+input[type='number'],
 select {
   font: inherit;
   color: var(--fg);
@@ -269,3 +273,7 @@ td.num {
 /* Page headings and controls remain usable on narrow screens. */
 .page { flex-wrap: wrap; }
 select { max-width: 100%; }
+input { min-width: 0; max-width: 100%; }
+code { overflow-wrap: anywhere; }
+:root { color-scheme: dark; }
+:root[data-theme='light'] { color-scheme: light; }

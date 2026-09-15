@@ -5,11 +5,13 @@
   import { goto } from '$app/navigation';
   import { untrack } from 'svelte';
   import { live } from '$lib/live.svelte';
-  import { api, currentSource } from '$lib/api';
+  import { api, ApiError, currentSource } from '$lib/api';
   import type { BlockLayout, FileStatus } from '$lib/types';
   import { ago, bibytes, bytes, count, fileHref, joinPath, segments } from '$lib/format';
   import Panel from '$lib/components/Panel.svelte';
   import BlockMatrix from '$lib/charts/BlockMatrix.svelte';
+  import FileAction from '$lib/components/FileAction.svelte';
+  import FilePreview from '$lib/components/FilePreview.svelte';
 
   interface Props {
     path: string;
@@ -27,10 +29,25 @@
   let busy = $state(false);
   let actionError = $state<string | null>(null);
   let folderName = $state('');
+  let query = $state('');
+  let hasNext = $state(false);
+  let action = $state<{ file: FileStatus; kind: 'rename' | 'delete' | 'properties' } | null>(null);
+  const connected = $derived(live.source === 'gateway' || currentSource() === 'gateway');
+
+  async function completed(destination?: string) {
+    const target = action?.file.path;
+    const kind = action?.kind;
+    action = null;
+    if (target === path && destination && kind !== 'properties') await goto(fileHref(destination));
+    else revision++;
+    await live.refresh();
+  }
+  let loadedPath = '';
   let refreshView = () => {};
   $effect(() => { void live.updatedAt; untrack(() => refreshView()); });
 
-  $effect(() => { void path; offset = 0; });
+  $effect(() => { void path; offset = 0; query = ''; actionError = null; action = null; });
+  $effect(() => { void query; offset = 0; });
 
   async function change(action: () => Promise<void>) {
     const selected = path;
@@ -49,7 +66,7 @@
     await change(async () => {
       let exists = false;
       try { exists = (await api.stat(name)) !== null; }
-      catch (e) { if (!(e instanceof Error) || !e.message.startsWith('404 ')) throw e; }
+      catch (e) { if (!(e instanceof ApiError) || e.status !== 404) throw e; }
       if (exists && !window.confirm(`Replace ${file.name}?`)) return;
       await api.upload(name, file);
     });
@@ -69,13 +86,15 @@
   $effect(() => {
     const wanted = path;
     const pageOffset = offset;
+    const nameFilter = query.trim();
     void revision;
     let active = true;
     loading = true;
     error = null;
-    status = null;
-    entries = null;
-    layout = null;
+    if (loadedPath !== wanted) {
+      status = null; entries = null; layout = null;
+      loadedPath = wanted;
+    }
 
     let fetching = false;
     const load = async () => {
@@ -86,12 +105,14 @@
         if (!active) return;
         if (!nextStatus) throw new Error(`No such path: ${wanted}`);
         const result = nextStatus.is_dir
-          ? { entries: await api.list(wanted, 200, pageOffset), layout: null }
+          ? { entries: await api.list(wanted, 201, pageOffset, nameFilter), layout: null }
           : { entries: null, layout: await api.blocks(wanted) };
         if (!active) return;
         if (!nextStatus.is_dir && !result.layout) throw new Error(`No block layout: ${wanted}`);
         status = nextStatus;
-        entries = result.entries;
+        if (result.entries?.length === 0 && pageOffset > 0) { offset = Math.max(0, pageOffset - 200); return; }
+        hasNext = (result.entries?.length ?? 0) > 200;
+        entries = result.entries?.slice(0, 200) ?? null;
         layout = result.layout;
         error = null;
       } catch (e) {
@@ -159,10 +180,11 @@
   {/each}
 </nav>
 
-{#if loading}
+{#if loading && !status}
   <p class="quiet mono">reading {path}…</p>
 {:else if error}
   <Panel title="Unable to load path">
+    <button onclick={() => revision++}>Try again</button> <a href="/files">Back to files</a>
     <p class="err mono" role="alert">{error}</p>
     {#if currentSource() === 'demo'}
     <p class="quiet">
@@ -173,51 +195,69 @@
     {/if}
   </Panel>
 {:else if entries}
-  {#if currentSource() === 'gateway'}
+  {#if connected}
     <div class="file-actions">
-      <label>Upload file <input type="file" onchange={upload} disabled={busy} /></label>
-      <form onsubmit={makeFolder}><input aria-label="New folder name" placeholder="New folder name" bind:value={folderName} disabled={busy} /><button disabled={busy}>Create folder</button></form>
+      <label class="upload">Upload file <input type="file" onchange={upload} disabled={busy} /></label>
+      <form onsubmit={makeFolder}><input type="text" aria-label="New folder name" placeholder="New folder name" bind:value={folderName} disabled={busy} /><button disabled={busy}>Create folder</button></form>
     </div>
     {#if actionError}<p role="alert" class="err">{actionError}</p>{/if}
   {/if}
+  {#if connected && status && path !== '/'}
+    <div class="file-actions">
+      <button onclick={() => action = { file: status!, kind: 'rename' }}>Rename / move folder</button>
+      <button onclick={() => action = { file: status!, kind: 'properties' }}>Folder properties</button>
+      <button onclick={() => action = { file: status!, kind: 'delete' }}>Delete folder</button>
+    </div>
+  {/if}
   <Panel title={path} note={`${entries.length} entries · page ${offset / 200 + 1}`}>
+    {#snippet actions()}
+      <input type="search" aria-label="Filter files" placeholder="Filter by name…" bind:value={query} />
+      <button disabled={loading || busy} onclick={() => revision++}>Refresh files</button>
+    {/snippet}
     {#if entries.length === 0}
-      <p class="quiet">Empty.</p>
+      <p class="quiet">{query ? `No entries match “${query}”.` : 'This folder is empty. Upload a file or create a folder to get started.'}</p>
     {:else}
       <table>
         <thead>
           <tr>
             <th>name</th>
             <th class="num">size</th>
-            <th>policy</th>
-            <th class="num">blocks</th>
-            <th>owner</th>
-            <th class="num">modified</th>
+            <th class="optional">policy</th>
+            <th class="num optional">blocks</th>
+            <th class="optional">owner</th>
+            <th class="num optional">modified</th>
+            {#if connected}<th>actions</th>{/if}
           </tr>
         </thead>
         <tbody>
           {#each entries as e (e.path)}
             <tr>
               <td>
-                <a href={fileHref(e.path)} class="mono">
+                <a href={fileHref(e.path)} class="mono filename">
                   <span class="icon" aria-hidden="true">{e.is_dir ? '▸' : '·'}</span>{e.name}{e.is_dir
                     ? '/'
                     : ''}
                 </a>
               </td>
               <td class="num mono">{bytes(e.len)}</td>
-              <td>
+              <td class="optional">
                 <span class="policy" data-inline={e.inlined}>{e.policy}</span>
               </td>
-              <td class="num mono">{e.inlined ? 'inlined' : e.blocks ? count(e.blocks) : '—'}</td>
-              <td class="mono dim">{e.owner}</td>
-              <td class="num mono dim">{ago(e.modified)}</td>
+              <td class="num mono optional">{e.inlined ? 'inlined' : e.blocks ? count(e.blocks) : '—'}</td>
+              <td class="mono dim optional">{e.owner}</td>
+              <td class="num mono dim optional">{ago(e.modified)}</td>
+              {#if connected}<td><select class="row-action" aria-label={`Actions for ${e.name}`} disabled={busy} onchange={(event) => {
+                action = { file: e, kind: event.currentTarget.value as 'rename' | 'delete' | 'properties' };
+                event.currentTarget.value = '';
+              }}>
+                <option value="" disabled selected>Actions…</option><option value="rename">Rename / move</option><option value="properties">Properties</option><option value="delete">Delete</option>
+              </select></td>{/if}
             </tr>
           {/each}
         </tbody>
       </table>
     {/if}
-    <div class="pagination"><button disabled={offset === 0 || loading} onclick={() => offset = Math.max(0, offset - 200)}>Previous</button><button disabled={entries.length < 200 || loading} onclick={() => offset += 200}>Next</button></div>
+    <div class="pagination"><span class="mono">Page {offset / 200 + 1} · {entries.length} entries</span><button disabled={offset === 0 || loading} onclick={() => offset = Math.max(0, offset - 200)}>Previous</button><button disabled={!hasNext || loading} onclick={() => offset += 200}>Next</button></div>
   </Panel>
 {:else if layout && status}
   <div class="filehead">
@@ -229,17 +269,33 @@
     </p>
   </div>
 
-  {#if currentSource() === 'gateway'}
-    <div class="file-actions"><a href={api.downloadUrl(status.path)} download={status.name}>Download</a><button disabled={busy} onclick={() => {
-      const selected = path;
-      if (window.confirm(`Delete ${status?.name}?`)) void change(async () => { await api.remove(selected); await goto(fileHref(selected.slice(0, selected.lastIndexOf('/')) || '/')); });
-    }}>Delete file</button></div>
+  {#if connected}
+    <div class="file-actions">
+      <a class="download" href={api.downloadUrl(status.path)} download={status.name}>Download file</a>
+      <a href={`/jobs?input=${encodeURIComponent(status.path)}`}>Run a text job →</a>
+      <button disabled={busy} onclick={() => action = { file: status!, kind: 'rename' }}>Rename / move</button>
+      <button disabled={busy} onclick={() => action = { file: status!, kind: 'properties' }}>Properties</button>
+      <button disabled={busy} onclick={() => action = { file: status!, kind: 'delete' }}>Delete file</button>
+    </div>
     {#if actionError}<p role="alert" class="err">{actionError}</p>{/if}
   {/if}
 
   {#each layout.warnings as w (w)}
     <p class="warning">⚠ {w}</p>
   {/each}
+
+  <div class="file-metadata">
+    <Panel title="File properties" note={status.path}>
+      <dl>
+        <div><dt>Size</dt><dd>{bytes(status.len)}</dd></div>
+        <div><dt>Owner · group</dt><dd>{status.owner} · {status.group}</dd></div>
+        <div><dt>Permissions</dt><dd class="mono">{status.mode.toString(8)}</dd></div>
+        <div><dt>Modified</dt><dd>{new Date(status.modified).toLocaleString()}</dd></div>
+        <div><dt>Checksum</dt><dd class="checksum mono">{status.checksum ?? 'Not available'}</dd></div>
+      </dl>
+    </Panel>
+    {#if connected}<FilePreview file={status} />{/if}
+  </div>
 
   {#if status.inlined}
     <Panel title="Inlined">
@@ -317,9 +373,31 @@
   {/if}
 {/if}
 
+{#if action}
+  <FileAction file={action.file} kind={action.kind} onclose={() => action = null} oncomplete={completed} />
+{/if}
+
 <style>
+  .file-metadata { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap); margin-bottom: var(--gap); }
+  .checksum { overflow-wrap: anywhere; min-width: 0; max-width: 75%; }
   .file-actions, .file-actions form, .pagination { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin: .75rem 0; }
 
+  .file-actions { padding: .9rem; background: var(--bg-panel); border: 1px solid var(--rule); border-radius: .4rem; }
+  .file-actions form { flex: 1; justify-content: flex-end; margin: 0; }
+  .file-actions input { min-width: 0; max-width: 100%; }
+  .upload { display: grid; gap: .4rem; }
+  .upload input { font-size: .8rem; }
+  .download { display: inline-block; padding: .45rem .75rem; background: var(--accent); color: var(--bg); border-radius: .25rem; }
+  .row-action { width: 6.5rem; font-size: .72rem; }
+  .filename { display: inline-block; max-width: 28rem; overflow-wrap: anywhere; white-space: normal; }
+  .filehead h2, .here { overflow-wrap: anywhere; }
+  .pagination { justify-content: flex-end; }
+  .pagination span { margin-right: auto; color: var(--fg-faint); }
+  @media (max-width: 700px) {
+    .optional { display: none; }
+    .filename { min-width: 5rem; }
+    .file-actions form { justify-content: flex-start; }
+  }
   .crumbs {
     display: flex;
     align-items: center;

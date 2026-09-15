@@ -9,6 +9,7 @@ repository.workspace   = true
 
 [dependencies]
 mammoth-core = { workspace = true }
+mammoth-compute = { workspace = true }
 axum = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }

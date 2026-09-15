@@ -19,7 +19,7 @@ use std::{
 };
 
 pub fn router(backend: Arc<dyn Backend>) -> Router {
-    Router::new().fallback(any(handle)).with_state(Gateway { backend })
+    Router::new().fallback(any(handle)).with_state(Gateway { backend, jobs: Default::default() })
 }
 fn xml(value: &str) -> String {
     value

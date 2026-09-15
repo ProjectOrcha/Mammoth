@@ -1,8 +1,7 @@
 # The Mammoth web UI
 
-The Svelte 5 admin dashboard. It runs independently with simulated data today.
-Serving and embedding it in the Rust binary is planned; `mammoth-gateway` is
-still a scaffold. Beginner walkthrough: [chapter 9](../docs/guide/09-web-ui.md).
+The Svelte 5 admin dashboard for the persistent local storage service. Production
+assets are embedded in the Rust binary by `mammoth-gateway`. Beginner walkthrough: [chapter 9](../docs/guide/09-web-ui.md).
 
 ## Run it
 
@@ -15,13 +14,17 @@ npm run dev            # http://localhost:5173
 
 Development probes `/api/v1/cluster/report` through Vite's port-8080 proxy. If
 no gateway answers, it shows a labelled demo: twelve workers, one dead, and a
-repair in progress. The Rust `serve` command does not start a gateway yet.
+repair in progress. Run `mammoth serve --role all` to start the gateway.
 
-Production builds require a compatible gateway by default. To preview a
-standalone demo, put `VITE_DATA_SOURCE=demo` in `ui/.env.local`, then build and
-preview. This local file is ignored by Git. Remove it and rebuild for real API
-integration. To test integration in dev, use `VITE_DATA_SOURCE=gateway`.
-Vite reads settings at startup/build time; do not put secrets in them.
+Production builds connect to a gateway by default. Use the **Workspace** selector
+in the header to switch between **My storage** and **Example cluster** without a
+rebuild. The choice survives navigation and reloads in the same tab. Example data
+is clearly labelled and cannot change real files. A connection error never
+silently switches a production dashboard to example data.
+
+`VITE_DATA_SOURCE=demo` can still set the initial build default; use
+`VITE_DATA_SOURCE=gateway` for strict gateway integration in development.
+Vite reads these settings at startup/build time; do not put secrets in them.
 
 [API-CONTRACT.md](../docs/guide/API-CONTRACT.md) documents all modes and endpoints.
 The core Rust types and dashboard types differ; they need an explicit adapter.
@@ -31,7 +34,7 @@ The core Rust types and dashboard types differ; they need an explicit adapter.
 | `npm run dev` | dev server with hot reload |
 | `npm run check` | `svelte-check` over every file — keep it at zero |
 | `npm test` | regression tests for requests, navigation and formatting |
-| `npm run build` | static output to `ui/build/`, for future embedding |
+| `npm run build` | static output to `ui/build/`, embedded by the next Rust build |
 | `npm run preview` | serve that build locally |
 
 `cargo xtask build-ui` runs `npm ci && npm run build` for you.
@@ -42,10 +45,10 @@ The core Rust types and dashboard types differ; they need an explicit adapter.
 | --- | --- |
 | `/` | capacity, throughput, block health, alerts, and the four fast paths as live numbers |
 | `/nodes` | sortable, rack-grouped worker table with per-node detail |
-| `/files` · `/files/[...path]` | namespace browser; per-file block placement, read plan and EC layout |
-| `/distribution` | six visualizations, the repair fan, and a 24-hour time machine |
-| `/jobs` | stage DAG, task Gantt, and the straggler setting the job's runtime |
-| `/cluster` | Raft members, and what the last start actually cost |
+| `/files` · `/files/[...path]` | uploads, downloads, filtering, folder creation, rename/move, deletion, properties, bounded UTF-8 previews and paginated block placement |
+| `/distribution` | six visualizations, replica bytes, and local session snapshots; example mode includes 24-hour historical replay |
+| `/jobs` | submit local word-count/sort jobs, inspect results and measured execution timelines; example mode illustrates distributed stage DAGs |
+| `/cluster` | rack and worker cards, replica repair and data lifecycle; example mode includes Raft and warm-start metrics |
 
 ## Layout
 
@@ -90,7 +93,7 @@ markup, but ECharts HTML formatter strings are outside that protection.
 
 **ECharts is imported from `echarts/core`.** Only the four registered chart
 types ship. Adding a fifth means adding it to the `use()` call in
-`charts/echarts.ts` and nowhere else — the full bundle is about a megabyte and
+`charts/echarts.svelte.ts` and nowhere else — the full bundle is about a megabyte and
 this all ends up inside the binary.
 
 ## Design
@@ -104,3 +107,16 @@ names the faces we want first and a system fallback after.
 The `cookie` override selects the patched 0.7 line while SvelteKit still requests
 0.6. Recheck upstream's dependency before removing it. `npm audit` reports no
 known advisories for the reviewed UI lockfile; keep reviewing dependency updates.
+
+Dashboard jobs are limited to two running operations and 100 recent submissions.
+History lasts for the current service session; output files persist, and CLI jobs
+are not included. Inputs must be UTF-8 files up to 64 MiB.
+
+Local distribution history samples metadata every ten seconds for up to thirty
+minutes. It stays in this tab’s memory and clears on reload. It is separate from
+server-side historical replay. File previews request at most 64 KiB.
+
+The namespace treemap retains its selected folder across live refreshes and theme
+changes. Its path buttons navigate back; **View all entries** exposes tiny and
+zero-byte entries that cannot occupy a clickable area. Folder navigation is held
+in Svelte because replacing an ECharts tree resets ECharts' internal zoom.

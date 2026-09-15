@@ -6,15 +6,17 @@
 <script lang="ts">
   import { escapeHtml } from '$lib/html';
   import type { FlowReport } from '$lib/types';
-  import { rate } from '$lib/format';
-  import { chart, palette, tooltipStyle, type ChartOption } from './echarts';
+  import { bytes, rate } from '$lib/format';
+  import { chart, palette, tooltipStyle, type ChartOption } from './echarts.svelte';
   import { FLOW_COLOUR } from './colors';
 
   interface Props {
     flow: FlowReport;
+    unit?: 'rate' | 'bytes';
   }
 
-  let { flow }: Props = $props();
+  let { flow, unit = 'rate' }: Props = $props();
+  const formatValue = $derived(unit === 'bytes' ? bytes : rate);
 
   const option = $derived((): ChartOption => {
     const p = palette();
@@ -27,7 +29,7 @@
         ...tooltipStyle(p),
         formatter: (params: unknown) => {
           const q = params as { dataType: string; data: { source?: string; target?: string; value?: number; name?: string } };
-          if (q.dataType === 'edge') return `${escapeHtml(q.data.source)} → ${escapeHtml(q.data.target)}<br/>${rate(q.data.value ?? 0)}`;
+          if (q.dataType === 'edge') return `${escapeHtml(q.data.source)} → ${escapeHtml(q.data.target)}<br/>${formatValue(q.data.value ?? 0)}`;
           return escapeHtml(q.data.name);
         },
       },
@@ -76,7 +78,7 @@
   {#each totals as [source, bps] (source)}
     <li>
       <span class="dot" style="background: {FLOW_COLOUR[source] ?? 'var(--accent)'}"></span>{source}
-      <b class="mono">{rate(bps)}</b>
+      <b class="mono">{formatValue(bps)}</b>
     </li>
   {/each}
 </ul>

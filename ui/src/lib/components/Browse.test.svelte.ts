@@ -52,3 +52,28 @@ describe('file navigation', () => {
     expect(document.body.textContent).not.toContain('demo namespace');
   });
 });
+
+it('keeps the search field mounted while filtering and disables Next on an exact full page', async () => {
+  api.stat.mockResolvedValue(directory('/data'));
+  const files = Array.from({ length: 200 }, (_, index) => entry(`/data/file-${index}`));
+  api.list.mockResolvedValue(files);
+  component = mount(Browse, { target: document.body, props: { path: '/data' } });
+  await settle();
+  expect(document.querySelector<HTMLSelectElement>('.row-action')?.value).toBe('');
+  const next = [...document.querySelectorAll('button')].find(button => button.textContent === 'Next')!;
+  expect(next.disabled).toBe(true);
+  const search = document.querySelector<HTMLInputElement>('[aria-label="Filter files"]')!;
+  search.focus();
+  search.value = 'match';
+  const filtered = pending<FileStatus[]>();
+  api.list.mockReturnValue(filtered.promise);
+  search.dispatchEvent(new Event('input', { bubbles: true }));
+  flushSync();
+  expect(document.activeElement).toBe(search);
+  await settle();
+  expect(api.list).toHaveBeenLastCalledWith('/data', 201, 0, 'match');
+  filtered.resolve([]);
+  await settle();
+  expect(document.body.textContent).toContain('No entries match');
+  expect(document.activeElement).toBe(search);
+});

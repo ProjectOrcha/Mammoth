@@ -19,11 +19,9 @@
 
 <section class="panel" style={span ? `grid-column: span ${span}` : undefined}>
   <header>
-    <p class="eyebrow">{title}</p>
+    <div class="heading"><h2 class="eyebrow">{title}</h2>{#if note}<p class="note mono">{note}</p>{/if}</div>
     {#if actions}
       <div class="actions">{@render actions()}</div>
-    {:else if note}
-      <p class="note mono">{note}</p>
     {/if}
   </header>
   <div class="body" class:scroll>
@@ -33,6 +31,7 @@
 
 <style>
   .panel {
+    border-radius: .4rem;
     background: var(--bg-panel);
     border: 1px solid var(--rule);
     display: flex;
@@ -54,7 +53,9 @@
     color: var(--fg-faint);
     font-size: 0.7rem;
   }
+  .heading { min-width: 0; overflow-wrap: anywhere; }
   .actions {
+    max-width: 100%;
     display: flex;
     align-items: center;
     gap: 0.4rem;

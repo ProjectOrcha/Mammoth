@@ -248,15 +248,15 @@ export interface TreemapNode {
   path: string;
   value: number;
   age_days: number;
-  reads: number;
+  reads: number | null;
   children?: TreemapNode[];
 }
 
 export interface SkewPoint {
   partition: string;
   size: number;
-  reads: number;
-  writes: number;
+  reads: number | null;
+  writes: number | null;
 }
 
 export interface SkewReport {
@@ -322,13 +322,17 @@ export interface Task {
 export interface Stage {
   id: string;
   name: string;
-  kind: 'map' | 'shuffle' | 'reduce';
+  kind: 'map' | 'shuffle' | 'reduce' | 'local';
   deps: string[];
   tasks: number;
   done: number;
 }
 
 export interface Job {
+  execution?: 'local';
+  input?: string;
+  output?: string;
+  error?: string;
   id: string;
   name: string;
   user: string;

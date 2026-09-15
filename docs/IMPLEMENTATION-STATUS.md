@@ -7,9 +7,9 @@
 | Local filesystem | Persistent namespace; automatic parent creation on upload; list/stat/read/write/remove; mkdir; atomic rename; recursive copy; POSIX metadata; replica changes |
 | Block storage | Immutable block directories; per-4-KiB CRC32C; file sync, atomic publication and directory sync on Unix; rack-aware rendezvous placement; corruption fallback; explicit repair and garbage collection |
 | Concurrency | OS file lock serializes processes sharing a store; interrupted streams preserve committed files; read snapshots retain one generation across overwrites |
-| CLI | Filesystem commands, human/JSON/YAML/CSV output, stable errors, health checks, configuration validation, completion scripts, basic HDFS command translation |
+| CLI | Filesystem commands, human/JSON/YAML/CSV output, terminal logo/help, local service status and graceful stop/shutdown, stable errors, health checks, configuration validation, completion scripts, basic HDFS command translation |
 | Visualization | Block matrix, capacity tables, topology, skew, namespace sizes, replication health and an interactive `top` dashboard |
-| Dashboard | Embedded production assets, live filesystem and node views, upload/download, folder creation, file deletion, listing pages, SSE refresh and errors |
+| Dashboard | Embedded production assets, live filesystem and node views, upload/download, folder creation, filtering, rename/move, properties, recursive deletion, paginated layouts, replica repair, local job submission, SSE refresh and errors |
 | HTTP client | Backend implementation over the versioned filesystem API; encoded paths and streamed request/response bodies |
 | S3 subset | Bucket/object CRUD, copy, list v1/v2, prefix/delimiter/pagination, HEAD, ranges, ETags, conditional GET and upload checksum verification |
 | Compute | Local UTF-8 word count and line sort, up to 64 MiB input |
@@ -35,7 +35,7 @@ these tests is not evidence that the production distributed milestones are done.
 - **M6:** no Raft log, quorum election, fencing, snapshots or distributed HA.
   The GFS model's master takeover remains an independent teaching simulation.
 - **M7:** no distributed DAG scheduler, worker task isolation, shuffle or TeraSort
-  benchmark. Local command results are not a persistent dashboard job history.
+  benchmark. Dashboard-submitted local text jobs have a bounded session history (100 jobs, two concurrent). Restarting clears this history; CLI jobs are not tracked in it. Output files remain persistent.
 - **M8:** no native HDFS import/cutover, resumable transfer journal or erasure coding.
 - **Operations:** capacities are simulated reference values for worker directories
   on one physical disk, not independently available disk capacity or enforced quotas.
@@ -103,7 +103,7 @@ verifies MD5 ETags and exact bytes, and queries 1,000 Parquet rows with DuckDB.
 
 Validated on macOS ARM64 on 2026-09-15:
 
-- 36 Rust tests passed across the workspace; 25 dashboard tests passed.
+- 38 Rust tests passed across the workspace; 33 dashboard tests passed.
 - Formatting, strict Clippy, Rust 1.85 compatibility and dependency policy checks passed.
 - 10,000 deterministic GFS teaching-model scenarios passed (seeds 1–10,000).
 - Dashboard type checking and production build passed; browser checks covered live
@@ -116,3 +116,31 @@ Validated on macOS ARM64 on 2026-09-15:
 - The native release archive was built locally. Docker Compose configuration
   validated; container execution was not tested because the Docker engine was
   stopped. Linux/Windows CI and hosted release workflows have not run locally.
+
+### Web repair verification
+
+The dashboard repair pass additionally checks reactive chart updates, zero-byte
+files without read metrics, access to all block-matrix rows, name filtering before
+pagination, rename errors, recursive-delete selection, job completion and failure,
+and protection of existing job outputs. Browser checks covered the six routes at
+390 px, both themes, Unicode folder creation, file rename/properties, word-count
+submission and its output link. Documentation search and diagrams were checked;
+1,578 internal links passed the rebuilt site audit. The release service was
+restarted at port 8080 and the existing six file paths, lengths and checksums were
+unchanged across the restart.
+
+### Branch UI comparison (2026-09-16)
+
+Compared the `main` and `AI_coded` dashboards and public homepages. The Workspace
+selector now exposes the full example dashboard without rebuilding, including
+historical charts, the six distribution views, distributed job stages, Raft and
+warm start. Real local storage has rack cards, four expandable lifecycle cards,
+replica-byte diagrams, thirty minutes of in-tab snapshots, file properties and
+bounded text previews. Local jobs report their measured single-task execution.
+
+Validated 41 dashboard tests, six gateway integration tests, strict gateway
+Clippy, type checking, and both production web builds. Browser checks covered all
+six routes in both workspaces at 390 px, desktop charts, workspace switching,
+historical replay, text preview, job input prefill, word-count completion and
+output preview, replica repair, and both themes. Distributed metrics remain
+example data; local snapshots are browser memory and clear on reload.

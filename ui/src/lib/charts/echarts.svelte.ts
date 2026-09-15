@@ -102,7 +102,8 @@ export function tooltipStyle(p: Palette) {
     borderColor: p.rule,
     borderWidth: 1,
     textStyle: { color: p.fg, fontSize: 11, fontFamily: p.fontMono },
-    extraCssText: 'border-radius: 0; box-shadow: none;',
+    extraCssText: 'border-radius: 0; box-shadow: none; max-width: min(24rem, 80vw); white-space: normal; overflow-wrap: anywhere;',
+    confine: true,
   };
 }
 
@@ -112,12 +113,22 @@ export function tooltipStyle(p: Palette) {
  * and disposal, which are the two things every hand-rolled ECharts wrapper
  * forgets.
  */
-export const chart: Action<HTMLElement, () => ChartOption> = (node, build) => {
-  let instance = echarts.init(node, undefined, { renderer: 'canvas' });
-  let make = build;
+type ChartSource = (() => ChartOption) | {
+  option: () => ChartOption;
+  onClick: (params: unknown) => void;
+};
 
-  const draw = () => instance.setOption(make(), { notMerge: true });
-  draw();
+export const chart: Action<HTMLElement, ChartSource> = (node, build) => {
+  const instance = echarts.init(node, undefined, { renderer: 'canvas' });
+  let make = $state(build);
+
+  const draw = () => instance.setOption(typeof make === 'function' ? make() : make.option());
+  instance.on('click', (params: unknown) => {
+    if (typeof make !== 'function') make.onClick(params);
+  });
+  // Track the props read by each chart builder, including live data and controls.
+  // An action parameter that is a stable closure does not itself track those reads.
+  $effect(draw);
 
   const ro = new ResizeObserver(() => instance.resize());
   ro.observe(node);
@@ -128,9 +139,8 @@ export const chart: Action<HTMLElement, () => ChartOption> = (node, build) => {
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   return {
-    update(next: () => ChartOption) {
+    update(next: ChartSource) {
       make = next;
-      draw();
     },
     destroy() {
       ro.disconnect();

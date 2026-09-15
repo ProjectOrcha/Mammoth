@@ -7,6 +7,7 @@
   import { live } from '$lib/live.svelte';
   import { bytes, clock, pctValue } from '$lib/format';
   import Meter from '$lib/components/Meter.svelte';
+  import { switchWorkspace, type Workspace } from '$lib/workspace';
   import '../app.css';
 
   let { children } = $props();
@@ -93,9 +94,13 @@
   <div class="main">
     <header class="topbar">
       <div class="cluster">
+        <select class="workspace" aria-label="Workspace" value={live.source === 'demo' ? 'demo' : 'gateway'} onchange={(event) => switchWorkspace(event.currentTarget.value as Workspace)}>
+          <option value="gateway">My storage</option>
+          <option value="demo">Example cluster</option>
+        </select>
         <span class="name">{report?.name ?? 'mammoth'}</span>
         {#if report}
-          <span class="mono dim">leader {report.leader ?? '—'}</span>
+          {#if !report.capabilities?.local}<span class="mono dim">leader {report.leader ?? '—'}</span>{/if}
           {#if report.safe_mode}
             <span class="badge danger">safe mode</span>
           {/if}
@@ -146,7 +151,7 @@
     {#if live.source === 'demo' && !dismissedBanner}
       <div class="banner" role="status">
         <div>
-          <strong>Demo workspace.</strong>
+          <strong>Example cluster.</strong>
           Explore a simulated cluster, including an offline worker and a repair in
           progress. All values are example data.
         </div>
@@ -158,7 +163,7 @@
     {/if}
 
     {#if report?.capabilities?.local}
-      <div class="banner" role="status"><div><strong>Local storage.</strong> File data is real and persistent. Workers and reference capacities are simulated on this machine; network performance and HA metrics are unavailable.</div></div>
+      <div class="banner" role="status"><div><strong>My storage.</strong> Your files are persistent. Worker directories and reference capacities model three racks on this machine.</div><button onclick={() => switchWorkspace('demo')}>Explore example cluster →</button></div>
     {/if}
 
     {#if live.error}
@@ -178,6 +183,10 @@
 </div>
 
 <style>
+  .workspace { font-size: .75rem; max-width: 10rem; }
+  .banner button { flex-shrink: 0; }
+  @media (max-width: 900px) { .cluster .name { display: none; } .updated { display: none; } }
+  @media (max-width: 600px) { .banner { flex-wrap: wrap; } .workspace { max-width: 8.5rem; } }
   .mobile-theme {
     display: none;
   }
@@ -387,6 +396,9 @@
     top: 0.5rem;
   }
   @media (max-width: 600px) {
+    .rail ul { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .rail li a { justify-content: center; padding: .65rem .35rem; gap: .35rem; font-size: .8rem; }
+    .right { gap: .5rem; }
     .updated {
       display: none;
     }
@@ -434,5 +446,8 @@
     .rail-foot {
       display: none;
     }
+  }
+  @media (max-width: 600px) {
+    .rail ul { display: grid; }
   }
 </style>

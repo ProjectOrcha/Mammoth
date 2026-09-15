@@ -21,6 +21,7 @@
 <style>
   .stat {
     display: block;
+    border-radius: .4rem;
     background: var(--bg-panel);
     border: 1px solid var(--rule);
     padding: 0.75rem 0.9rem 0.85rem;
@@ -40,9 +41,7 @@
     letter-spacing: 0.02em;
     margin: 0.35rem 0 0;
     color: var(--fg);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
   }
   [data-tone='ok'] .value {
     color: var(--ok);

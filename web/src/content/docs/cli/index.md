@@ -1,178 +1,97 @@
 ---
 title: CLI overview
-description: POSIX verbs, JSON everywhere, and errors that teach — plus the global flags that apply to every command.
+description: Commands and options supported by the current local service and HTTP gateway.
 sidebar:
   order: 1
 ---
 
-If you know `ls`, `cp` and `df`, you already know most of this CLI. The verbs
-are the POSIX ones, they take the flags you expect, and everything prints a
-table on a terminal and JSON in a pipe.
+The CLI works with persistent local storage or one HTTP gateway. These pages
+describe the commands available in the current build. For installation, follow
+the [quickstart](/intro/quickstart/).
+
+The examples use `mammoth` on your PATH. Follow the
+[shortcut setup](/intro/install/#use-mammoth-from-any-folder) to use that command
+from any folder. You can also run `./target/release/mammoth` directly after a
+release build. Use the same storage root as the service:
 
 ```bash
-mammoth ls /data                  # not: hdfs dfs -ls /data
-mammoth put ./big.parquet /data/  # not: hdfs dfs -put ./big.parquet /data/
-mammoth df                        # not: hdfs dfsadmin -report
+export MAMMOTH_LOCAL_ROOT="$PWD/.mammoth"
+mammoth ls /sample
+mammoth put README.md /sample/readme.md
+mammoth df
 ```
 
-Old scripts do not have to be rewritten on day one:
+Specify the complete destination filename for uploads, copies, and downloads.
+To connect to a running service:
 
 ```bash
-mammoth compat hdfs dfs -ls /data     # runs the Mammoth equivalent and tells
-                                      # you what it would have been
+mammoth --masters http://127.0.0.1:8080 ls /
 ```
 
 ## Where to look
 
+`mammoth --help` lists top-level and nested commands with descriptions.
+`mammoth commands` shows the complete catalog, including aliases;
+`mammoth <command> --help` explains its arguments.
+
 | Page | Commands |
 | --- | --- |
-| [Files](/cli/filesystem/) | `ls` `put` `get` `cat` `head` `tail` `mkdir` `rm` `mv` `cp` `stat` `du` `df` `find` `chmod` `chown` `setrep` `checksum` |
-| [Visualization](/cli/viz/) | `viz blocks` `viz cluster` `viz topology` `viz skew` `viz treemap` `viz health` `viz flow` `top` |
-| [Operations](/cli/operations/) | `init` `quickstart` `serve` `ui` `doctor` `node` `cluster` `admin` `job` `migrate` `bench` `config` `token` `completions` |
-| [Reference](/cli/reference/) | every flag, generated from the binary |
-
-## The command tree
-
-```
-mammoth
-├── init                    Create a new cluster (config, IDs, certs)
-├── quickstart              One-command demo cluster + sample data + open UI
-├── serve --role R          Run a node
-├── ui                      Launch/open the web GUI
-├── doctor                  Diagnose config, ports, disks, clock, ulimits
-│
-├── ls | put | get | cat | tail | head | mkdir | rm | mv | cp
-├── stat | du | df | find | chmod | chown | setrep | checksum
-│
-├── viz                     data distribution visualization
-│   ├── blocks <path>       where this file's blocks live
-│   ├── cluster             per-node capacity heatmap
-│   ├── topology            rack/zone tree
-│   ├── skew [path]         hotspots and imbalance
-│   ├── treemap [path]      which directories eat the space
-│   ├── health              redundancy health
-│   └── flow                live data movement
-├── top                     live TUI dashboard (htop for your cluster)
-│
-├── node    list | show | decommission | maintenance | remove
-├── cluster members | leader | health | join | leave | transfer-leadership
-├── admin   report | safemode | fsck | balancer | snapshot | quota | ec | upgrade
-├── job     submit | list | status | logs | kill
-├── migrate plan | run | resume | verify | sync | cutover
-├── bench   dfsio | terasort | metadata
-├── config  show | validate | set | diff
-├── token   create | list | revoke
-├── compat  hdfs …         translate an old Hadoop invocation
-└── completions bash|zsh|fish|powershell
-```
+| [Files](/cli/filesystem/) | `ls`, `put`, `get`, `cat`, `head`, `tail`, `mkdir`, `rm`, `mv`, `cp`, `stat`, `du`, `df`, `find`, `chmod`, `chown`, `setrep`, `checksum` |
+| [Visualization](/cli/viz/) | block placement, node capacity, topology, skew, namespace sizes, health, `top` |
+| [Operations](/cli/operations/) | lifecycle, health checks, repairs, local text jobs, transfers, benchmarks, configuration |
+| [Generated reference](/cli/reference/) | complete command tree and accepted flags |
 
 ## Global flags
 
-These work on every command.
+| Flag | Environment variable | Behavior |
+| --- | --- | --- |
+| `--local-root PATH` | `MAMMOTH_LOCAL_ROOT` | Local store; defaults to `~/.mammoth/local`. |
+| `-c`, `--config PATH` | `MAMMOTH_CONFIG` | Read a configuration file. |
+| `--masters URL` | `MAMMOTH_MASTERS` | Connect to one HTTP gateway. |
+| `--output FORMAT` | — | `auto`, `table`, `json`, `yaml`, or `csv`. |
+| `--json` | — | Shorthand for JSON output. |
+| `--color MODE` | `NO_COLOR` for automatic mode | `auto`, `always`, or `never`; controls human output and help. |
+| `-h`, `--help` | — | Show accepted arguments for a command. |
 
-| Flag | Env | Default | What it does |
-| --- | --- | --- | --- |
-| `-c`, `--config <PATH>` | `MAMMOTH_CONFIG` | `/etc/mammoth/mammoth.toml`, then `~/.mammoth/mammoth.toml` | Which `mammoth.toml` to read. |
-| `--masters <A,B,C>` | `MAMMOTH_MASTERS` | from the config | Talk to a different cluster without editing a file. |
-| `--output <FORMAT>` | — | `auto` | `auto` · `table` · `json` · `yaml` · `csv`. |
-| `--json` | — | off | Shorthand for `--output json`. |
-| `--color <WHEN>` | `NO_COLOR` | `auto` | `auto` · `always` · `never`. `auto` colours only on a terminal; `NO_COLOR` set to anything turns it off. Use `always` for `less -R` and CI log viewers. |
-| `-v`, `-vv`, `-vvv` | — | off | More detail. `-vvv` includes per-RPC timing. |
-
-Any config key can be overridden by environment variable — uppercase the path
-and join it with `__`:
+Configuration values can also be set through nested environment variables:
 
 ```bash
 MAMMOTH_STORAGE__REPLICATION=2 mammoth put ./scratch.bin /tmp/scratch.bin
 ```
 
-## Output: tables for you, JSON for scripts
+`--masters` does not provide multi-master discovery. Separate distributed
+master and worker services, token management, and high availability remain
+[roadmap work](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md).
 
-`--output auto` is the default, and it does the right thing without being told:
-**a table when stdout is a terminal, JSON when it is a pipe.** So the same
-command is readable by hand and parseable in a script.
+## Output
 
-```console
-$ mammoth node list
- NODE  RACK         STATE      USED             FRAGMENTS  DISK p99
- w1    /dc1/rack-a  ● healthy  113 TB / 160 TB       5.1M       8 ms
- w3    /dc1/rack-a  ⚠ warn     150 TB / 160 TB       6.7M      12 ms
- w12   /dc1/rack-c  ✕ dead     —                        —         —
-```
-
-```console
-$ mammoth node list | jq -r '.[] | select(.state != "healthy") | .id'
-w3
-w12
-```
-
-The JSON field names are a **public API**. They will not be renamed without a
-major version bump, so it is safe to build on them.
-
-Colour is emitted only when stdout is a terminal, so redirected output never
-contains escape sequences, and `NO_COLOR` turns it off entirely. `--output table`
-forces the human form anyway, `--color always` keeps the colour through a pipe
-(handy together, for `less -R`), and `--color never` drops the colour but keeps
-the table. Every colour-carried distinction also has a symbol, so nothing is
-lost in plain text — see [Colour](/cli/viz/#colour).
-
-## Exit codes
-
-| Code | Meaning |
-| --- | --- |
-| `0` | Success. |
-| `1` | The operation failed — the message says why. |
-| `2` | Bad usage: an unknown flag, a missing argument. |
-| `3` | Could not reach a master. Network, address, or nothing running. |
-| `4` | Refused on purpose: safe mode, a lease held elsewhere, a quota. |
+Automatic output is a table in a terminal and JSON when piped. Choose an
+explicit format for scripts. File content from `cat`, `head`, and `tail` remains
+raw regardless of the output flag.
 
 ```bash
-mammoth stat /data/report.parquet >/dev/null 2>&1 || echo "not there yet"
+mammoth node list --json
+mammoth ls /sample --output csv
+mammoth config show --output yaml
 ```
 
-## Errors that teach
+## Exit codes and errors
 
-A Mammoth error never prints a stack trace. It names what broke, why, what to
-do about it, and where to read more:
+| Exit | Meaning |
+| --- | --- |
+| `0` | Success. |
+| `1` | An operation failed; the error includes a stable code. |
+| `2` | Invalid command-line usage, such as an unknown flag. |
 
-```console
-$ mammoth put ./big.bin /data/big.bin
+Use `mammoth COMMAND --help` when a command is rejected. Earlier design examples
+included flags that the local service does not implement. The
+[generated reference](/cli/reference/) is generated from the command parser.
 
-error[E0301]: not enough healthy workers for replication 3
-
-  only 2 workers are accepting writes, and this file asks for 3 copies.
-  w3 is full (94%) and w12 has not sent a heartbeat in 42m.
-
-  what you can do:
-    · lower replication:   mammoth put ./big.bin /data/big.bin --replication 2
-    · check node health:   mammoth node list
-    · why is a node down:  mammoth doctor --node w12
-
-  docs: https://projectorcha.github.io/Mammoth/errors/E0301
-```
-
-Codes are stable and greppable. The common ones:
-
-| Code | Means | Usually fixed by |
-| --- | --- | --- |
-| `E0001` | The config file is wrong. | `mammoth config validate` |
-| `E0101` | No such path. | check the path; `mammoth ls` its parent |
-| `E0102` | Wrong kind — a directory where a file was expected, or the reverse. | add `--recursive`, or fix the path |
-| `E0201` | Someone else holds the write lease. | wait for it to expire, or `mammoth admin lease list` |
-| `E0301` | Not enough healthy workers for the replication asked for. | `mammoth node list`, lower `--replication` |
-| `E0302` | The cluster is in safe mode. | `mammoth admin safemode status` — it names the shard |
-| `E0401` | Checksum mismatch. | `mammoth admin fsck <path>` |
-| `E0500` | Local I/O error. | disk, permissions, `ulimit -n` |
-
-## Design principles
-
-1. **Verbs are POSIX, not Hadoop.** `mammoth ls /data`, not `hdfs dfs -ls /data`.
-2. **Everything has `--json`.** Human tables on a TTY, JSON when piped.
-3. **Errors teach.** Never a stack trace — what broke, why, and the next command.
-4. **Progress bars on anything over one second**, auto-disabled when piped.
-5. **`mammoth doctor` exists** and checks what beginners get wrong.
-
-The full flag-by-flag reference at [`cli/reference`](/cli/reference/) is
-generated from the `clap` tree by `cargo xtask docs` and verified in CI, so it
-can never drift from the binary. The pages here are the hand-written half: what
-each command is *for*, and what its output is telling you.
+| Error | Action |
+| --- | --- |
+| `E0001` — configuration | Run `mammoth config validate`. |
+| `E0101` — missing path | List the parent folder and check the filename. |
+| `E0102` — wrong kind | Check whether the path is a file or directory. |
+| `E0301` — insufficient workers | Inspect `mammoth node list` and the requested replication count. |
+| `E0401` — checksum mismatch | Inspect the file's replicas and run `mammoth admin repair`. |
+| `E0500` — local I/O | Check disk space and filesystem access. |

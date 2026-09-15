@@ -15,6 +15,7 @@
   import StateDot from '$lib/components/StateDot.svelte';
   import Sparkline from '$lib/components/Sparkline.svelte';
   import FastPaths from '$lib/components/FastPaths.svelte';
+  import StoragePaths from '$lib/components/StoragePaths.svelte';
 
   const report = $derived(live.report);
   const summary = $derived(report ? summarizeCluster(report) : null);
@@ -176,6 +177,14 @@
             ></span>{/each}
         </div>
       </OverviewMetric>
+      {#if report.capabilities?.local}
+        <OverviewMetric label="Stored blocks" value={count(summary.totalBlocks)} note="Files below the inline threshold stay in metadata" href="/files">
+          <div class="metric-caption">Browse your files and their block layouts</div>
+        </OverviewMetric>
+        <OverviewMetric label="Replica copies" value={count(report.nodes.reduce((total, node) => total + node.fragments, 0))} note="Stored across the worker directories" href="/distribution">
+          <div class="metric-caption">Inspect placement and redundancy</div>
+        </OverviewMetric>
+      {:else}
       <OverviewMetric
         label="Read throughput"
         value={report.throughput.read_bps === 0
@@ -198,6 +207,7 @@
           <span class="direction" aria-hidden="true">↑</span> From clients to storage
         </div>
       </OverviewMetric>
+      {/if}
     </div>
 
     <div class="health-layout">
@@ -347,7 +357,7 @@
               </p>{/if}
           {:else}<p>No blocks are currently waiting to be rebuilt.</p>{/if}
         </div>
-        {:else}<p>Replica repair is available with <code>mammoth admin repair</code>.</p>{/if}
+        {:else}<div class="repair"><h3>Replica protection</h3><p>Checksums protect each stored copy. Inspect placement or run a repair check from Cluster.</p><a href="/cluster">Check and repair replicas →</a></div>{/if}
       </section>
     </div>
 
@@ -422,6 +432,12 @@
       {/if}
     </section>
 
+    {#if report.capabilities?.local}
+      <section class="performance" aria-labelledby="tools-title">
+        <header class="section-heading"><div><h2 id="tools-title">Inside your storage</h2><p>Follow a file from upload to verified reads and recovery.</p></div><a href="/cluster">Cluster details ↗</a></header>
+        <StoragePaths {report} />
+      </section>
+    {:else}
     <section class="performance" aria-labelledby="performance-title">
       <header class="section-heading">
         <div>
@@ -437,6 +453,7 @@
       </header>
       <FastPaths {report} />
     </section>
+    {/if}
     <footer class="overview-footer">
       <span
         >{live.source === 'demo'

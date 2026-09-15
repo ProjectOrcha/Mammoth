@@ -3,8 +3,6 @@
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
-use clap::CommandFactory;
-
 // Share the actual command tree, so help and committed documentation stay in sync.
 #[allow(dead_code)]
 #[path = "../../crates/mammoth-cli/src/cli.rs"]
@@ -35,7 +33,7 @@ fn run(root: &Path, task: Option<&str>) -> Result<(), Box<dyn std::error::Error>
                  The local filesystem, dashboard, HTTP client, text jobs and S3 subset are implemented.\n\
                  Separate master/worker roles remain future work. See docs/IMPLEMENTATION-STATUS.md.\n\n",
             );
-            render_help(cli::Cli::command(), "mammoth", &mut text);
+            render_help(cli::Cli::help_command(), "mammoth", &mut text);
             std::fs::write(
                 root.join("web/src/content/docs/cli/reference.md"),
                 format!("{}\n", text.trim_end()),
@@ -123,7 +121,7 @@ mod tests {
     #[test]
     fn reference_includes_nested_commands_and_global_flags() {
         let mut text = String::new();
-        render_help(cli::Cli::command(), "mammoth", &mut text);
+        render_help(cli::Cli::help_command(), "mammoth", &mut text);
         assert!(text.contains("## `mammoth viz blocks`"));
         let blocks = text.split("## `mammoth viz blocks`").nth(1).unwrap();
         assert!(blocks.split("## ").next().unwrap().contains("--json"));

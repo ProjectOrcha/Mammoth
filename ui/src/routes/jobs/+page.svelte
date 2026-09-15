@@ -4,9 +4,12 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import { live } from '$lib/live.svelte';
+  import { page } from '$app/state';
+  import { switchWorkspace } from '$lib/workspace';
+  import Stat from '$lib/components/Stat.svelte';
   import { api } from '$lib/api';
   import type { Job, Task } from '$lib/types';
-  import { ago, duration, pct } from '$lib/format';
+  import { ago, duration, pct, fileHref } from '$lib/format';
   import Panel from '$lib/components/Panel.svelte';
   import Meter from '$lib/components/Meter.svelte';
 
@@ -14,6 +17,34 @@
   let selectedId = $state<string | null>(null);
 
   let error = $state<string | null>(null);
+  let jobKind = $state<'wordcount' | 'sort'>('wordcount');
+  let inputPath = $state('');
+  let availableFiles = $state<string[]>([]);
+  let jobFilter = $state('all');
+  const filteredJobs = $derived(jobs?.filter(job => jobFilter === 'all' || job.state === jobFilter));
+  $effect(() => {
+    if (filteredJobs && !filteredJobs.some(job => job.id === selectedId)) selectedId = filteredJobs[0]?.id ?? null;
+  });
+  let outputPath = $state('');
+  let overwrite = $state(false);
+  let submitting = $state(false);
+  let submitError = $state('');
+
+  async function submit(event: SubmitEvent) {
+    event.preventDefault();
+    if (submitting) return;
+    submitting = true; submitError = '';
+    try {
+      const created = await api.submitJob(jobKind, inputPath, outputPath, overwrite);
+      jobFilter = 'all';
+      selectedId = created.id;
+      jobs = [created, ...(jobs ?? []).filter(job => job.id !== created.id)];
+      overwrite = false;
+      live.paused = false;
+      await live.refresh();
+    } catch (e) { submitError = e instanceof Error ? e.message : String(e); }
+    finally { submitting = false; }
+  }
   let active = false;
   let busy = false;
 
@@ -35,6 +66,9 @@
 
   onMount(() => {
     active = true;
+    inputPath = page.url.searchParams.get('input') ?? '';
+    if (inputPath) outputPath = `${inputPath}.result.txt`;
+    void api.files().then(files => { if (active) availableFiles = files.map(file => file.path); }).catch(() => {});
     void loadJobs();
     return () => { active = false; };
   });
@@ -50,10 +84,14 @@
   const layers = $derived.by(() => {
     if (!job) return [];
     const depth = new Map<string, number>();
+    const visiting = new Set<string>();
     const of = (id: string): number => {
+      if (visiting.has(id)) return 0;
+      visiting.add(id);
       if (depth.has(id)) return depth.get(id)!;
       const stage = job.stages.find((s) => s.id === id);
       const d = stage && stage.deps.length ? Math.max(...stage.deps.map(of)) + 1 : 0;
+      visiting.delete(id);
       depth.set(id, d);
       return d;
     };
@@ -66,7 +104,7 @@
 
   const span = $derived.by(() => {
     if (!job?.tasks.length) return 1;
-    return Math.max(1, ...job.tasks.map((t) => t.start_s + t.dur_s));
+    return Math.max(.001, ...job.tasks.map((t) => t.start_s + t.dur_s));
   });
 
   const straggler = $derived.by(() => {
@@ -100,19 +138,45 @@
   <p class="eyebrow">{jobs ? `${jobs.length} recent` : 'loading'}</p>
 </header>
 
-{#if error}<p class="load-error" role="alert">Unable to load jobs: {error}</p>{/if}
+{#if live.source === 'gateway' && live.report?.capabilities?.jobs}
+  <Panel title="Run a text job" note="UTF-8 input · up to 64 MiB">
+    <datalist id="job-input-files">{#each availableFiles as path}<option value={path}></option>{/each}</datalist>
+    <form class="job-form" onsubmit={submit}>
+      <label>Operation<select bind:value={jobKind} disabled={submitting}><option value="wordcount">Word count</option><option value="sort">Sort lines</option></select></label>
+      <label>Input file<input type="text" list="job-input-files" bind:value={inputPath} placeholder="/sample/words.txt" required disabled={submitting} /></label>
+      <label>Output file<input type="text" bind:value={outputPath} placeholder="/sample/counts.txt" required disabled={submitting} /></label>
+      <button disabled={submitting}>{submitting ? 'Starting…' : 'Run job'}</button>
+      <label class="overwrite"><input type="checkbox" bind:checked={overwrite} disabled={submitting} /> Replace the output file if it already exists</label>
+    </form>
+    <p class="hint">Runs on this machine. Browse <a href="/files">Files</a> to find an input. Recent jobs are kept for this service session; CLI jobs are not included.</p>
+    {#if submitError}<p class="load-error" role="alert">{submitError}</p>{/if}
+  </Panel>
+{:else if live.source === 'gateway' && live.report?.capabilities?.jobs === false}
+  <Panel title="Local text jobs"><p>The running service does not support dashboard jobs. Restart it with the latest Mammoth build to enable this page.</p><p><code>mammoth job wordcount /sample/words.txt /sample/counts.txt</code></p></Panel>
+{/if}
 
+{#if error}<p class="load-error" role="alert">Unable to load jobs: {error}</p><button onclick={loadJobs}>Try again</button>{/if}
+
+{#if jobs}
+  <div class="job-stats">
+    <Stat label="Running" value={String(jobs.filter(job => job.state === 'running').length)} note="In progress" />
+    <Stat label="Completed" value={String(jobs.filter(job => job.state === 'succeeded').length)} note="Output ready" tone="ok" />
+    <Stat label="Failed" value={String(jobs.filter(job => job.state === 'failed').length)} note="Open a job for details" />
+  </div>
+{/if}
 <div class="cols">
-  <Panel title="Recent" scroll>
+  <Panel title="Recent jobs" scroll>
+    {#snippet actions()}<select aria-label="Filter jobs" bind:value={jobFilter}><option value="all">All jobs</option><option value="running">Running</option><option value="succeeded">Completed</option><option value="failed">Failed</option></select><button onclick={loadJobs}>Refresh jobs</button>{/snippet}
     {#if !jobs && error}
       <p class="quiet">Job data unavailable.</p>
     {:else if !jobs}
       <p class="quiet mono">reading…</p>
     {:else if jobs.length === 0}
-      <p class="quiet">No jobs yet.</p>
+      <p class="quiet">No jobs have been submitted in this service session.</p>
+    {:else if filteredJobs?.length === 0}<p class="quiet">No jobs match this filter.</p>
     {:else}
       <ul class="joblist">
-        {#each jobs as j (j.id)}
+        {#each filteredJobs ?? [] as j (j.id)}
           <li>
             <button class:on={j.id === selectedId} onclick={() => (selectedId = j.id)}>
               <span class="dot" data-state={j.state}></span>
@@ -126,7 +190,19 @@
     {/if}
   </Panel>
 
-  {#if job}
+  {#if job?.execution === 'local'}
+    <Panel title={job.name} note={job.id}>
+      <dl>
+        <div><dt>State</dt><dd data-state={job.state}>{job.state}</dd></div>
+        <div><dt>Elapsed</dt><dd>{duration(job.elapsed_s)}</dd></div>
+        <div><dt>Input</dt><dd><a href={fileHref(job.input ?? '/')}>{job.input}</a></dd></div>
+        <div><dt>Output</dt><dd>{#if job.state === 'succeeded'}<a href={fileHref(job.output ?? '/')}>{job.output}</a>{:else}{job.output}{/if}</dd></div>
+      </dl>
+      <Meter value={job.progress * 100} tone="accent" />
+      {#if job.error}<p class="load-error" role="alert">{job.error}</p>{/if}
+      {#if job.state === 'running'}<p class="hint" role="status">Processing the input and writing the result…</p>{/if}
+    </Panel>
+  {:else if job}
     <Panel title={job.name} note={job.id}>
       <dl>
         <div><dt>state</dt><dd class="mono" data-state={job.state}>{job.state}</dd></div>
@@ -144,11 +220,18 @@
         at all. It is the whole reason the scheduler cares where blocks are.
       </p>
     </Panel>
+  {:else}
+    <Panel title="Your next job" note="Choose a file, an operation and an output path">
+      <div class="empty-workflow"><span>1<br /><strong>Input file</strong></span><span aria-hidden="true">→</span><span>2<br /><strong>Process text</strong></span><span aria-hidden="true">→</span><span>3<br /><strong>Open result</strong></span></div>
+      <p class="hint">Word count groups words with their counts. Sort puts lines in order. Completed jobs show their execution stage and timeline here.</p>
+      <a href="/files">Browse input files →</a>
+      {#if live.source === 'gateway'}<p class="hint"><button onclick={() => switchWorkspace('demo')}>Explore a distributed job example →</button></p>{/if}
+    </Panel>
   {/if}
 </div>
 
 {#if job && job.stages.length}
-  <Panel title="Stages" note={`${job.stages.length} stages`}>
+  <Panel title="Stages" note={`${job.stages.length} ${job.stages.length === 1 ? 'stage' : 'stages'}`}>
     <div class="dag">
       {#each layers as layer, i (i)}
         {#if i > 0}<span class="arrow" aria-hidden="true">→</span>{/if}
@@ -157,7 +240,7 @@
             <article class="stage" data-kind={s.kind}>
               <p class="eyebrow">{s.kind}</p>
               <p class="sname">{s.name}</p>
-              <Meter value={(s.done / s.tasks) * 100} tone="accent" height="0.3rem" />
+              <Meter value={s.tasks ? (s.done / s.tasks) * 100 : 0} tone="accent" height="0.3rem" />
               <p class="mono stasks">{s.done} / {s.tasks} tasks</p>
             </article>
           {/each}
@@ -165,9 +248,9 @@
       {/each}
     </div>
     <p class="hint">
-      The shuffle is where a job spends most of its time — it is an all-to-all network
+      {#if job.execution === 'local'}This job runs as one local task, covering input reads, text processing and output writes. The timeline measures that complete execution.{:else}The shuffle is where a job spends most of its time — it is an all-to-all network
       transfer plus a disk sort. Every performance conversation about a job like this
-      eventually becomes a conversation about that stage.
+      eventually becomes a conversation about that stage.{/if}
     </p>
   </Panel>
 
@@ -200,20 +283,34 @@
         ⚠ <code class="mono">{straggler.task.id}</code> on
         <code class="mono">{straggler.task.node}</code> is running
         {straggler.ratio.toFixed(0)}× the median at {duration(straggler.task.dur_s)}. That one
-        task sets this job's runtime. w7's disk p99 is 340 ms — a slow disk is worse than a
-        dead one, because nothing routes around it.
+        task sets this job's runtime. Inspect that worker and its input size to investigate the delay.
         <br />
         <span class="mono fix">mammoth doctor --node {straggler.task.node}</span>
       </p>
     {/if}
   </Panel>
-{:else if job}
+{:else if job && job.execution !== 'local'}
   <Panel title="Stages">
     <p class="quiet">This job has finished; its per-task detail has aged out.</p>
   </Panel>
 {/if}
 
 <style>
+  .job-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); margin: var(--gap) 0; }
+  .empty-workflow { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: 1.2rem 0; color: var(--fg-dim); font-size: .75rem; }
+  .empty-workflow strong { color: var(--fg); }
+  .job-form { display: grid; gap: .8rem; align-items: end; grid-template-columns: minmax(8rem, .7fr) minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .job-form label { display: grid; gap: .4rem; min-width: 0; }
+  .job-form .overwrite { grid-column: 1 / -1; display: flex; align-items: center; }
+  .job-form input[type='checkbox'] { width: auto; }
+  :global(main > .panel + .cols), :global(main > .panel + .panel) { margin-top: var(--gap); }
+  dd { overflow-wrap: anywhere; min-width: 0; }
+  @media (max-width: 700px) {
+    .job-form { grid-template-columns: 1fr; }
+    .joblist button { grid-template-columns: .6rem minmax(0, 1fr) 3rem; }
+    .jmeta { grid-column: 2; }
+    .jpct { grid-column: 3; grid-row: 1 / 3; }
+  }
   .load-error { color: var(--danger); overflow-wrap: anywhere; }
   .page {
     display: flex;

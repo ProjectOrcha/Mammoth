@@ -4,12 +4,28 @@
      read-only cluster, during the incident that caused the restart), so it gets
      a whole panel rather than a line in a table. -->
 <script lang="ts">
+  import { api } from '$lib/api';
   import { live } from '$lib/live.svelte';
   import { ago, bibytes, count, duration, ms } from '$lib/format';
   import Panel from '$lib/components/Panel.svelte';
   import Meter from '$lib/components/Meter.svelte';
   import Stat from '$lib/components/Stat.svelte';
+  import StorageRacks from '$lib/components/StorageRacks.svelte';
+  import StoragePaths from '$lib/components/StoragePaths.svelte';
+  import { switchWorkspace } from '$lib/workspace';
 
+  let repairing = $state(false);
+  let actionMessage = $state('');
+  let actionError = $state('');
+  async function repairReplicas() {
+    repairing = true; actionMessage = ''; actionError = '';
+    try {
+      const result = await api.repair();
+      actionMessage = `${count(result.repaired)} replicas repaired.`;
+      await live.refresh();
+    } catch (e) { actionError = e instanceof Error ? e.message : String(e); }
+    finally { repairing = false; }
+  }
   const report = $derived(live.report);
   const start = $derived(report?.start ?? null);
 
@@ -28,15 +44,46 @@
   </p>
 </header>
 
-{#if !report || !start}
-  <p class="quiet mono">reading cluster report…</p>
+{#if !report}
+  <p class="quiet mono">{live.error ? 'Cluster data is unavailable.' : 'Reading cluster report…'}</p>
+  {#if live.error}<button onclick={() => live.refresh()}>Try again</button>{/if}
 {:else if report.capabilities?.local}
-  <Panel title="Local storage" note="persistent data on this machine">
-    <p>Six worker directories store checksummed replicas across three simulated racks. Namespace updates are committed atomically and survive restarts.</p>
-    <p>Capacity values are simulated reference values. There is no Raft quorum, separate worker process, or distributed failover in this mode.</p>
-    <p>{count(report.nodes.length)} workers · {bibytes(report.used)} of replica data · {report.placement} placement</p>
+  <div class="stats">
+    <Stat label="Workers" value={count(report.nodes.length)} note={`${new Set(report.nodes.map(node => node.rack)).size} simulated racks`} />
+    <Stat label="Stored replicas" value={count(report.nodes.reduce((total, node) => total + node.fragments, 0))} note={`${bibytes(report.used)} on disk`} />
+    <Stat label="Healthy blocks" value={count(report.health.healthy)} note="Checksummed replicas" tone="ok" />
+    <Stat label="Need repair" value={count(report.health.under_replicated + report.health.critical + report.health.corrupt + report.health.missing)} note="Blocks with damaged or missing copies" />
+  </div>
+  <Panel title="Storage topology" note={`Placement epoch ${report.topology_epoch}`}>
+    <StorageRacks {report} />
+    <p class="note">Worker directories share this machine. Rack placement and capacity are simulated; the files and replica sizes shown here are real.</p>
   </Panel>
-{:else}
+  <div class="local-columns">
+    <Panel title="Storage maintenance" note="Check and restore replica copies">
+      <p>Repair verifies the stored blocks and replaces damaged or missing replicas from healthy copies.</p>
+      <div class="health-strip">
+        {#each Object.entries(report.health) as [state, total]}
+          <div><span>{state.replaceAll('_', ' ')}</span><strong>{count(total)}</strong></div>
+        {/each}
+      </div>
+      <button onclick={repairReplicas} disabled={repairing}>{repairing ? 'Checking replicas…' : 'Check and repair replicas'}</button>
+      {#if actionMessage}<p role="status">{actionMessage}</p>{/if}
+      {#if actionError}<p class="error" role="alert">{actionError}</p>{/if}
+    </Panel>
+    <Panel title="Namespace & recovery" note="Persistent local storage">
+      <dl>
+        <div><dt>Namespace</dt><dd>Atomic commits</dd></div>
+        <div><dt>Block verification</dt><dd>Checksum per replica</dd></div>
+        <div><dt>Placement</dt><dd>{report.placement}</dd></div>
+        <div><dt>Text jobs</dt><dd>{report.capabilities.jobs ? 'Available' : 'Unavailable'}</dd></div>
+      </dl>
+      <p>On startup, Mammoth loads the committed namespace. Reads verify stored replicas and can fall back to another copy.</p>
+      <p>This local service runs without a Raft quorum. Explore the example cluster to see the full Raft, warm-start and shard views.</p>
+      <button onclick={() => switchWorkspace('demo')}>Explore Raft & warm start →</button>
+    </Panel>
+  </div>
+  <Panel title="Data lifecycle" note="Expand a card to follow each operation"><StoragePaths {report} /></Panel>
+{:else if start}
   <div class="stats">
     <Stat label="Last start" value={duration(start.last_start_ms / 1000)} note={ago(start.started_at)} tone="ok" />
     <Stat
@@ -187,6 +234,13 @@
 {/if}
 
 <style>
+  .local-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(23rem, 100%), 1fr)); gap: var(--gap); margin: var(--gap) 0; }
+  .health-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: .65rem; margin: 1rem 0; }
+  .health-strip div { padding: .6rem; border: 1px solid var(--rule); display: grid; gap: .3rem; }
+  .health-strip span { font-size: .7rem; text-transform: capitalize; color: var(--fg-dim); }
+  .health-strip strong { font-size: 1.4rem; font-weight: 500; }
+  .note { color: var(--fg-dim); font-size: .8rem; }
+  .error { color: var(--danger); overflow-wrap: anywhere; }
   .page {
     display: flex;
     align-items: baseline;
@@ -195,13 +249,13 @@
   }
   .stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--gap);
     margin-bottom: var(--gap);
   }
   .warm {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
     gap: 1.5rem;
   }
   .lead {
@@ -324,4 +378,5 @@
     color: var(--fg-faint);
     margin: 0;
   }
+  @media (max-width: 1000px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>

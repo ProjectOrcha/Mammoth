@@ -5,7 +5,7 @@
   import { escapeHtml } from '$lib/html';
   import type { TopologyReport } from '$lib/types';
   import { bytes, pct, rate } from '$lib/format';
-  import { chart, palette, tooltipStyle, type ChartOption } from './echarts';
+  import { chart, palette, tooltipStyle, type ChartOption } from './echarts.svelte';
 
   interface Props {
     topology: TopologyReport;
@@ -119,7 +119,7 @@
 
 <div class="chart" use:chart={option}></div>
 <p class="legend eyebrow">
-  size = capacity · colour = health · edge weight = cross-rack traffic · drag to rearrange
+  size = capacity · colour = health · {topology.links.length ? 'edge weight = cross-rack traffic · ' : ''}drag to rearrange
 </p>
 
 <style>

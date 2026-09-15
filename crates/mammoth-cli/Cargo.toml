@@ -30,6 +30,7 @@ mammoth-gateway = { workspace = true }
 mammoth-client = { workspace = true }
 mammoth-storage = { workspace = true }
 futures-util = { workspace = true }
+fs2 = { workspace = true }
 tokio-util = { workspace = true }
 bytes = { workspace = true }
 tempfile = { workspace = true }

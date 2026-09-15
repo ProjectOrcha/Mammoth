@@ -8,7 +8,7 @@ copy generated from here by `cargo xtask assets`.
 | `mammoth-logo.svg` | 8.3 MB | Original vector export. Used by the repository `README.md`. |
 | `mammoth-logo.min.svg` | 2.8 MB | Losslessly optimized drop-in for the above. Copied to `ui/static/logo.svg` and `web/public/logo.svg`. |
 | `mammoth-logo.jpg` | 1.2 MB | Raster. Social preview card, slide decks, anywhere SVG is awkward. |
-| `mammoth-cli-logo.txt` | 7.7 KB | ASCII art. Copied to `crates/mammoth-cli/assets/banner.txt` and `include_str!`d into the binary for `mammoth quickstart`. |
+| `mammoth-cli-logo.txt` | 7.7 KB | Terminal art. Copied to `crates/mammoth-cli/assets/banner.txt` and embedded for top-level help, `logo`, `quickstart`, and `serve`. |
 
 ## A note on the SVG size
 

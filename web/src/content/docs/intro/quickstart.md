@@ -24,6 +24,9 @@ Open [the dashboard](http://127.0.0.1:8080). The S3 endpoint listens on
 `127.0.0.1:9000`. Press Ctrl-C to stop; restart with the same root to keep data.
 Build the dashboard before the Rust binary, because its files are embedded.
 
+Prefer typing just `mammoth`? Build the release binary and follow the
+[command shortcut setup](/intro/install/#use-mammoth-from-any-folder).
+
 In another terminal:
 
 ```bash

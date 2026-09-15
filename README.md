@@ -26,6 +26,19 @@ cargo build --locked -p mammoth-cli
 
 Open [the dashboard](http://127.0.0.1:8080). The S3 endpoint is
 `http://127.0.0.1:9000`. Quickstart runs in the foreground; Ctrl-C stops it.
+From another terminal, inspect or stop that service with:
+
+```bash
+./target/debug/mammoth --local-root .mammoth status
+./target/debug/mammoth --local-root .mammoth stop
+```
+
+`shutdown` is an alias for `stop`. Both listeners close after active requests and
+dashboard jobs finish. `stop --timeout 60` allows a longer wait. Files stay on disk.
+The selected local root identifies the service; lifecycle commands do not use `--masters`.
+The logo appears with `mammoth`, `mammoth --help`, `mammoth logo`, `quickstart`, and
+`serve`. Explicit structured service output (`--json`, YAML or CSV) omits the logo.
+
 Restart with the same local root to keep your files. Omit `--local-root` to use
 `~/.mammoth/local`; `MAMMOTH_LOCAL_ROOT` also selects the store.
 
@@ -65,6 +78,14 @@ POSIX ownership is descriptive in local mode; it is not an authorization system.
 records; `cat`, `head`, `tail` and downloaded files preserve raw content.
 Errors have stable codes and nonzero exits. Existing local downloads require
 `get --force` before replacement.
+
+Human output includes colored file listings, capacity and size bars, rack and
+namespace trees, block placement matrices and replica-health charts. Use
+`--color auto|always|never`; auto respects `NO_COLOR` and terminal detection.
+Use `--output table` to keep charts when piping output. `top` and
+`viz health --live` refresh in place, support arrow-key scrolling and exit with q.
+`mammoth --help` includes nested commands; `mammoth commands` prints the full
+catalog, matching the generated website reference.
 
 ## Remote CLI access
 

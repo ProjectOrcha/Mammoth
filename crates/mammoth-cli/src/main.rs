@@ -2,7 +2,8 @@
 mod cli;
 mod commands;
 mod output;
-use clap::{CommandFactory, Parser};
+mod service;
+use clap::{CommandFactory, FromArgMatches};
 use cli::*;
 use futures_util::{StreamExt, TryStreamExt};
 use mammoth_core::{
@@ -11,7 +12,7 @@ use mammoth_core::{
 };
 use serde_json::json;
 use std::{
-    io::Write,
+    io::{IsTerminal, Write},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -20,7 +21,38 @@ use tokio_util::io::StreamReader;
 
 #[tokio::main]
 async fn main() -> std::process::ExitCode {
-    let cli = Cli::parse();
+    let args = std::env::args_os().collect::<Vec<_>>();
+    // Clap exits while rendering --help, so apply the color override before
+    // normal argument parsing. Stop at -- to leave positional data alone.
+    let mut help = Cli::help_command();
+    let mut color_arg = None;
+    for (index, arg) in args.iter().enumerate().skip(1) {
+        if arg == "--" {
+            break;
+        }
+        if arg == "--color" {
+            color_arg = args.get(index + 1).and_then(|s| s.to_str());
+        } else if let Some(value) = arg.to_str().and_then(|s| s.strip_prefix("--color=")) {
+            color_arg = Some(value);
+        }
+    }
+    help = help.color(match color_arg {
+        Some("always") => clap::ColorChoice::Always,
+        Some("never") => clap::ColorChoice::Never,
+        _ => clap::ColorChoice::Auto,
+    });
+    if args.len() == 1 {
+        let _ = help.print_help();
+        println!();
+        return std::process::ExitCode::SUCCESS;
+    }
+    let matches = help.get_matches_from(args);
+    let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
+    mammoth_viz::style::set_color(match cli.color {
+        clap::ColorChoice::Auto => None,
+        clap::ColorChoice::Always => Some(true),
+        clap::ColorChoice::Never => Some(false),
+    });
     let fmt = cli.format();
     match run(cli).await {
         Ok(()) => std::process::ExitCode::SUCCESS,
@@ -41,6 +73,32 @@ fn default_root() -> PathBuf {
 }
 async fn run(cli: Cli) -> Result<()> {
     let fmt = cli.format();
+    if matches!(cli.command, Command::Logo) {
+        println!("{}", mammoth_viz::style::paint(BANNER, mammoth_viz::style::Tone::Accent));
+        return Ok(());
+    }
+    if matches!(cli.command, Command::Commands) {
+        let entries = Cli::catalog()
+            .into_iter()
+            .map(|(command, description)| json!({"command":command,"description":description}))
+            .collect::<Vec<_>>();
+        return output::emit(&entries, fmt);
+    }
+    let root = cli.local_root.clone().unwrap_or_else(default_root);
+    if matches!(
+        cli.command,
+        Command::Status | Command::Stop { .. } | Command::Quickstart { .. } | Command::Serve { .. }
+    ) && !cli.masters.is_empty()
+    {
+        return Err(Error::InvalidInput("service commands use --local-root, not --masters".into()));
+    }
+    match cli.command {
+        Command::Status => return output::emit(&service::status(&root)?, fmt),
+        Command::Stop { timeout } => {
+            return output::emit(&service::stop(&root, timeout).await?, fmt)
+        }
+        _ => {}
+    }
     if cli.masters.len() > 1 {
         return Err(Error::Config(
             "use one HTTP gateway endpoint; multi-master discovery is not implemented".into(),
@@ -83,7 +141,6 @@ async fn run(cli: Cli) -> Result<()> {
         let url = format!("http://{}", config.gateway.ui_listen.replace("0.0.0.0", "127.0.0.1"));
         return output::emit(&json!({"url":url,"start":"mammoth quickstart"}), fmt);
     }
-    let root = cli.local_root.clone().unwrap_or_else(default_root);
     let mut replication = config.storage.replication;
     let mut block_size = parse_size(&config.storage.block_size)?;
     if let Command::Put { replication: r, block_size: b, .. } = &cli.command {
@@ -118,12 +175,12 @@ async fn run(cli: Cli) -> Result<()> {
             output::emit(&json!({"root":root,"config":target}), fmt)
         }
         Command::Quickstart { ui_listen, s3_listen, no_sample, allow_remote } => {
+            local_listeners(&ui_listen, &s3_listen, allow_remote)?;
+            let service = service::Service::bind(&root, &ui_listen, &s3_listen).await?;
             if !no_sample {
                 seed(be).await?;
             }
-            eprintln!("{BANNER}");
-            local_listeners(&ui_listen, &s3_listen, allow_remote)?;
-            mammoth_gateway::serve(backend, &ui_listen, &s3_listen).await
+            service.run(backend, fmt).await
         }
         Command::Serve { role, ui_listen, s3_listen, allow_remote } => {
             if role == "master" || role == "worker" {
@@ -134,9 +191,9 @@ async fn run(cli: Cli) -> Result<()> {
             let s3 = s3_listen
                 .unwrap_or_else(|| config.gateway.s3_listen.replace("0.0.0.0", "127.0.0.1"));
             local_listeners(&ui, &s3, allow_remote)?;
-            mammoth_gateway::serve(backend, &ui, &s3).await
+            service::Service::bind(&root, &ui, &s3).await?.run(backend, fmt).await
         }
-        Command::Ls { path } => output::emit(&be.list(&path).await?, fmt),
+        Command::Ls { path } => output::files(&be.list(&path).await?, fmt),
         Command::Stat { path } => output::emit(&be.stat(&path).await?, fmt),
         Command::Put { src, dst, replication, .. } => {
             if let Some(n) = replication {
@@ -194,7 +251,7 @@ async fn run(cli: Cli) -> Result<()> {
                 fmt,
             )
         }
-        Command::Df | Command::Cluster { .. } => output::emit(&be.cluster_report().await?, fmt),
+        Command::Df | Command::Cluster { .. } => output::report(&be.cluster_report().await?, fmt),
         Command::Find { path, name } => {
             let all = mammoth_gateway::walk(be, &path).await?;
             output::emit(
@@ -235,14 +292,21 @@ async fn run(cli: Cli) -> Result<()> {
         }
         Command::Viz { what } => viz(backend, what, fmt).await,
         Command::Top { once } => {
-            if once {
-                output::emit(&be.cluster_report().await?, fmt)
+            if once || fmt.resolve() != OutputFormat::Table {
+                output::report(&be.cluster_report().await?, fmt)
             } else {
                 mammoth_viz::top(backend).await
             }
         }
         Command::Node { command } => match command {
-            NodeCommand::List => output::emit(&be.cluster_report().await?.nodes, fmt),
+            NodeCommand::List => {
+                let report = be.cluster_report().await?;
+                if fmt.resolve() == OutputFormat::Table {
+                    output::chart(&mammoth_viz::cluster(&report))
+                } else {
+                    output::emit(&report.nodes, fmt)
+                }
+            }
             NodeCommand::Inspect { id } => {
                 let report = be.cluster_report().await?;
                 output::emit(
@@ -257,7 +321,7 @@ async fn run(cli: Cli) -> Result<()> {
             NodeCommand::Repair => output::emit(&json!({"repaired":be.repair().await?}), fmt),
         },
         Command::Admin { command } => match command {
-            AdminCommand::Report => output::emit(&be.cluster_report().await?, fmt),
+            AdminCommand::Report => output::report(&be.cluster_report().await?, fmt),
             AdminCommand::Repair => output::emit(&json!({"repaired":be.repair().await?}), fmt),
             AdminCommand::Gc => output::emit(&json!({"removed":be.gc().await?}), fmt),
             AdminCommand::Safemode => {
@@ -368,7 +432,14 @@ async fn run(cli: Cli) -> Result<()> {
             }
             Ok(())
         }
-        Command::Version | Command::Completions { .. } | Command::Config { .. } | Command::Ui => {
+        Command::Version
+        | Command::Logo
+        | Command::Commands
+        | Command::Status
+        | Command::Stop { .. }
+        | Command::Completions { .. }
+        | Command::Config { .. }
+        | Command::Ui => {
             unreachable!("handled before backend creation")
         }
     }
@@ -498,6 +569,7 @@ async fn viz(backend: Arc<dyn Backend>, what: VizCommand, fmt: OutputFormat) -> 
         }
         VizCommand::Topology => {
             let report = be.cluster_report().await?;
+            if fmt.resolve() == OutputFormat::Table { return output::chart(&mammoth_viz::topology(&report)); }
             let mut racks = std::collections::BTreeMap::<String, Vec<String>>::new();
             for n in report.nodes {
                 racks.entry(n.rack).or_default().push(n.id.0);
@@ -512,21 +584,34 @@ async fn viz(backend: Arc<dyn Backend>, what: VizCommand, fmt: OutputFormat) -> 
                     let all = mammoth_gateway::walk(be, &s.path).await?;
                     partitions.push(json!({"partition":s.path,"bytes":all.iter().filter(|f|!f.is_dir).map(|f|f.len).sum::<u64>()}));
                 }
-                output::emit(&partitions, fmt)
+                if fmt.resolve() == OutputFormat::Table {
+                    let entries = partitions.iter().map(|row| (row["partition"].as_str().unwrap_or_default().to_string(), row["bytes"].as_u64().unwrap_or(0))).collect::<Vec<_>>();
+                    output::chart(&mammoth_viz::skew(&path, &entries, true))
+                } else { output::emit(&partitions, fmt) }
             } else {
-                output::emit(&mammoth_gateway::skew(be, &path).await?, fmt)
+                let report = mammoth_gateway::skew(be, &path).await?;
+                if fmt.resolve() == OutputFormat::Table {
+                    let entries = report["points"].as_array().into_iter().flatten().map(|row| (row["partition"].as_str().unwrap_or_default().to_string(), row["size"].as_u64().unwrap_or(0))).collect::<Vec<_>>();
+                    output::chart(&mammoth_viz::skew(&path, &entries, false))
+                } else { output::emit(&report, fmt) }
             }
         }
         VizCommand::Treemap { path, depth } => {
             let path = path.unwrap_or_else(|| "/".into());
             let root = be.stat(&path).await?.path;
             let all = mammoth_gateway::walk(be, &root).await?;
+            if fmt.resolve() == OutputFormat::Table { return output::chart(&mammoth_viz::treemap(&root, &all, depth)); }
             let rows:Vec<_>=all.iter().filter(|s|s.path.components().count().saturating_sub(root.components().count())<=depth as usize).map(|s|json!({"path":s.path,"bytes":if s.is_dir {all.iter().filter(|f|!f.is_dir&&f.path.starts_with(&s.path)).map(|f|f.len).sum::<u64>()}else {s.len}})).collect();
             output::emit(&rows, fmt)
         }
         VizCommand::Health { live } => {
+            if live && fmt.resolve() == OutputFormat::Table && std::io::stdin().is_terminal() && std::io::stdout().is_terminal() {
+                return mammoth_viz::health_live(backend).await;
+            }
             loop {
-                output::emit(&be.cluster_report().await?.health, fmt)?;
+                let report = be.cluster_report().await?;
+                if fmt.resolve() == OutputFormat::Table { output::chart(&mammoth_viz::health(&report.health))?; }
+                else { output::emit(&report.health, fmt)?; }
                 if !live {
                     break;
                 }
@@ -534,6 +619,7 @@ async fn viz(backend: Arc<dyn Backend>, what: VizCommand, fmt: OutputFormat) -> 
             }
             Ok(())
         }
+        VizCommand::Flow if fmt.resolve() == OutputFormat::Table => output::chart("NETWORK FLOW\nNetwork-flow measurements are unavailable in local mode.\nUse mammoth viz topology for placement or mammoth viz health for replicas.\n"),
         VizCommand::Flow => output::emit(
             &json!({"available":false,"message":"Network flow measurements are unavailable in the local backend"}),
             fmt,
