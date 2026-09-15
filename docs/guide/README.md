@@ -16,6 +16,11 @@ small examples and an explicit working-versus-planned status table. Then read
 The numbered chapters teach you to implement the Rust scaffold. The dashboard
 already runs with simulated data; the real filesystem and gateway do not.
 
+The [GFS reliability chapter](13-gfs-reliability.md) includes an executable
+in-memory model of chunking, replication, repair, primary ordering and master
+takeover. The [video coverage audit](GFS-COVERAGE.md) separates its tested
+behavior from the remaining service work, item by item.
+
 ## Start here
 
 | If you are… | Go to |
@@ -26,6 +31,7 @@ already runs with simulated data; the real filesystem and gateway do not.
 | **Unsure where code belongs** | [Code map and request flows](CODE-MAP.md) |
 | **Working on the dashboard/API** | [Frontend walkthrough](09-web-ui.md) and [API contract](API-CONTRACT.md) |
 | **New to distributed systems** | [Distributed storage, from zero](CONCEPTS.md) |
+| **Checking the GFS video against this project** | [Coverage audit](GFS-COVERAGE.md), then [run the model](13-gfs-reliability.md) |
 | **New to Rust** | [Chapter 1](01-rust-you-need.md), then [the Rust reference](RUST-REFERENCE.md) |
 | **Learning best by running things** | [`examples/parts/`](../../examples/parts/) — 16 runnable programs |
 | **Lost in a word you do not recognise** | [The glossary](GLOSSARY.md) |
@@ -265,6 +271,7 @@ Everyone on the team does all four of these, in week one.
 | # | Chapter | Time | You end with |
 | --- | --- | --- | --- |
 | 12 | [The four fast paths](12-the-fast-paths.md) | 90 min | The design for the distributed half |
+| 13 | [GFS reliability](13-gfs-reliability.md) | 30 min | A working local failure/ordering demo and the production gap checklist |
 
 Chapters 8a and 8b are lettered rather than numbered because they extend chapter
 8 rather than following it. **8a is not optional polish** — it is where the
@@ -307,6 +314,7 @@ with milestones and owner slots, is in [the checklists](CHECKLISTS.md#the-whole-
 - [ ] 10 · Publishing the docs
 - [ ] 11 · Where to go next
 - [ ] 12 · The four fast paths
+- [ ] 13 · GFS reliability and coverage audit
 ```
 
 ---

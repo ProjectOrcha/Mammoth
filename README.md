@@ -24,6 +24,12 @@
 > real, most of the implementation is not. See the [roadmap](docs/ROADMAP.md)
 > for what exists and what does not. The first usable release is **M5**.
 
+**New runnable learning demo:** `cargo run -p mammoth-local --example gfs-demo`
+models GFS chunk replication, heartbeat repair, primary write ordering and
+standby takeover in memory. Read the [walkthrough](docs/guide/13-gfs-reliability.md)
+and [item-by-item GFS coverage audit](docs/guide/GFS-COVERAGE.md). This is a
+separate teaching model; the storage service and `LocalBackend` remain unfinished.
+
 ## What it is
 
 You have a 10 TB file. No single machine has 10 TB of fast disk, and reading it
@@ -76,6 +82,7 @@ cargo build --release -p mammoth-cli
 ./target/release/mammoth --help
 ./target/release/mammoth --version
 cargo run -p mammoth-parts --example 13-block-matrix
+cargo run -p mammoth-local --example gfs-demo
 ```
 
 The standalone dashboard works with simulated data: run `npm ci` and
@@ -185,6 +192,10 @@ $ mammoth put ./big.bin /data/big.bin
 ```
 
 ## Architecture
+
+This is the planned distributed architecture. The initial M5 service has one
+master; three-master HA requires M6. The local GFS example models a two-master
+takeover separately and does not implement Raft.
 
 ```mermaid
 flowchart TB
@@ -352,6 +363,10 @@ It assumes no Rust and no Hadoop, and it is written for a team of three.
 | [10 · GitHub Pages](docs/guide/10-github-pages.md) | publish the docs site |
 | [11 · Where to go next](docs/guide/11-what-next.md) | M4 and beyond |
 | [12 · The four fast paths](docs/guide/12-the-fast-paths.md) | the design for the distributed half |
+| [13 · GFS reliability](docs/guide/13-gfs-reliability.md) | runnable replication, repair, write ordering and master takeover |
+
+[GFS video coverage and remaining gaps](docs/guide/GFS-COVERAGE.md) maps each
+supplied video topic to the implementation, tests and production work still needed.
 
 Plus three references you come back to rather than read through:
 [the Rust reference](docs/guide/RUST-REFERENCE.md) (including a decoder for

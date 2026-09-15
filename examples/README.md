@@ -26,3 +26,16 @@ cargo run -q -p mammoth-parts --example 04-traits-and-dyn
 
 These are the companion to [the build guide](../docs/guide/). Every chapter that
 introduces a pattern has an example here that runs it in isolation.
+
+## GFS reliability, runnable now
+
+```bash
+cargo run -p mammoth-local --example gfs-demo
+```
+
+This separate example models chunking, three replicas, primary-ordered writes,
+heartbeat repair and master takeover in memory. It includes assertions and
+advances logical time without waiting. Follow the
+[walkthrough](../docs/guide/13-gfs-reliability.md) and
+[coverage checklist](../docs/guide/GFS-COVERAGE.md). Real services, persistence
+and Raft remain planned.

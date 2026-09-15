@@ -113,6 +113,17 @@ Everything overridable by env: `MAMMOTH_STORAGE__REPLICATION=2`.
 
 ## The keys that change the shape of the system
 
+### Heartbeat timing in the GFS teaching model
+
+The model in [GFS reliability](/concepts/gfs/) uses separate `Settings`: 30-second
+heartbeats and three missed beats give a 90-second deadline. It does not load
+this TOML. Service defaults remain `heartbeat_ms = 3000` and `dead_after = "10m"`.
+The future repair scheduler must specify how `repair.delay` relates to that
+silence deadline, so two grace periods are not added accidentally. These config
+fields currently declare intended behavior; they do not run a failure detector.
+
+### Fast-path choices
+
 Most of the file is sizing. These six change *how* the cluster works, and each
 one is explained in [The four fast paths](/concepts/fast-paths/).
 

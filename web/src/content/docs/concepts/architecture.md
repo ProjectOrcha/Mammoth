@@ -3,6 +3,11 @@ title: Architecture
 description: Masters, workers, gateway — and the one trait everything hangs off.
 ---
 
+This diagram describes the planned distributed service. The initial M5 target
+uses one master; three-master HA requires M6. For executable behavior today,
+see [the GFS local demonstration](/concepts/gfs/), which is a separate in-memory
+model with two masters and no Raft or network service.
+
 ```mermaid
 flowchart TB
     clients["clients<br/>CLI · SDK · any S3 tool"]
@@ -46,5 +51,15 @@ pub trait Backend: Send + Sync {
 }
 ```
 
-Two implementations: `LocalBackend` (one machine, simulated workers) and
+Two planned implementations: `LocalBackend` (one machine, simulated workers) and
 `ClusterBackend` (real masters and workers over gRPC).
+
+## Reliability requirements
+
+Replica placement, data transfer and write ordering are separate mechanisms.
+A primary must order concurrent mutations under a valid lease, and workers
+must reject stale versions and authority. Heartbeats must drive verified,
+bounded repair. Master takeover must preserve acknowledged metadata and fence
+the former leader before clients retry. See the
+[GFS coverage and limitations](/concepts/gfs/) for what the model demonstrates
+and the remaining M4–M6 work.

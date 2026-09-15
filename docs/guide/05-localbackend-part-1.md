@@ -101,6 +101,7 @@ futures-util = { workspace = true }
 serde        = { workspace = true }
 serde_json   = { workspace = true }
 tokio        = { workspace = true }
+thiserror    = { workspace = true }
 ```
 
 `{ workspace = true }` means "use the version the root `Cargo.toml` pins". That
@@ -110,11 +111,15 @@ is how every crate in the workspace stays on the same version of everything.
 
 Replace the whole of `crates/mammoth-local/src/lib.rs` with this. It is long,
 but every piece is used — read the annotations after.
+Keep `pub mod gfs;` as shown: it exports the separate teaching model and is
+required by the GFS example and tests. Do not remove `src/gfs.rs`.
 
 ```rust
 //! LocalBackend — a whole cluster, simulated on one machine's disk.
 
 #![forbid(unsafe_code)]
+
+pub mod gfs;
 
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};

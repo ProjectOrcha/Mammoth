@@ -4,9 +4,10 @@
 about forty minutes, it involves no code, and it is the difference between
 typing chapters 5 and 6 and *understanding* them.
 
-Nothing here is Mammoth-specific until the last section. These are the ideas
-behind HDFS, GFS, Ceph, S3 and every other system in this family, and once you
-have them, the code in this repository stops looking arbitrary.
+These are ideas shared by distributed storage systems, illustrated with
+Mammoth's planned design. Individual systems differ in their consistency,
+placement and recovery rules. For GFS specifically, use the
+[video coverage audit](GFS-COVERAGE.md) and [runnable model](13-gfs-reliability.md).
 
 The [glossary](GLOSSARY.md) defines every term in one line. This page explains
 *why the terms exist*.
@@ -63,9 +64,11 @@ single object — it exists as a *recipe*: "block 0, then block 1, then block 2"
 
 ### Why 128 MB and not 4 KB or 4 GB?
 
-Your laptop's filesystem uses 4 KB blocks. Mammoth uses 128 MB — thirty thousand
-times bigger. Both numbers are right for their job, and understanding why is
-most of understanding this whole design.
+A local filesystem often allocates storage in blocks of a few KiB; 4 KiB is a
+common example, not an operating-system rule. Its indexes map filenames to disk
+blocks or extents. A distributed chunk is a larger unit layered on top of that
+local filesystem. Mammoth's planned default is 128 MiB, while the original GFS
+design used 64 MB chunks.
 
 The block size trades two costs against each other:
 
@@ -110,7 +113,8 @@ flowchart LR
     b0 --> w5["w5"]
 ```
 
-Three copies is the near-universal default, and the reasoning is worth
+Three copies is the default in the GFS example and Mammoth's replication config.
+Other systems and policies make different choices. The reasoning is worth
 following because "why not two" is the obvious question.
 
 With one copy, one disk failure loses data. With two copies you are safe from
@@ -127,7 +131,8 @@ makes recovery much more expensive in network traffic.
 
 ### Racks: the failure that takes ten machines at once
 
-Three copies on three machines protects you from three *independent* failures.
+Three copies on three machines protect you from up to two lost copies,
+provided the remaining copy is intact and reachable.
 Real failures are not independent.
 
 Machines live in **racks**: a cabinet of perhaps 20–40 machines sharing a power
@@ -195,15 +200,16 @@ about files, directories or filenames. It has a pile of blocks with numeric
 IDs, and it will hand one over or take a new one.
 
 **Masters** store the namespace: which files exist, what they are called, who
-owns them, and which blocks make up each file. Masters store **no file data at
-all** — the total volume of a master's state is a few gigabytes for a petabyte
-cluster.
+owns them, and which blocks make up each file. In the chunked path, masters
+store metadata and workers store file bytes. Mammoth's planned small-file
+inlining (§8) is an explicit exception: those bytes live in replicated metadata.
 
 The split matters because the two have completely different needs. Metadata is
 small, must be perfectly consistent, and is read constantly — so it lives in
 memory and is replicated by a consensus protocol. Data is enormous, is read in
-big sequential gulps, and can tolerate being slightly stale on one replica — so
-it lives on spinning disks and is replicated by simply copying it.
+big sequential gulps, and lives on worker disks. A stale replica must be detected
+and excluded according to the consistency protocol; extra copies alone do not
+make concurrent updates consistent.
 
 **And notice step ③.** The client asks the master *where*, and then talks to the
 worker directly. The bytes never pass through the master. That single decision
@@ -211,6 +217,12 @@ is what lets one master serve a thousand workers: it handles a few thousand
 small questions a second while the workers move gigabytes.
 
 ## 5 · What a write actually does
+
+This is a simplified single-writer pipeline, used by the introductory Mammoth
+exercise. It is not GFS's concurrent-mutation protocol. GFS gives a **worker** a
+chunk-primary lease and lets it order several clients' mutations. See
+[chapter 13 §5](13-gfs-reliability.md#5-concurrent-clients-bytes-first-order-second).
+Mammoth's future dispersal/mirroring modes still need explicit ordering rules.
 
 Follow `mammoth put ./big.log /data/big.log` all the way through. Every step
 here is something chapter 5 or 6 has you implement, in simplified form.
@@ -272,10 +284,10 @@ Simpler, and this simplicity is the reward for all the write-side machinery.
 
 Two properties fall out for free:
 
-- **A dead worker is invisible.** Three copies means two other places to ask.
-  The read does not fail; it does not even slow down noticeably.
-- **Parallel reads are automatic.** Ten clients reading the same file spread
-  themselves across the replicas without anyone coordinating it.
+- **A dead worker can be tolerated.** The client retries an intact, reachable
+  copy. Timeouts add latency; losing every usable copy makes the read fail.
+- **Replicas offer parallel read capacity.** Clients need suitable selection
+  and scheduling to spread load; copies alone do not guarantee balanced reads.
 
 The "sorted by distance" step is why the system knows about racks for a second
 reason: not only durability, but choosing the copy on the near side of the slow
@@ -286,6 +298,11 @@ link.
 Every worker sends a **heartbeat** to the master every few seconds: I am alive,
 here is my free space, here is my load. It is a small message and it is the
 entire liveness mechanism.
+
+Mammoth's config declares a 3-second interval and a 10-minute silence deadline;
+the live detector is still unimplemented. The GFS video uses 30 seconds and
+three missed beats (90 seconds); [chapter 13](13-gfs-reliability.md) runs that
+policy in logical time. These are configurable choices, not universal GFS rules.
 
 When heartbeats stop, the master waits — usually around ten minutes. That delay
 looks absurd the first time you see it, and it is deliberate: a worker rebooting
@@ -308,13 +325,13 @@ flowchart LR
     e --> f["back to 3 copies"]
 ```
 
-Two things stay true throughout, and they are the reason this design is worth
-the trouble: **reads never fail** — two copies remained the whole time — and
-**nobody was paged**. A human finds out later that a disk died, from a
-dashboard, and replaces it whenever convenient.
+If at least one valid copy is reachable, reads can retry it while repair runs.
+Repair needs a surviving source, a healthy destination and spare capacity.
+Missing copies, insufficient destinations or correlated failures need visible
+health reporting and may require an operator.
 
-That whole loop is what [example 03](../../examples/03-kill-a-node/) demonstrates,
-and it is the single best demo this project has.
+[Example 03](../../examples/03-kill-a-node/) describes the future service demo.
+The loop runs today only in the separate [GFS event model](13-gfs-reliability.md).
 
 ## 8 · The four things that make this hard
 
@@ -326,7 +343,8 @@ that every operation needs. Lose it and the data is intact but unreachable —
 you have a warehouse full of unlabelled boxes. So masters are replicated,
 usually three of them, agreeing via a consensus protocol (Raft) on every change
 to the namespace. That is a large piece of machinery, it is subtle, and it is
-milestone M4 for a reason.
+milestone M6 for a reason. Safe takeover also needs old-leader fencing and client
+rediscovery; changing DNS alone does not provide write safety.
 
 **Metadata lives in memory.** ~250 bytes per block, and every operation touches
 it. Hold a billion blocks and you need hundreds of gigabytes of RAM in one
@@ -364,6 +382,12 @@ is a trade someone made on purpose.
 
 **Write once, read many** is the assumption underneath all of it. Relax that and
 almost every simplification above stops working.
+
+This table describes the introductory Mammoth API, not every distributed
+filesystem. GFS also supports mutations and record append with its own relaxed
+consistency semantics; [chapter 13](13-gfs-reliability.md) explains that distinction.
+Bandwidth is the bulk-data objective; latency remains something to measure,
+especially during replica retries and repair.
 
 ## 10 · The vocabulary, translated
 
@@ -407,7 +431,8 @@ talking to the trait.
 | Writing (§5) | [ch 6](06-localbackend-part-2.md) | `mammoth put` |
 | Reading (§6) | [ch 6](06-localbackend-part-2.md) | `mammoth cat` |
 | Heartbeats and healing (§7) | milestone M5 | [example 03](../../examples/03-kill-a-node/) |
-| Consensus, safe mode (§8) | milestone M4, [ch 12 §4](12-the-fast-paths.md) | — |
+| Consensus, safe mode (§8) | M6 consensus; M5 startup reconciliation; [ch 12 §4](12-the-fast-paths.md) | — |
+| GFS reliability model | [ch 13](13-gfs-reliability.md) | `cargo run -p mammoth-local --example gfs-demo` |
 | Inlining (§8) | [ch 6](06-localbackend-part-2.md) | `mammoth stat`, `inlined: true` |
 
 ## Check you understand it

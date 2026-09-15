@@ -212,6 +212,9 @@ and right now you are the only one who can say so.
 
 ## The whole guide — progress tracker
 
+For the GFS video review, use the separate [coverage and acceptance checklist](GFS-COVERAGE.md).
+Its completed boxes apply to the local model; the M4–M6 service boxes remain open.
+
 Copy this into a pinned GitHub issue called **"Guide progress"** and let all
 four of you tick your own rows. It is the cheapest project-management tool you
 will ever set up.
@@ -242,6 +245,7 @@ will ever set up.
 
 ## Part 4 — Going faster than Hadoop
 - [ ] 12 · The four fast paths   ← read together before anyone writes mammoth-master
+- [ ] 13 · GFS reliability model and production gap checklist
 
 ## Milestones
 - [ ] **M1** — `mammoth version` works, dispatch is real       (end of ch. 2)

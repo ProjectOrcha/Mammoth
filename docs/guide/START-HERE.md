@@ -12,6 +12,7 @@ Mammoth is a learning scaffold, not a working storage service yet.
 | Rust CLI | `--help`, subcommand help, `--version`, friendly unsupported-command errors | File operations, `quickstart`, `serve`, terminal dashboards |
 | Rust core | Shared types, errors, configuration structures, `Backend` trait | Concrete filesystem behavior and configuration loading |
 | Examples | 16 small runnable Rust programs | These do not store your real files |
+| GFS teaching model | `cargo run -p mammoth-local --example gfs-demo`; real in-memory chunk bytes, repair, write ordering and takeover | Durable storage, network services, Raft and real DNS; see [coverage](GFS-COVERAGE.md) |
 | `ui/` | Six dashboard sections, simulated data, light/dark themes | A Rust HTTP API matching the dashboard contract |
 | `web/` | Documentation website | Product examples describe the intended system |
 | Repository tools | `cargo xtask docs`, `build-ui`, `assets`; `dist` delegates to cargo-dist | A release-ready product |

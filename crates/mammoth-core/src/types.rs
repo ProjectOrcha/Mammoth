@@ -45,7 +45,8 @@ pub struct FileStatus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReplicaState {
-    /// First replica written; served preferentially for reads.
+    /// First replica written; served preferentially for reads. This display
+    /// label is not a GFS primary lease and grants no mutation-ordering authority.
     Primary,
     /// A healthy secondary copy.
     Replica,

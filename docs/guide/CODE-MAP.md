@@ -24,7 +24,10 @@ Mammoth/
 │   │   ├── cli.rs             clap arguments and subcommands
 │   │   ├── output.rs          tables, JSON and errors
 │   │   └── commands/mod.rs    home for future command handlers
-│   ├── mammoth-local/         storage exercise, currently a placeholder
+│   ├── mammoth-local/         GFS teaching model; LocalBackend still to build
+│   │   ├── src/gfs.rs         deterministic metadata/worker/lease simulation
+│   │   ├── examples/gfs-demo.rs  executable reliability walkthrough
+│   │   └── tests/gfs.rs       failure boundaries and mutation-order checks
 │   ├── mammoth-viz/           terminal visualization exercise, placeholder
 │   ├── mammoth-gateway/       HTTP server exercise, placeholder
 │   └── ...                   other planned distributed-system crates
@@ -80,6 +83,11 @@ The semicolon means a trait declaration with no implementation here.
 
 Find the implementation later with `rg 'impl Backend' crates`. Right now that
 search has no storage implementation; this is an expected scaffold boundary.
+
+The GFS example runs separately: `gfs-demo.rs` → `gfs::Simulation` → separate
+worker byte stores and replicated metadata snapshots. It does not use `Backend`,
+the gateway or sockets. See [chapter 13](13-gfs-reliability.md) and the
+[coverage audit](GFS-COVERAGE.md) before treating the model as service code.
 
 ## Follow a dashboard request
 

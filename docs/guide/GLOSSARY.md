@@ -129,8 +129,41 @@ means only one copy is left, which is the number that should wake somebody.
 
 ### Lease
 
-**Permission to be the one writer of a file.** Granted by the master, and it
-expires — so a client that dies mid-write does not lock the file forever.
+**Temporary authority with an expiry.** A file-writer lease allows one client
+to write a file. A GFS chunk-primary lease allows one worker to order mutations
+from multiple clients. A read-location lease allows cached locations to be
+reused. These are separate contracts; see [chapter 13](13-gfs-reliability.md).
+
+### Chunkserver
+
+**GFS's name for a worker that stores chunk replicas.** The local operating
+system still stores each replica using its own filesystem blocks.
+
+### Primary, mutation and sequence number
+
+**A primary orders changes to one chunk.** A change is a mutation; its sequence
+number specifies the order all replicas must apply. Sending bytes to several
+replicas does not establish that order. Mammoth's `ReplicaState::Primary` is a
+display label, not an authority check; the teaching model has a separate `Lease`.
+
+### Fencing and epoch
+
+**Fencing rejects obsolete authority.** An epoch identifies a leadership term.
+After takeover, requests carrying an older epoch must be refused even if their
+old lease has not timed out. Routing clients to a new endpoint is insufficient.
+
+### Failover and metadata log
+
+**Failover moves service to a replacement master.** Its index must include
+acknowledged changes, normally recovered from a durable replicated operation
+log and checkpoints. The GFS model uses in-memory snapshots and an idealized
+controller; production persistence and Raft remain M6 work.
+
+### Bandwidth and latency
+
+**Bandwidth measures data moved per unit time; latency measures one request's
+wait.** Bulk storage aims for high aggregate bandwidth. That does not promise
+low latency for a small read or a request retried during failure.
 
 ---
 

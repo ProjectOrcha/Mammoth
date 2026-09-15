@@ -104,6 +104,12 @@ Three things to get right:
 
 This is the big one, and it is where the project stops being a toy.
 
+First run [chapter 13's GFS model](13-gfs-reliability.md) and review the
+[reliability acceptance checklist](GFS-COVERAGE.md#acceptance-checklist).
+The heartbeat `.proto` and a replica labelled `Primary` are only declarations;
+the service still needs mutation identity, a primary lease, ordering,
+acknowledgements, stale-version rejection and recovery after partial failure.
+
 - `mammoth-proto` — the gRPC surface, with `tonic`. There is already a starter
   `.proto` in `crates/mammoth-proto/proto/`.
 - `mammoth-master` — namespace, block map, lease management, safe mode.
@@ -129,6 +135,12 @@ TigerBeetle and FoundationDB trustworthy, and the
 and waiting for tests to run.
 
 ### 4 · Then decide
+
+**M6 is the master-protection step.** Implement the replicated durable metadata
+log, snapshots and replay, Raft election, former-leader fencing, client discovery
+and retries. Exercise leader loss during a write, unavailable quorum and stale
+master return. A health check or DNS update alone cannot prevent split brain.
+The local model demonstrates an idealized takeover; it does not satisfy M6.
 
 Ship at M5 and get feedback before building compute. A fast, easy,
 S3-compatible distributed filesystem with the best data-distribution UI in the
