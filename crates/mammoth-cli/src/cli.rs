@@ -1,65 +1,40 @@
-//! Command tree (Part V §5.2). Kept in its own module so `xtask docs` can
-//! render its clap help and regenerate the CLI reference.
-
-use std::path::PathBuf;
-
+//! Command tree shared with generated documentation.
 use clap::{ArgAction, Parser, Subcommand, ValueEnum};
-
-/// Banner shown by `mammoth quickstart` and `mammoth --version --verbose`.
+use std::path::PathBuf;
 pub const BANNER: &str = include_str!("../assets/banner.txt");
-
 #[derive(Parser)]
 #[command(
     name = "mammoth",
     version,
-    about = "Distributed storage that doesn't need a JVM",
-    long_about = None,
+    about = "Durable storage with a local cluster, CLI, dashboard and S3 API"
 )]
 pub struct Cli {
-    /// Path to mammoth.toml.
     #[arg(short, long, env = "MAMMOTH_CONFIG", global = true)]
     pub config: Option<PathBuf>,
-
-    /// Master addresses, comma separated.
+    /// HTTP gateway address for remote filesystem access.
     #[arg(long, env = "MAMMOTH_MASTERS", global = true, value_delimiter = ',')]
     pub masters: Vec<String>,
-
-    /// Output format.
+    /// Local store directory. Defaults to ~/.mammoth/local.
+    #[arg(long, env = "MAMMOTH_LOCAL_ROOT", global = true)]
+    pub local_root: Option<PathBuf>,
     #[arg(long, global = true, value_enum, default_value = "auto")]
     pub output: OutputFormat,
-
-    /// Shorthand for `--output json`. Common enough in scripts to deserve it.
     #[arg(long, global = true, conflicts_with = "output")]
     pub json: bool,
-
-    /// Repeat for more detail: -v, -vv, -vvv.
-    #[arg(short, long, global = true, action = ArgAction::Count)]
+    #[arg(short,long,global=true,action=ArgAction::Count)]
     pub verbose: u8,
-
     #[command(subcommand)]
     pub command: Command,
 }
-
-/// `auto` resolves to `table` on a TTY and `json` when piped.
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
-    /// Table on a terminal, JSON when piped.
     Auto,
-    /// Always a human-readable table.
     Table,
-    /// Always JSON.
     Json,
-    /// Always YAML.
     Yaml,
-    /// Always CSV.
     Csv,
 }
-
 impl Cli {
-    /// The output format to use, with the `--json` shorthand folded in.
-    ///
-    /// Call this rather than reading `output` directly, or `--json` silently
-    /// does nothing.
     pub fn format(&self) -> OutputFormat {
         if self.json {
             OutputFormat::Json
@@ -68,135 +43,236 @@ impl Cli {
         }
     }
 }
-
 #[derive(Subcommand)]
 pub enum Command {
-    // --- lifecycle ---
-    /// Create a new cluster: config, IDs, certs.
+    /// Version and build information.
+    Version,
+    /// Initialize the local store and write a starter config.
     Init,
-    /// One-command demo cluster with sample data, then open the UI.
-    Quickstart,
-    /// Run a node.
-    Serve {
-        /// master | worker | gateway | all
+    /// Start the local dashboard and S3 server with sample data.
+    Quickstart {
+        #[arg(long, default_value = "127.0.0.1:8080")]
+        ui_listen: String,
+        #[arg(long, default_value = "127.0.0.1:9000")]
+        s3_listen: String,
         #[arg(long)]
-        role: String,
+        no_sample: bool,
+        /// Allow non-loopback listeners in an isolated development network. No authentication.
+        #[arg(long)]
+        allow_remote: bool,
     },
-    /// Launch or open the web GUI.
+    /// Run the local service in the foreground.
+    Serve {
+        #[arg(long,default_value="all",value_parser=["all","gateway","master","worker"])]
+        role: String,
+        #[arg(long)]
+        ui_listen: Option<String>,
+        #[arg(long)]
+        s3_listen: Option<String>,
+        /// Allow non-loopback listeners in an isolated development network. No authentication.
+        #[arg(long)]
+        allow_remote: bool,
+    },
+    /// Print the configured dashboard address.
     Ui,
-    /// Diagnose config, ports, disks, clock and ulimits.
+    /// Validate configuration and inspect local storage health.
     Doctor {
-        /// Apply the fixes that are safe to apply automatically.
         #[arg(long)]
         fix: bool,
+        #[arg(long)]
+        node: Option<String>,
     },
-
-    // --- filesystem ---
-    /// List a directory.
-    Ls,
-    /// Upload a local file.
-    Put,
-    /// Download to a local file.
-    Get,
-    /// Stream a file to stdout.
-    Cat,
-    /// Last lines of a file.
-    Tail,
-    /// First lines of a file.
-    Head,
-    /// Create a directory.
-    Mkdir,
-    /// Remove a path.
-    Rm,
-    /// Move or rename.
-    Mv,
-    /// Copy within the cluster.
-    Cp,
-    /// Metadata for one path.
-    Stat,
-    /// Disk usage by path.
-    Du,
-    /// Cluster capacity summary.
+    /// List direct children of a directory.
+    Ls {
+        #[arg(default_value = "/")]
+        path: PathBuf,
+    },
+    /// Upload a local file; use - for stdin.
+    Put {
+        src: PathBuf,
+        dst: PathBuf,
+        #[arg(long)]
+        replication: Option<u8>,
+        #[arg(long)]
+        block_size: Option<String>,
+    },
+    /// Download a file; existing destinations require --force.
+    Get {
+        src: PathBuf,
+        dst: PathBuf,
+        #[arg(long)]
+        force: bool,
+    },
+    /// Write raw file bytes to stdout.
+    Cat {
+        path: PathBuf,
+    },
+    /// Print the final N lines.
+    Tail {
+        path: PathBuf,
+        #[arg(short = 'n', long, default_value_t = 10)]
+        lines: usize,
+    },
+    /// Print the first N lines.
+    Head {
+        path: PathBuf,
+        #[arg(short = 'n', long, default_value_t = 10)]
+        lines: usize,
+    },
+    Mkdir {
+        path: PathBuf,
+        #[arg(short = 'p', long)]
+        parents: bool,
+    },
+    Rm {
+        path: PathBuf,
+        #[arg(short = 'r', long)]
+        recursive: bool,
+    },
+    Mv {
+        src: PathBuf,
+        dst: PathBuf,
+    },
+    Cp {
+        src: PathBuf,
+        dst: PathBuf,
+        #[arg(short = 'r', long)]
+        recursive: bool,
+    },
+    Stat {
+        path: PathBuf,
+    },
+    Du {
+        #[arg(default_value = "/")]
+        path: PathBuf,
+    },
     Df,
-    /// Search the namespace.
-    Find,
-    /// Change mode bits.
-    Chmod,
-    /// Change owner or group.
-    Chown,
-    /// Change the replication factor.
-    Setrep,
-    /// Print or verify a file checksum.
-    Checksum,
-
-    /// Visualize how data is spread across the cluster.
+    Find {
+        #[arg(default_value = "/")]
+        path: PathBuf,
+        #[arg(long)]
+        name: Option<String>,
+    },
+    /// Set descriptive POSIX mode bits (local mode does not enforce ACLs).
+    Chmod {
+        mode: String,
+        path: PathBuf,
+    },
+    Chown {
+        owner: String,
+        path: PathBuf,
+    },
+    Setrep {
+        replication: u8,
+        path: PathBuf,
+    },
+    /// Verify contents and display their CRC32C.
+    Checksum {
+        path: PathBuf,
+    },
     Viz {
         #[command(subcommand)]
         what: VizCommand,
     },
-    /// Live TUI dashboard — htop for your cluster.
-    Top,
-
-    // --- operations ---
-    /// Inspect and manage workers.
-    Node,
-    /// Raft membership and leadership.
-    Cluster,
-    /// Cluster administration.
-    Admin,
-    /// Submit and inspect jobs.
-    Job,
-    /// Migrate data in, and upgrade Mammoth itself.
-    Migrate,
-    /// Built-in benchmarks.
-    Bench,
-    /// Inspect and validate configuration.
-    Config,
-    /// Manage auth tokens.
-    Token,
-    /// Translate old Hadoop invocations: `mammoth compat hdfs dfs -ls /`.
-    Compat,
+    /// Interactive cluster dashboard. Press q to quit.
+    Top {
+        #[arg(long)]
+        once: bool,
+    },
+    Node {
+        #[command(subcommand)]
+        command: NodeCommand,
+    },
+    Cluster {
+        #[command(subcommand)]
+        command: ClusterCommand,
+    },
+    Admin {
+        #[command(subcommand)]
+        command: AdminCommand,
+    },
+    /// Execute a local data-processing job.
+    Job {
+        #[command(subcommand)]
+        command: JobCommand,
+    },
+    /// Import or export a directory tree.
+    Migrate {
+        #[command(subcommand)]
+        command: MigrateCommand,
+    },
+    /// Measure a local write/read round trip, then remove the benchmark file.
+    Bench {
+        #[arg(long, default_value = "8MiB")]
+        size: String,
+    },
+    Config {
+        #[command(subcommand)]
+        command: ConfigCommand,
+    },
     /// Generate a shell completion script.
     Completions {
-        /// bash | zsh | fish | powershell
         shell: String,
     },
+    /// Translate basic hdfs dfs commands into Mammoth commands.
+    Compat {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
-
-/// `mammoth viz …` — the feature that makes Mammoth feel different (Part VII).
 #[derive(Subcommand)]
 pub enum VizCommand {
-    /// Where this file's blocks live, as a block × node matrix.
     Blocks {
-        /// Path to inspect.
         path: PathBuf,
     },
-    /// Per-node capacity heatmap, grouped by rack.
     Cluster,
-    /// The rack / zone tree.
     Topology,
-    /// Hotspots and partition-size imbalance.
     Skew {
-        /// Directory to analyze.
         path: Option<PathBuf>,
-        /// Group by partition directory rather than by file.
         #[arg(long)]
         by_partition: bool,
     },
-    /// Which directories are eating the space.
     Treemap {
-        /// Root of the treemap.
         path: Option<PathBuf>,
-        /// How many levels to descend.
         #[arg(long, default_value_t = 2)]
         depth: u8,
     },
-    /// Replication health, optionally refreshing live.
     Health {
-        /// Refresh every 2s until interrupted.
         #[arg(long)]
         live: bool,
     },
-    /// Live data movement between clients, replication, balancer and shuffle.
     Flow,
+}
+#[derive(Subcommand)]
+pub enum NodeCommand {
+    List,
+    Inspect { id: String },
+    Repair,
+}
+#[derive(Subcommand)]
+pub enum ClusterCommand {
+    Status,
+}
+#[derive(Subcommand)]
+pub enum AdminCommand {
+    Report,
+    Repair,
+    Gc,
+    Safemode,
+}
+#[derive(Subcommand)]
+pub enum ConfigCommand {
+    Show,
+    Validate,
+    Template,
+}
+#[derive(Subcommand)]
+pub enum JobCommand {
+    Wordcount { input: PathBuf, output_path: PathBuf },
+    Sort { input: PathBuf, output_path: PathBuf },
+}
+#[derive(Subcommand)]
+pub enum MigrateCommand {
+    Import { source: PathBuf, destination: PathBuf },
+    Export { source: PathBuf, destination: PathBuf },
 }

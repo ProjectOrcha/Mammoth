@@ -1,8 +1,18 @@
 # Dashboard API: what the gateway must provide
 
-**Status:** the frontend client and demo exist. The Rust gateway is a placeholder.
-This page describes the dashboard's current expectations, not an implemented
-network service. Read it together before connecting the frontend and backend.
+**Status on AI_coded:** the local gateway and its dashboard adapters are
+implemented. `GET /api/v1/cluster/report` returns `capabilities` with `local: true`,
+`distributed_metrics: false`, `history: false`, and `jobs: false`. Unavailable
+metric groups are JSON `null`; the frontend normalizes them to non-finite display
+values and hides their panels. Node rates and latency are also `null`. They must
+never be treated as measured zeroes. History requests return HTTP 501.
+
+The filesystem API also supports PUT `/fs/data`, GET `/fs/data`, PUT
+`/fs/directory`, DELETE `/fs`, POST `/fs/rename`, POST `/fs/attributes`, and
+POST `/fs/replication`, with query parameters matching the CLI's backend operations.
+GET `/fs/search` provides up to 1,000 file choices for the distribution view.
+The `/core/*` endpoints use Rust records for the HTTP SDK; dashboard endpoints
+use the enriched records below.
 
 An **endpoint** is an HTTP URL and method. A **contract** describes the shape and
 meaning of its input, success response and errors. A TypeScript interface checks
@@ -46,9 +56,9 @@ long-lived GET. The client expects JSON for normal responses.
 | `/jobs` | None | `Job[]` |
 | `/events` | None | SSE events described below |
 
-The default listing limit is 200. There is no pagination UI yet: the page labels
-its limit, but it cannot show every entry of a larger directory. Agree on a
-cursor/next-page contract before claiming full namespace browsing.
+The default listing limit is 200. `offset` selects subsequent pages; the file
+browser has Previous/Next controls. Listings use stable lexicographic order.
+Concurrent namespace changes may shift offsets; this is not a snapshot cursor.
 
 Use HTTP 404 for missing resources in a new gateway. The current demo returns
 null for missing stat/layout; both paths show a message. Use non-2xx statuses
@@ -140,12 +150,12 @@ Reload after starting a gateway if the current page already selected demo mode.
 
 ## Integration acceptance checklist
 
-- [ ] C and D agree on fixtures for each endpoint actually used by a page.
-- [ ] Core records are adapted explicitly; missing metrics are represented honestly.
-- [ ] Empty directory, missing file, empty fragment list and zero-capacity node work.
-- [ ] Filenames containing spaces, Unicode, `#`, `?` and `%` round-trip correctly.
-- [ ] A slow old request cannot replace a newer selection or page.
-- [ ] Errors, malformed reports and reconnects are visible; no unhandled rejection.
-- [ ] Gateway routes do not fall through to the SPA HTML for unknown `/api` URLs.
-- [ ] Static assets and nested browser routes work after a hard reload.
-- [ ] `npm run check`, `npm test` and `npm run build` pass.
+- [x] Gateway regression tests cover endpoint shapes used by the UI.
+- [x] Core records are adapted explicitly; missing metrics are represented honestly.
+- [x] Empty directory, missing file, empty fragment list and zero-capacity node work.
+- [x] Filenames containing spaces, Unicode, `#`, `?` and `%` round-trip correctly.
+- [x] A slow old request cannot replace a newer selection or page.
+- [x] Errors, malformed reports and reconnects are visible; no unhandled rejection.
+- [x] Gateway routes do not fall through to the SPA HTML for unknown `/api` URLs.
+- [x] Static assets and nested browser routes work after a hard reload.
+- [x] `npm run check`, `npm test` and `npm run build` pass.

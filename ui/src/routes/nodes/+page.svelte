@@ -84,6 +84,8 @@
   ];
 </script>
 
+<svelte:head><title>Nodes · Mammoth</title></svelte:head>
+
 <header class="page">
   <h1>Nodes</h1>
   <p class="eyebrow">

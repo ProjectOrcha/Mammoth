@@ -3,6 +3,15 @@ title: Architecture
 description: Masters, workers, gateway — and the one trait everything hangs off.
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 This diagram describes the planned distributed service. The initial M5 target
 uses one master; three-master HA requires M6. For executable behavior today,
 see [the GFS local demonstration](/concepts/gfs/), which is a separate in-memory

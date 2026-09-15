@@ -12,3 +12,27 @@ mammoth-core = { workspace = true }
 axum = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
+
+serde_json = { workspace = true }
+futures-util = { workspace = true }
+bytes = { workspace = true }
+tokio-util = { workspace = true }
+rust-embed = { version = "8", features = ["debug-embed"] }
+mime_guess = "2"
+percent-encoding = "2"
+httpdate = "1"
+
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+md-5 = { workspace = true }
+base64 = "0.22"
+crc32c = { workspace = true }
+
+sha2 = "0.10"
+crc32fast = "1"
+
+[dev-dependencies]
+mammoth-local = { workspace = true }
+tempfile = { workspace = true }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+mammoth-client = { workspace = true }

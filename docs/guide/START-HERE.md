@@ -5,23 +5,14 @@ make a useful change without understanding the whole distributed system.
 
 ## 1. Know what works today
 
-Mammoth is a learning scaffold, not a working storage service yet.
+On `AI_coded`, the local application works with persistent files, replicated
+blocks, a CLI, a live dashboard, and a development S3 endpoint. Use the
+[current README](../../README.md) to build and run it, and
+[implementation status](../IMPLEMENTATION-STATUS.md) for boundaries and checks.
 
-| Area | Available now | Still to build |
-| --- | --- | --- |
-| Rust CLI | `--help`, subcommand help, `--version`, friendly unsupported-command errors | File operations, `quickstart`, `serve`, terminal dashboards |
-| Rust core | Shared types, errors, configuration structures, `Backend` trait | Concrete filesystem behavior and configuration loading |
-| Examples | 16 small runnable Rust programs | These do not store your real files |
-| GFS teaching model | `cargo run -p mammoth-local --example gfs-demo`; real in-memory chunk bytes, repair, write ordering and takeover | Durable storage, network services, Raft and real DNS; see [coverage](GFS-COVERAGE.md) |
-| `ui/` | Six dashboard sections, simulated data, light/dark themes | A Rust HTTP API matching the dashboard contract |
-| `web/` | Documentation website | Product examples describe the intended system |
-| Repository tools | `cargo xtask docs`, `build-ui`, `assets`; `dist` delegates to cargo-dist | A release-ready product |
-
-A **scaffold** is a project skeleton: names and interfaces exist before their
-behavior is implemented. `cargo test` succeeding does not mean a filesystem
-exists; many crates do not contain tests yet. The [roadmap](../ROADMAP.md) tracks
-implementation milestones. The numbered chapters are exercises to implement
-those milestones, not proof that they are already complete.
+The numbered guide chapters explain how the pieces fit together. The later
+multi-machine architecture, Raft, distributed compute and HDFS/EC milestones
+remain roadmap work. The GFS teaching simulation remains separate from the service.
 
 ## 2. Set up once
 
@@ -55,8 +46,9 @@ Read `cargo run -p mammoth-cli -- --help` as:
 | `--` | Stop Cargo's arguments; pass the rest to the program |
 | `--help` | Ask Mammoth to show its help |
 
-Use `--help` to explore. `quickstart` and `serve` currently return `E0002` with a
-nonzero exit status because command execution is unfinished.
+Use `--help` to explore. Build the UI, rebuild the binary, then run `quickstart`
+to start the local filesystem and dashboard. Separate `master` and `worker` roles
+still report an explicit unsupported-operation error.
 
 ## 3. See something working
 

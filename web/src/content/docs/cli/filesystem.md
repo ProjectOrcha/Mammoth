@@ -5,6 +5,15 @@ sidebar:
   order: 2
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 The file verbs are POSIX. If a flag exists in coreutils and means something
 here, it has the same name and the same behaviour: `-l`, `-h`, `-r`,
 `--recursive`, `-n`.

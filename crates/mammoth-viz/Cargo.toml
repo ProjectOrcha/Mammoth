@@ -11,3 +11,6 @@ repository.workspace   = true
 mammoth-core = { workspace = true }
 comfy-table = { workspace = true }
 owo-colors = { workspace = true }
+ratatui = { workspace = true }
+tokio = { workspace = true }
+crossterm = "0.28"

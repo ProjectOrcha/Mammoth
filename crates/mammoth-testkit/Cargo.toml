@@ -9,3 +9,6 @@ repository.workspace   = true
 
 [dependencies]
 mammoth-core = { workspace = true }
+
+[dev-dependencies]
+mammoth-local = { workspace = true }

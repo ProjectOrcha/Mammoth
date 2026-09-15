@@ -1,62 +1,61 @@
 ---
-title: 5-minute cluster
-description: One command to a running cluster with sample data and an open browser.
+title: 5-minute local service
+description: Build Mammoth and run a persistent local filesystem with a live dashboard.
 sidebar:
   order: 4
 ---
 
-:::caution[Planned walkthrough]
-The commands and output below describe the intended product. `quickstart` and
-`serve` do not run a cluster in this scaffold. To try working code today, follow
-[contributor setup](/contributing/) and run the standalone demo dashboard.
-:::
+On `AI_coded`, the guided local service runs with real persistent files.
+Six worker directories simulate three racks on one host. This is a development
+service; separate distributed workers, Raft and HA remain future work.
 
-```console
-$ mammoth quickstart
+## Build and run
 
-  Mammoth v0.1.0
+Requires Rust 1.85+ and Node 22.x. From the repository root:
 
-  ✔ config written        ~/.mammoth/mammoth.toml
-  ✔ data dir created      ~/.mammoth/data
-  ✔ started master        127.0.0.1:7000
-  ✔ started 3 workers     w1 w2 w3  (simulated, single machine)
-  ✔ started gateway       S3 :9000 · UI :8080
-  ✔ sample data loaded    /sample/nyc-taxi.parquet (120 MB)
-
-  Web UI  →  http://localhost:8080
-  Try     →  mammoth ls /sample
-             mammoth viz blocks /sample/nyc-taxi.parquet
-
-  Stop with: mammoth serve stop
+```bash
+npm --prefix ui ci
+npm --prefix ui run build
+cargo build --locked -p mammoth-cli
+./target/debug/mammoth --local-root .mammoth quickstart
 ```
 
-## Put a file and look at where it went
+Open [the dashboard](http://127.0.0.1:8080). The S3 endpoint listens on
+`127.0.0.1:9000`. Press Ctrl-C to stop; restart with the same root to keep data.
+Build the dashboard before the Rust binary, because its files are embedded.
 
-```console
-$ mammoth put ./sales-2026.csv /data/sales-2026.csv
-  uploading  ████████████████████████  350 MB / 350 MB  ·  412 MB/s  ·  0s
-  ✔ /data/sales-2026.csv   350 MB · 3 blocks · replication 3
+In another terminal:
 
-$ mammoth viz blocks /data/sales-2026.csv
-
-  /data/sales-2026.csv   350 MB · 3 blocks · replication 3
-
-           w1    w2    w3
-  blk 1    ●     ●     ●
-  blk 2    ·     ●     ●
-  blk 3    ●     ·     ●
+```bash
+export MAMMOTH_LOCAL_ROOT="$PWD/.mammoth"
+./target/debug/mammoth ls /sample
+./target/debug/mammoth put README.md /sample/readme.md
+./target/debug/mammoth cat /sample/readme.md
+./target/debug/mammoth viz blocks /sample/blocks.bin --output table
+./target/debug/mammoth top
 ```
 
-## Point DuckDB at it
+Small files live directly in the namespace snapshot. Larger files use immutable
+checksummed blocks replicated across the simulated racks. Read errors on one
+copy cause the backend to try another copy. `mammoth admin repair` restores
+bad or missing copies from a checked source.
 
-```python
-import duckdb
-duckdb.sql("SET s3_endpoint='localhost:9000'")
-duckdb.sql("SELECT count(*) FROM 's3://sample/*.parquet'")
+## DuckDB
+
+Upload a local Parquet file with a path-style, unsigned S3 client, then query it:
+
+```sql
+INSTALL httpfs;
+LOAD httpfs;
+CREATE SECRET mammoth (
+  TYPE S3,
+  ENDPOINT '127.0.0.1:9000',
+  URL_STYLE 'path',
+  USE_SSL false
+);
+SELECT count(*) FROM read_parquet('s3://warehouse/*.parquet');
 ```
 
-Every command has `--json`, so the same session scripts cleanly:
-
-```console
-$ mammoth stat /data/sales-2026.csv --json | jq '.blocks[].replicas'
-```
+The development S3 subset supports objects, buckets, listings and byte ranges.
+It does not implement multipart upload or authentication. Keep the default
+loopback listeners for local use.

@@ -11,6 +11,21 @@ import Homepage from '../../components/Homepage.astro';
 
 <Homepage>
   <Tabs>
+    <TabItem label="Working local service">
+      Requires **Rust 1.85+** and **Node.js 22.12+ (22.x)**.
+
+      ```bash
+      git clone --branch AI_coded https://github.com/ProjectOrcha/Mammoth.git
+      cd Mammoth
+      npm --prefix ui ci
+      npm --prefix ui run build
+      cargo run --locked -p mammoth-cli -- --local-root .mammoth quickstart
+      ```
+
+      Open [localhost:8080](http://localhost:8080) to upload, download and inspect
+      real files. Your files persist under `.mammoth`. Six worker directories
+      model placement on one host; multi-machine storage is still in development.
+    </TabItem>
     <TabItem label="Dashboard demo">
       Requires **Node.js 22.12+ (22.x)** and Git.
 
@@ -37,7 +52,7 @@ import Homepage from '../../components/Homepage.astro';
 
       Already cloned the project? Start from your existing `Mammoth` folder
       and run the two `cargo` commands. The example introduces ownership;
-      `--help` shows the planned command tree.
+      `--help` shows the implemented command tree.
     </TabItem>
 
   </Tabs>

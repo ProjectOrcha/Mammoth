@@ -93,6 +93,8 @@
   }
 </script>
 
+<svelte:head><title>Jobs · Mammoth</title></svelte:head>
+
 <header class="page">
   <h1>Jobs</h1>
   <p class="eyebrow">{jobs ? `${jobs.length} recent` : 'loading'}</p>

@@ -1,0 +1,10 @@
+.git
+.mammoth
+target
+**/node_modules
+ui/.svelte-kit
+ui/build
+web/dist
+web/.astro
+**/.env.local
+**/.env.*.local

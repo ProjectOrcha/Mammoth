@@ -3,6 +3,15 @@ title: Migration
 description: Six steps to move a Hadoop cluster's data into Mammoth without a maintenance window — plan, run, resume, verify, sync, cut over — and how to upgrade Mammoth itself.
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 Two different meanings of "migration". You need both: getting your data **out of
 Hadoop**, and upgrading **Mammoth itself** later.
 

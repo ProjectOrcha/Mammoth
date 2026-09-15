@@ -38,21 +38,19 @@ that release decides whether M7 is worth ten weeks.
 
 ## Implemented in this checkout
 
-The CLI parses help/version and reports unsupported commands without a panic.
-Core types/errors and 16 teaching examples exist. The dashboard runs with demo
-data; the docs site builds. A separate executable GFS model now lives in
-`mammoth-local`: it demonstrates in-memory chunk replicas, heartbeat repair,
-primary-ordered mutations and standby takeover with stale-lease rejection.
-Run `cargo run -p mammoth-local --example gfs-demo`. It does not implement
-`LocalBackend`, durable storage, network services or Raft.
+On `AI_coded`, the guided local application now works: persistent replicated
+storage, CLI commands and terminal visualization, the embedded dashboard with
+real data, a versioned HTTP client, a development S3 subset, local text jobs and
+tree transfers. See [implementation status](IMPLEMENTATION-STATUS.md) for the
+exact behavior, tests, limits and remaining gates.
 
-`cargo xtask` builds the UI, generates the CLI
-reference, copies logos and delegates release builds. Storage, gateway serving
-and the distributed harnesses remain placeholders. See the detailed
-[current-status table](guide/START-HERE.md#1-know-what-works-today).
+M1–M3's local application is implemented. Durable block storage is an M4
+foundation; production performance is not qualified. An HTTP client and a working
+S3 subset do **not** complete distributed M5. M5–M8 remain open.
 
-The week estimates above are planning targets, not a promise for a beginner team.
-Use the [four-person plan](guide/TEAM-PLAN.md) to progress by tested handoffs.
+The separate executable GFS model still demonstrates heartbeat repair,
+primary-ordered mutations and standby takeover in memory. It is not Raft or
+a network service.
 
 ## Reliability gates from the GFS review
 

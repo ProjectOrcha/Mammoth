@@ -11,3 +11,8 @@ repository.workspace   = true
 mammoth-core = { workspace = true }
 bytes = { workspace = true }
 tokio = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+crc32c = { workspace = true }
+tempfile = { workspace = true }

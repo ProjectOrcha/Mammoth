@@ -13,9 +13,17 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 /// Everything that can go wrong at the `Backend` boundary.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    /// This scaffold declares the operation but does not implement it yet.
+    /// A planned operation is not implemented by this backend.
     #[error("not implemented yet: {0}")]
     NotImplemented(&'static str),
+
+    /// The request is malformed or outside supported bounds.
+    #[error("invalid request: {0}")]
+    InvalidInput(String),
+
+    /// A destination already exists.
+    #[error("path already exists: {0}")]
+    AlreadyExists(PathBuf),
 
     /// The path does not exist in the namespace.
     #[error("no such path: {0}")]
@@ -75,6 +83,17 @@ pub enum Error {
     #[error("config error: {0}")]
     Config(String),
 
+    /// A gateway error retaining its stable code and HTTP status.
+    #[error("{message}")]
+    Remote {
+        /// The gateway's stable Mammoth error code.
+        code: String,
+        /// The original explanation from the gateway.
+        message: String,
+        /// The HTTP response status.
+        status: u16,
+    },
+
     /// Transport or I/O failure.
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -82,9 +101,11 @@ pub enum Error {
 
 impl Error {
     /// Stable error code, for `--json` output and for the docs URL.
-    pub fn code(&self) -> &'static str {
+    pub fn code(&self) -> &str {
         match self {
             Error::NotImplemented(_) => "E0002",
+            Error::InvalidInput(_) => "E0003",
+            Error::AlreadyExists(_) => "E0103",
             Error::NotFound(_) => "E0101",
             Error::WrongKind { .. } => "E0102",
             Error::NotEnoughWorkers { .. } => "E0301",
@@ -93,6 +114,7 @@ impl Error {
             Error::LeaseHeld { .. } => "E0201",
             Error::Config(_) => "E0001",
             Error::Io(_) => "E0500",
+            Error::Remote { code, .. } => code,
         }
     }
 
@@ -122,6 +144,9 @@ impl Error {
 
     /// Documentation URL for this error code.
     pub fn docs_url(&self) -> String {
-        format!("https://projectorcha.github.io/Mammoth/errors/{}", self.code())
+        format!(
+            "https://projectorcha.github.io/Mammoth/errors/{}",
+            self.code().to_ascii_lowercase()
+        )
     }
 }

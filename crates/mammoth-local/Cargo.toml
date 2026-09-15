@@ -17,3 +17,11 @@ serde        = { workspace = true }
 serde_json   = { workspace = true }
 tokio        = { workspace = true }
 thiserror    = { workspace = true }
+
+mammoth-storage = { workspace = true }
+fs2 = { workspace = true }
+tempfile = { workspace = true }
+crc32c = { workspace = true }
+tokio-util = { workspace = true }
+
+md-5 = { workspace = true }

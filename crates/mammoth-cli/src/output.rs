@@ -1,77 +1,98 @@
-//! Write this once, use it everywhere (Part V §5.4).
-//!
-//! Two rules that keep the CLI scriptable: `auto` never emits a table into a
-//! pipe, and nothing emits ANSI escapes unless stdout is a terminal.
-
-use std::io::IsTerminal;
-
-use mammoth_core::Error;
-use owo_colors::OwoColorize;
-
+//! Consistent human output and structured output with no panic paths.
 use crate::cli::OutputFormat;
-
-/// Anything the CLI can print.
-pub trait Render {
-    /// Human-facing table form.
-    fn to_table(&self) -> comfy_table::Table;
-    /// Machine-facing form. Field names here are a public API — treat them as such.
-    fn to_json(&self) -> serde_json::Value;
-}
-
+use mammoth_core::{Error, Result};
+use serde::Serialize;
+use serde_json::Value;
+use std::io::{IsTerminal, Write};
 impl OutputFormat {
-    /// Resolve `auto` against the terminal; every other variant passes through.
-    pub fn resolve(self) -> OutputFormat {
+    pub fn resolve(self) -> Self {
         match self {
-            OutputFormat::Auto if std::io::stdout().is_terminal() => OutputFormat::Table,
-            OutputFormat::Auto => OutputFormat::Json,
+            Self::Auto if std::io::stdout().is_terminal() => Self::Table,
+            Self::Auto => Self::Json,
             other => other,
         }
     }
 }
-
-/// Print a value in the requested format.
-pub fn emit<T: Render>(v: &T, fmt: OutputFormat) {
+pub fn emit(value: &impl Serialize, fmt: OutputFormat) -> Result<()> {
+    let value = serde_json::to_value(value).map_err(|e| Error::InvalidInput(e.to_string()))?;
+    let out = std::io::stdout();
+    let mut out = out.lock();
     match fmt.resolve() {
-        OutputFormat::Table => println!("{}", v.to_table()),
-        OutputFormat::Json => {
-            println!("{}", serde_json::to_string_pretty(&v.to_json()).expect("json"))
+        OutputFormat::Json => writeln!(
+            out,
+            "{}",
+            serde_json::to_string_pretty(&value).map_err(|e| Error::InvalidInput(e.to_string()))?
+        )?,
+        OutputFormat::Yaml => writeln!(
+            out,
+            "{}",
+            serde_yaml::to_string(&value)
+                .map_err(|e| Error::InvalidInput(e.to_string()))?
+                .trim_end()
+        )?,
+        OutputFormat::Table | OutputFormat::Csv => {
+            let rows = match &value {
+                Value::Array(v) => v.clone(),
+                v => vec![v.clone()],
+            };
+            let mut headers = std::collections::BTreeSet::new();
+            for row in &rows {
+                if let Some(o) = row.as_object() {
+                    headers.extend(o.keys().cloned());
+                }
+            }
+            let headers: Vec<_> = if headers.is_empty() {
+                vec!["value".into()]
+            } else {
+                headers.into_iter().collect()
+            };
+            let values: Vec<Vec<String>> = rows
+                .iter()
+                .map(|r| {
+                    headers.iter().map(|k| text(if r.is_object() { &r[k] } else { r })).collect()
+                })
+                .collect();
+            if fmt.resolve() == OutputFormat::Csv {
+                let mut w = csv::Writer::from_writer(&mut out);
+                w.write_record(&headers).map_err(csv_error)?;
+                for row in values {
+                    w.write_record(row).map_err(csv_error)?;
+                }
+                w.flush()?;
+            } else {
+                let mut table = comfy_table::Table::new();
+                table.load_preset(comfy_table::presets::UTF8_FULL).set_header(headers);
+                for row in values {
+                    table.add_row(row);
+                }
+                writeln!(out, "{table}")?;
+            }
         }
-        OutputFormat::Yaml | OutputFormat::Csv => {
-            unimplemented!("yaml and csv renderers — milestone M2")
-        }
-        OutputFormat::Auto => unreachable!("resolve() never returns Auto"),
+        OutputFormat::Auto => unreachable!("format resolved"),
+    }
+    Ok(())
+}
+fn text(v: &Value) -> String {
+    match v {
+        Value::String(s) => s.clone(),
+        Value::Null => "—".into(),
+        _ => v.to_string(),
     }
 }
-
-/// Print an error the way principle 3 demands: what broke, why, what to do next.
-///
-/// ```text
-/// error[E0301]: not enough healthy workers for replication 3
-///
-///   only 2 workers are available, but this file requires 3 replicas
-///
-///   what you can do:
-///     · lower replication:   mammoth put ./big.bin /data/big.bin --replication 2
-///     · check node health:   mammoth node list
-///
-///   docs: https://projectorcha.github.io/Mammoth/errors/E0301
-/// ```
-pub fn print_error(e: &Error) {
-    let color = std::io::stderr().is_terminal();
-    let tag = format!("error[{}]", e.code());
-    if color {
-        eprintln!("\n  {}: {e}\n", tag.red().bold());
+fn csv_error(e: csv::Error) -> Error {
+    Error::Io(std::io::Error::other(e))
+}
+pub fn print_error(e: &Error, fmt: OutputFormat) {
+    if matches!(fmt.resolve(), OutputFormat::Json | OutputFormat::Yaml | OutputFormat::Csv) {
+        eprintln!(
+            "{}",
+            serde_json::json!({"code":e.code(),"message":e.to_string(),"hints":e.hints(),"docs":e.docs_url()})
+        );
     } else {
-        eprintln!("\n  {tag}: {e}\n");
-    }
-
-    let hints = e.hints();
-    if !hints.is_empty() {
-        eprintln!("  what you can do:");
-        for h in hints {
-            eprintln!("    · {h}");
+        eprintln!("error[{}]: {}", e.code(), e);
+        for hint in e.hints() {
+            eprintln!("  · {hint}");
         }
-        eprintln!();
+        eprintln!("  docs: {}", e.docs_url());
     }
-    eprintln!("  docs: {}\n", e.docs_url());
 }

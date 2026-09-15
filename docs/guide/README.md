@@ -1,5 +1,12 @@
 # The Mammoth build guide
 
+> **AI_coded implementation update:** the local filesystem, CLI, visualization,
+> gateway and dashboard are now implemented. The chapter code remains a teaching
+> walkthrough; use [the runnable README](../../README.md) and
+> [implementation status](../IMPLEMENTATION-STATUS.md) for current commands,
+> the durable on-disk format and the remaining distributed milestones.
+
+
 A step-by-step guide to building Mammoth from the scaffold in this repository,
 written for people who have not built a distributed system before.
 

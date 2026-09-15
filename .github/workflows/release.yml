@@ -1,25 +1,64 @@
 name: Release
-
-# Generated and maintained by `cargo dist init`. Re-run it after editing
-# dist-workspace.toml rather than hand-editing this file.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
-
 permissions:
-  contents: write
-
+  contents: read
 jobs:
-  plan:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: mammoth
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary: mammoth
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary: mammoth.exe
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - name: Placeholder
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: ui/package-lock.json }
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: "${{ matrix.target }}" }
+      - uses: Swatinem/rust-cache@v2
+      - name: Build dashboard and binary
+        shell: bash
         run: |
-          echo "Run 'cargo dist init' to generate the real release workflow."
-          echo "It builds every target in dist-workspace.toml, produces the"
-          echo "shell/PowerShell/Homebrew/MSI installers, and attaches them"
-          echo "to the GitHub Release."
-          exit 1
+          cargo xtask build-ui
+          cargo build --release --locked -p mammoth-cli --target '${{ matrix.target }}'
+          cargo test --workspace --locked
+      - name: Package
+        shell: bash
+        run: |
+          mkdir package
+          cp 'target/${{ matrix.target }}/release/${{ matrix.binary }}' package/
+          cp LICENSE-APACHE LICENSE-MIT README.md docs/IMPLEMENTATION-STATUS.md package/
+          tar -czf 'mammoth-${{ matrix.target }}.tar.gz' -C package .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mammoth-${{ matrix.target }}
+          path: mammoth-${{ matrix.target }}.tar.gz
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: packages, merge-multiple: true }
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release view "$RELEASE_TAG" || gh release create "$RELEASE_TAG" --draft --generate-notes
+          gh release upload "$RELEASE_TAG" packages/*.tar.gz --clobber

@@ -3,6 +3,15 @@ title: Performance
 description: Lock-free metadata reads, short-circuit reads, zero-copy, io_uring, hardware CRC32C, quorum acks, hedged reads.
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 Explained so you know _why_, not just _what_. Ordered by impact.
 
 ### 0 · The four fast paths — read this first

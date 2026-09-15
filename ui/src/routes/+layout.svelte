@@ -157,6 +157,10 @@
       </div>
     {/if}
 
+    {#if report?.capabilities?.local}
+      <div class="banner" role="status"><div><strong>Local storage.</strong> File data is real and persistent. Workers and reference capacities are simulated on this machine; network performance and HA metrics are unavailable.</div></div>
+    {/if}
+
     {#if live.error}
       <div class="banner danger" role="alert">
         <div>

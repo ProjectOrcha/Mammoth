@@ -1,7 +1,7 @@
 name: Nightly simulation
 
-# 10,000 deterministic seeds. Any failure files an issue carrying the seed, so
-# the bug reproduces exactly:
+# 10,000 deterministic seeds of the in-memory GFS teaching model.
+# A failed assertion records its seed in the job log; reproduce with:
 #   MAMMOTH_SIM_SEED=<seed> cargo nextest run --test sim
 on:
   schedule: [{ cron: '0 3 * * *' }]
@@ -36,33 +36,37 @@ jobs:
       - name: Run seeds
         id: sim
         if: steps.harness.outputs.ready == 'true'
+        env:
+          MAMMOTH_SIM_COUNT: ${{ github.event.inputs.seeds || '10000' }}
+          MAMMOTH_SIM_SEED: '1'
         run: |
-          SEEDS="${{ github.event.inputs.seeds || '10000' }}"
-          for i in $(seq 1 "$SEEDS"); do
-            SEED=$RANDOM$RANDOM
-            if ! MAMMOTH_SIM_SEED=$SEED cargo nextest run --test sim --no-fail-fast; then
-              echo "failing_seed=$SEED" >> "$GITHUB_OUTPUT"
-              exit 1
-            fi
-          done
+          if ! cargo test --locked -p mammoth-testkit --test sim -- --nocapture > simulation.log 2>&1; then
+            cat simulation.log
+            python3 -c 'import os,re; text=open("simulation.log").read(); match=re.search(r"failing_seed=(\d+)", text); open(os.environ["GITHUB_OUTPUT"], "a").write("failing_seed="+match.group(1)+"\n") if match else None'
+            exit 1
+          fi
+          cat simulation.log
 
       - name: File an issue with the seed
         if: failure() && steps.sim.outputs.failing_seed != ''
         uses: actions/github-script@v7
+        env:
+          FAILING_SEED: ${{ steps.sim.outputs.failing_seed }}
         with:
           script: |
-            const seed = '${{ steps.sim.outputs.failing_seed }}';
+            const seed = process.env.FAILING_SEED;
+            if (!/^\d+$/.test(seed)) throw new Error('Invalid simulation seed');
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `sim: failure on seed ${seed}`,
               labels: ['bug', 'simulation'],
               body: [
-                'The nightly simulation run failed.',
+                'The nightly GFS teaching-model simulation failed.',
                 '',
                 'Reproduce:',
                 '```bash',
-                `MAMMOTH_SIM_SEED=${seed} cargo nextest run --test sim`,
+                `MAMMOTH_SIM_SEED=${seed} cargo test --locked -p mammoth-testkit --test sim`,
                 '```',
                 '',
                 `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,

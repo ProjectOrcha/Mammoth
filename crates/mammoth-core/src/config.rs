@@ -388,3 +388,99 @@ impl Default for Telemetry {
         Self { metrics_listen: "0.0.0.0:9100".into(), log_format: "json".into() }
     }
 }
+
+impl Config {
+    /// Load defaults, system/user config, explicit config, then environment.
+    pub fn load(path: Option<&std::path::Path>) -> crate::Result<Self> {
+        use figment::{
+            providers::{Env, Format, Serialized, Toml},
+            Figment,
+        };
+        let mut f = Figment::from(Serialized::defaults(Self::default()))
+            .merge(Toml::file("/etc/mammoth/mammoth.toml"));
+        if let Some(home) = std::env::var_os("HOME") {
+            f = f.merge(Toml::file(std::path::PathBuf::from(home).join(".mammoth/mammoth.toml")));
+        }
+        if let Some(path) = path {
+            if !path.is_file() {
+                return Err(crate::Error::Config(format!(
+                    "config file not found: {}",
+                    path.display()
+                )));
+            }
+            f = f.merge(Toml::file(path));
+        }
+        let config: Self = f
+            .merge(
+                Env::prefixed("MAMMOTH_").ignore(&["CONFIG", "MASTERS", "LOCAL_ROOT"]).split("__"),
+            )
+            .extract()
+            .map_err(|e| crate::Error::Config(e.to_string()))?;
+        config.validate()?;
+        Ok(config)
+    }
+    /// Check bounds before any I/O or memory allocation.
+    pub fn validate(&self) -> crate::Result<()> {
+        let block = parse_size(&self.storage.block_size)?;
+        let inline = parse_size(&self.storage.inline_threshold)?;
+        if block == 0 || block > 256 * 1024 * 1024 || inline > 16 * 1024 * 1024 {
+            return Err(crate::Error::Config(
+                "block_size must be 1 B–256 MiB and inline_threshold at most 16 MiB".into(),
+            ));
+        }
+        if self.storage.replication == 0 {
+            return Err(crate::Error::Config("replication must be positive".into()));
+        }
+        if !(0.0..=1.0).contains(&self.master.safemode_threshold) || self.master.heartbeat_ms == 0 {
+            return Err(crate::Error::Config(
+                "invalid safe-mode threshold or heartbeat interval".into(),
+            ));
+        }
+        for address in [&self.master.listen, &self.gateway.ui_listen, &self.gateway.s3_listen] {
+            address
+                .parse::<std::net::SocketAddr>()
+                .map_err(|e| crate::Error::Config(format!("{address}: {e}")))?;
+        }
+        Ok(())
+    }
+}
+
+/// Parse integer byte sizes with SI or IEC units, rejecting overflow.
+pub fn parse_size(value: &str) -> crate::Result<u64> {
+    let value = value.trim();
+    let split = value.find(|c: char| !c.is_ascii_digit()).unwrap_or(value.len());
+    let n: u64 = value[..split]
+        .parse()
+        .map_err(|_| crate::Error::Config(format!("invalid byte size: {value}")))?;
+    let factor = match value[split..].trim().to_ascii_lowercase().as_str() {
+        "" | "b" => 1,
+        "kb" => 1000,
+        "mb" => 1000_u64.pow(2),
+        "gb" => 1000_u64.pow(3),
+        "kib" => 1024,
+        "mib" => 1024_u64.pow(2),
+        "gib" => 1024_u64.pow(3),
+        _ => return Err(crate::Error::Config(format!("unknown size unit: {value}"))),
+    };
+    n.checked_mul(factor)
+        .ok_or_else(|| crate::Error::Config(format!("byte size overflow: {value}")))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn invalid_sizes_and_settings_are_rejected_before_allocation() {
+        assert_eq!(parse_size("128MiB").unwrap(), 134217728);
+        assert_eq!(parse_size("2 MB").unwrap(), 2_000_000);
+        for value in ["", "-1", "1.5MiB", "10watts", "18446744073709551615GiB"] {
+            assert!(parse_size(value).is_err(), "{value}");
+        }
+        let mut config = Config::default();
+        config.storage.block_size = "0".into();
+        assert!(config.validate().is_err());
+        config.storage.block_size = "1MiB".into();
+        config.storage.replication = 0;
+        assert!(config.validate().is_err());
+    }
+}

@@ -1,20 +1,30 @@
-//! One module per command group. Each takes `&dyn Backend` and returns a type
-//! that implements [`crate::output::Render`], so a command never knows whether
-//! it is talking to `LocalBackend` or a real cluster, and never decides how its
-//! output is formatted.
-//!
-//! Populate in roadmap order: `fs` and `viz` first (M1–M2), the rest after.
+//! Local processing and directory migration commands.
+use crate::{
+    cli::{JobCommand, MigrateCommand, OutputFormat},
+    output,
+};
+use mammoth_core::{Backend, Result};
 
-// pub mod admin;
-// pub mod bench;
-// pub mod cluster;
-// pub mod config;
-// pub mod doctor;
-// pub mod fs;
-// pub mod job;
-// pub mod migrate;
-// pub mod node;
-// pub mod quickstart;
-// pub mod serve;
-// pub mod top;
-// pub mod viz;
+pub async fn job(be: &dyn Backend, command: JobCommand, fmt: OutputFormat) -> Result<()> {
+    let (input, output_path, kind) = match command {
+        JobCommand::Wordcount { input, output_path } => {
+            (input, output_path, mammoth_compute::JobKind::Wordcount)
+        }
+        JobCommand::Sort { input, output_path } => {
+            (input, output_path, mammoth_compute::JobKind::Sort)
+        }
+    };
+    output::emit(&mammoth_compute::run_local(be, input, output_path, kind).await?, fmt)
+}
+
+pub async fn migrate(be: &dyn Backend, command: MigrateCommand, fmt: OutputFormat) -> Result<()> {
+    let transfer = match command {
+        MigrateCommand::Import { source, destination } => {
+            mammoth_migrate::Transfer::Import { source, destination }
+        }
+        MigrateCommand::Export { source, destination } => {
+            mammoth_migrate::Transfer::Export { source, destination }
+        }
+    };
+    output::emit(&mammoth_migrate::transfer(be, transfer).await?, fmt)
+}

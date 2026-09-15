@@ -1,13 +1,22 @@
-FROM rust:1.82-bookworm AS builder
-WORKDIR /build
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      clang cmake protobuf-compiler nodejs npm && rm -rf /var/lib/apt/lists/*
-COPY . .
-RUN cargo xtask build-ui && cargo build --release --locked -p mammoth-cli
+FROM node:22-bookworm-slim AS ui
+WORKDIR /src/ui
+COPY ui/package*.json ./
+RUN npm ci
+COPY ui/ ./
+RUN npm run check && npm test && npm run build
 
-FROM gcr.io/distroless/cc-debian12
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+COPY . .
+COPY --from=ui /src/ui/build ./ui/build
+RUN cargo build --release --locked -p mammoth-cli
+
+FROM debian:bookworm-slim
+RUN useradd --system --uid 10001 --create-home mammoth && mkdir -p /data && chown mammoth:mammoth /data
 COPY --from=builder /build/target/release/mammoth /usr/local/bin/mammoth
-EXPOSE 7000 8080 9000 9100
-VOLUME ["/data", "/var/lib/mammoth"]
+USER mammoth
+ENV MAMMOTH_LOCAL_ROOT=/data
+EXPOSE 8080 9000
+VOLUME ["/data"]
 ENTRYPOINT ["/usr/local/bin/mammoth"]
-CMD ["serve", "--role", "all"]
+CMD ["quickstart", "--ui-listen", "0.0.0.0:8080", "--s3-listen", "0.0.0.0:9000", "--allow-remote"]

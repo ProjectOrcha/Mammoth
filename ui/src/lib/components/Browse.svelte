@@ -2,6 +2,9 @@
      whether to list a directory or open a file, so /files and
      /files/[...path] cannot drift apart. -->
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { untrack } from 'svelte';
+  import { live } from '$lib/live.svelte';
   import { api, currentSource } from '$lib/api';
   import type { BlockLayout, FileStatus } from '$lib/types';
   import { ago, bibytes, bytes, count, fileHref, joinPath, segments } from '$lib/format';
@@ -19,10 +22,54 @@
   let layout = $state<BlockLayout | null>(null);
   let error = $state<string | null>(null);
   let loading = $state(true);
+  let revision = $state(0);
+  let offset = $state(0);
+  let busy = $state(false);
+  let actionError = $state<string | null>(null);
+  let folderName = $state('');
+  let refreshView = () => {};
+  $effect(() => { void live.updatedAt; untrack(() => refreshView()); });
+
+  $effect(() => { void path; offset = 0; });
+
+  async function change(action: () => Promise<void>) {
+    const selected = path;
+    busy = true; actionError = null;
+    try { await action(); if (path === selected) revision++; await live.refresh(); }
+    catch (e) { if (path === selected) actionError = e instanceof Error ? e.message : String(e); }
+    finally { busy = false; }
+  }
+
+  async function upload(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    const selected = path;
+    if (!file) return;
+    const name = joinPath(selected, file.name);
+    await change(async () => {
+      let exists = false;
+      try { exists = (await api.stat(name)) !== null; }
+      catch (e) { if (!(e instanceof Error) || !e.message.startsWith('404 ')) throw e; }
+      if (exists && !window.confirm(`Replace ${file.name}?`)) return;
+      await api.upload(name, file);
+    });
+    input.value = '';
+  }
+
+  async function makeFolder(event: SubmitEvent) {
+    event.preventDefault();
+    if (!folderName.trim() || /[\/\\]/.test(folderName) || ['.', '..'].includes(folderName)) { actionError = 'Enter a single folder name.'; return; }
+    const destination = joinPath(path, folderName);
+    await change(() => api.mkdir(destination));
+    if (!actionError) folderName = '';
+  }
+
 
   // Cleanup invalidates every result, including a second request and A → B → A navigation.
   $effect(() => {
     const wanted = path;
+    const pageOffset = offset;
+    void revision;
     let active = true;
     loading = true;
     error = null;
@@ -30,25 +77,32 @@
     entries = null;
     layout = null;
 
-    void (async () => {
+    let fetching = false;
+    const load = async () => {
+      if (!active || fetching) return;
+      fetching = true;
       try {
         const nextStatus = await api.stat(wanted);
         if (!active) return;
         if (!nextStatus) throw new Error(`No such path: ${wanted}`);
         const result = nextStatus.is_dir
-          ? { entries: await api.list(wanted), layout: null }
+          ? { entries: await api.list(wanted, 200, pageOffset), layout: null }
           : { entries: null, layout: await api.blocks(wanted) };
         if (!active) return;
         if (!nextStatus.is_dir && !result.layout) throw new Error(`No block layout: ${wanted}`);
         status = nextStatus;
         entries = result.entries;
         layout = result.layout;
+        error = null;
       } catch (e) {
         if (active) error = e instanceof Error ? e.message : String(e);
       } finally {
+        fetching = false;
         if (active) loading = false;
       }
-    })();
+    };
+    refreshView = () => { void load(); };
+    refreshView();
 
     return () => { active = false; };
   });
@@ -92,6 +146,8 @@
   });
 </script>
 
+<svelte:head><title>{path} · Files · Mammoth</title></svelte:head>
+
 <nav class="crumbs" aria-label="Path">
   {#each crumbs as c, i (c.href)}
     {#if i > 1}<span class="sep" aria-hidden="true">/</span>{/if}
@@ -117,7 +173,14 @@
     {/if}
   </Panel>
 {:else if entries}
-  <Panel title={path} note={`${entries.length} entries (up to 200)`}>
+  {#if currentSource() === 'gateway'}
+    <div class="file-actions">
+      <label>Upload file <input type="file" onchange={upload} disabled={busy} /></label>
+      <form onsubmit={makeFolder}><input aria-label="New folder name" placeholder="New folder name" bind:value={folderName} disabled={busy} /><button disabled={busy}>Create folder</button></form>
+    </div>
+    {#if actionError}<p role="alert" class="err">{actionError}</p>{/if}
+  {/if}
+  <Panel title={path} note={`${entries.length} entries · page ${offset / 200 + 1}`}>
     {#if entries.length === 0}
       <p class="quiet">Empty.</p>
     {:else}
@@ -154,6 +217,7 @@
         </tbody>
       </table>
     {/if}
+    <div class="pagination"><button disabled={offset === 0 || loading} onclick={() => offset = Math.max(0, offset - 200)}>Previous</button><button disabled={entries.length < 200 || loading} onclick={() => offset += 200}>Next</button></div>
   </Panel>
 {:else if layout && status}
   <div class="filehead">
@@ -165,6 +229,14 @@
     </p>
   </div>
 
+  {#if currentSource() === 'gateway'}
+    <div class="file-actions"><a href={api.downloadUrl(status.path)} download={status.name}>Download</a><button disabled={busy} onclick={() => {
+      const selected = path;
+      if (window.confirm(`Delete ${status?.name}?`)) void change(async () => { await api.remove(selected); await goto(fileHref(selected.slice(0, selected.lastIndexOf('/')) || '/')); });
+    }}>Delete file</button></div>
+    {#if actionError}<p role="alert" class="err">{actionError}</p>{/if}
+  {/if}
+
   {#each layout.warnings as w (w)}
     <p class="warning">⚠ {w}</p>
   {/each}
@@ -173,14 +245,12 @@
     <Panel title="Inlined">
       <p class="quiet">
         This file is under the inline threshold, so it never became blocks at all — its
-        bytes live directly in the metadata store, and its durability comes from Raft
-        replication of that metadata. No block id, no fragment bookkeeping, and a read
-        of it costs exactly one round trip because resolving it <em>is</em> reading it.
+        bytes live directly in the metadata store. In local mode, the namespace is committed atomically on this machine; it has no separate block replicas.
       </p>
     </Panel>
   {:else}
     <div class="cols">
-      <Panel title="Read plan" note="derived on the client">
+      <Panel title="Read plan" note="reported replica layout">
         {#if readPlan}
           <dl>
             <div><dt>fragments per block</dt><dd class="mono">{readPlan.fragments}</dd></div>
@@ -190,7 +260,7 @@
             </div>
             <div>
               <dt>metadata round trips</dt>
-              <dd class="mono ok">0 — placement is computed</dd>
+              <dd class="mono ok">{live.report?.capabilities?.local ? 'Not measured in local mode' : '0 — placement is computed'}</dd>
             </div>
             <div>
               <dt>degraded fragments</dt>
@@ -203,9 +273,7 @@
             </div>
           </dl>
           <p class="hint">
-            The client derived this replica set itself from the block id and the topology
-            epoch, so it can hedge at a second node without asking anyone. If a fragment is
-            rebuilding, the read reconstructs from the rest of its local group.
+            The gateway reports these copies. The local backend verifies checksums and tries another replica if a copy is damaged or missing.
           </p>
         {/if}
       </Panel>
@@ -250,6 +318,8 @@
 {/if}
 
 <style>
+  .file-actions, .file-actions form, .pagination { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin: .75rem 0; }
+
   .crumbs {
     display: flex;
     align-items: center;

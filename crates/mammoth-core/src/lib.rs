@@ -12,10 +12,13 @@
 pub mod backend;
 pub mod config;
 pub mod error;
+pub mod path;
+pub mod place;
 pub mod types;
 
 pub use backend::Backend;
 pub use error::{Error, Result};
 pub use types::{
-    BlockId, BlockPlacement, ClusterReport, FileStatus, NodeId, NodeState, Replica, ReplicaState,
+    BlockId, BlockPlacement, ClusterReport, FileStatus, NodeId, NodeReport, NodeState, Replica,
+    ReplicaState,
 };

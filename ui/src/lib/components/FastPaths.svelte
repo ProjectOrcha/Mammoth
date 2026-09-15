@@ -22,7 +22,7 @@
     read.lease_hits + read.resolve_hits + read.master_hits,
   );
 
-  const cards = $derived([
+  const cards = $derived(report.capabilities?.distributed_metrics === false ? [] : [
     {
       key: 'read',
       title: 'One-shot read',
@@ -117,6 +117,9 @@
   let open = $state<string | null>(null);
 </script>
 
+{#if report.capabilities?.distributed_metrics === false}
+  <p class="quiet">Distributed read, write, repair and restart metrics are unavailable in local mode.</p>
+{/if}
 <div class="grid">
   {#each cards as card (card.key)}
     <article class="card" class:open={open === card.key}>

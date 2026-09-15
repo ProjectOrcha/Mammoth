@@ -150,6 +150,8 @@ export interface RaftMember {
 }
 
 export interface ClusterReport {
+  /** Missing on the standalone demo; explicit on a live gateway. */
+  capabilities?: { local: boolean; distributed_metrics: boolean; history: boolean; jobs: boolean };
   name: string;
   leader: string | null;
   safe_mode: boolean;

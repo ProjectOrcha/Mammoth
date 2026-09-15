@@ -39,7 +39,7 @@ figment      = { version = "0.10", features = ["toml", "env"] }
 # 7.2 uses let-chains requiring Rust 1.88; keep our tested 1.85 floor.
 comfy-table  = "=7.1.4"
 ratatui      = "0.28"
-indicatif    = "0.17"
+indicatif    = "0.18"
 owo-colors   = { version = "4", features = ["supports-colors"] }
 bytes        = "1"
 thiserror    = "2"
@@ -47,6 +47,12 @@ tracing      = "0.1"
 async-trait  = "0.1"
 futures-core = "0.3"
 futures-util = "0.3.31"
+crc32c       = "0.6"
+md-5         = "0.10"
+fs2          = "0.4"
+tempfile     = "3"
+tokio-util   = { version = "0.7", features = ["io"] }
+
 
 [profile.release]
 lto           = "fat"

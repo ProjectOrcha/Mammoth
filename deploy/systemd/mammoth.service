@@ -1,29 +1,23 @@
-# Written by `mammoth systemd install --role worker`. Do not hand-write units.
+# Local development service. Create the mammoth user and data directory before use.
 [Unit]
-Description=Mammoth %i
-Documentation=https://projectorcha.github.io/Mammoth
+Description=Mammoth local storage
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=notify
+Type=simple
 User=mammoth
 Group=mammoth
-ExecStart=/usr/local/bin/mammoth serve --role worker
-Environment=MAMMOTH_CONFIG=/etc/mammoth/mammoth.toml
+ExecStart=/usr/local/bin/mammoth --local-root /var/lib/mammoth/local serve --role all --ui-listen 127.0.0.1:8080 --s3-listen 127.0.0.1:9000
 Restart=on-failure
 RestartSec=5s
-
-# Block storage opens a lot of files. 1024 is the single most common cause of
-# a worker falling over under load — `mammoth doctor` checks for it.
-LimitNOFILE=1048576
-
-# Hardening. Storage volumes are granted explicitly via ReadWritePaths.
+KillSignal=SIGINT
+LimitNOFILE=65536
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/mammoth /data
+ReadWritePaths=/var/lib/mammoth
 
 [Install]
 WantedBy=multi-user.target

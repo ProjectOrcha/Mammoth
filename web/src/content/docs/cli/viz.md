@@ -5,6 +5,15 @@ sidebar:
   order: 3
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 Seven commands that answer seven questions, all in the terminal, all over SSH,
 none of them needing a browser.
 

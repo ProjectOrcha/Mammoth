@@ -32,6 +32,19 @@ export function currentSource(): Source {
 /** Reject an incompatible API before any page dereferences its nested fields.
  * The Rust teaching report is smaller than this dashboard's contract. */
 function checkReport(value: unknown): asserts value is ClusterReport {
+  // Wire-level nulls mean unavailable. Normalize them to non-finite display
+  // values for the existing chart model; capability checks hide these panels.
+  // These values are never presented as measured zeroes.
+  const local = value as ClusterReport | null;
+  if (local?.capabilities?.local === true && local.capabilities.distributed_metrics === false) {
+    const missing = (keys: string[]) => Object.fromEntries(keys.map(k => [k, Number.NaN]));
+    const target = local as unknown as Record<string, unknown>;
+    target.read_path ??= missing(['lease_hits', 'resolve_hits', 'master_hits', 'short_circuit', 'hedged', 'p50_ms', 'p99_ms']);
+    target.write_path ??= { ...missing(['k', 'm', 'depth', 'quorum_at', 'trailing', 'p50_ms', 'p99_ms', 'uplink_ratio', 'storage_ratio']), mode: 'mirror', ec_policy: 'unavailable' };
+    target.repair ??= { ...missing(['queued', 'total', 'in_flight', 'participating', 'node_count', 'blocks_per_sec', 'bytes_per_sec', 'budget_pct', 'eta_s', 'grace_remaining_s', 'worst_remaining', 'total_fragments']), cause: null };
+    target.start ??= { ...missing(['last_start_ms', 'started_at', 'mapped_bytes', 'blocks', 'roots_matched', 'roots_total', 'buckets_streamed', 'merkle_fanout', 'rebuild_equivalent_ms']), block_map: 'rebuild', shards: [] };
+    target.throughput ??= missing(['read_bps', 'write_bps', 'repair_bps', 'balancer_bps', 'shuffle_bps', 'cross_rack_bps', 'cross_rack_capacity']);
+  }
   const r = value as ClusterReport | null;
   if (!r || typeof r.name !== 'string' || !Array.isArray(r.nodes) ||
       !Array.isArray(r.alerts) || !Array.isArray(r.raft) || !r.health ||
@@ -90,7 +103,21 @@ async function get<T>(path: string, fallback: () => T): Promise<T> {
 
 const q = encodeURIComponent;
 
+async function mutate(path: string, method: string, body?: BodyInit): Promise<void> {
+  if ((await probe()) !== 'gateway') throw new Error('File changes require a live gateway.');
+  const response = await fetch(`${BASE}${path}`, { method, body });
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message ?? `${response.status} ${response.statusText}`);
+  }
+}
+
 export const api = {
+  upload: (path: string, file: File) => mutate(`/fs/data?path=${q(path)}`, 'PUT', file),
+  mkdir: (path: string) => mutate(`/fs/directory?path=${q(path)}`, 'PUT'),
+  remove: (path: string) => mutate(`/fs?path=${q(path)}`, 'DELETE'),
+  downloadUrl: (path: string) => `${BASE}/fs/data?path=${q(path)}`,
+
   clusterReport: async () => {
     const report = await get<ClusterReport>('/cluster/report', demo.clusterReport);
     checkReport(report);
@@ -104,8 +131,10 @@ export const api = {
       demo.clusterReport().nodes.find((n) => n.id === id),
     ),
 
-  list: (path: string, limit = 200) =>
-    get<FileStatus[]>(`/fs?path=${q(path)}&limit=${limit}`, () => demo.list(path).slice(0, limit)),
+  list: (path: string, limit = 200, offset = 0) =>
+    get<FileStatus[]>(`/fs?path=${q(path)}&limit=${limit}&offset=${offset}`, () => demo.list(path).slice(offset, offset + limit)),
+
+  files: () => get<FileStatus[]>('/fs/search', () => []),
 
   stat: (path: string) => get<FileStatus | null>(`/fs/stat?path=${q(path)}`, () => demo.stat(path)),
 
@@ -136,10 +165,13 @@ export const api = {
   jobs: () => get<Job[]>('/jobs', demo.jobs),
 
   /** The cluster as it was N minutes ago, for the distribution page's slider. */
-  reportAt: (minutesAgo: number) =>
-    get<ClusterReport>(`/cluster/report?minutes_ago=${minutesAgo}`, () =>
+  reportAt: async (minutesAgo: number) => {
+    const report = await get<ClusterReport>(`/cluster/report?minutes_ago=${minutesAgo}`, () =>
       demo.reportAt(minutesAgo),
-    ),
+    );
+    checkReport(report);
+    return report;
+  },
 };
 
 /** Live updates over SSE — simpler than WebSockets and sufficient here.

@@ -308,6 +308,7 @@
               <dd>{count(row.value)}</dd>
             </div>{/each}
         </dl>
+        {#if report.capabilities?.distributed_metrics !== false}
         <div class="repair">
           <div class="repair-heading">
             <h3>
@@ -346,6 +347,7 @@
               </p>{/if}
           {:else}<p>No blocks are currently waiting to be rebuilt.</p>{/if}
         </div>
+        {:else}<p>Replica repair is available with <code>mammoth admin repair</code>.</p>{/if}
       </section>
     </div>
 

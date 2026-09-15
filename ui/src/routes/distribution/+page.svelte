@@ -2,7 +2,7 @@
      Hadoop's UI shows you tables of numbers. This shows you where your data
      actually is, and what moved it there. (Part VII §7.2) -->
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { untrack } from 'svelte';
   import { api } from '$lib/api';
   import { live } from '$lib/live.svelte';
   import type {
@@ -42,7 +42,9 @@
   let metric = $state<HeatMetric>('usage');
   let minutesAgo = $state(0);
   let colourBy = $state<'age' | 'reads'>('age');
-  let matrixPath = $state(FILES[0]);
+  let matrixPath = $state('');
+  let realFiles = $state<string[]>([]);
+  const fileOptions = $derived(live.source === 'demo' ? FILES : realFiles);
 
   let heat = $state<HeatCell[] | null>(null);
   let flow = $state<FlowReport | null>(null);
@@ -61,6 +63,8 @@
   let historyLoading = $state(false);
 
   let refreshHistory = () => {};
+  let refreshNamespace = () => {};
+  let refreshMatrix = () => {};
 
   // Selection changes invalidate old responses. Live ticks reuse the current
   // loader, so a slow request is not discarded/restarted on every report tick.
@@ -97,37 +101,62 @@
 
   $effect(() => {
     void live.updatedAt;
-    untrack(() => refreshHistory());
+    untrack(() => { refreshHistory(); refreshNamespace(); refreshMatrix(); });
   });
 
   $effect(() => {
     const path = matrixPath;
     let active = true;
+    let busy = false;
     matrix = null;
     matrixError = null;
-    void api.blocks(path).then((m) => {
-      if (!active) return;
-      matrix = m;
-      if (!m) matrixError = `No block layout: ${path}`;
-    }).catch((e) => {
-      if (active) matrixError = e instanceof Error ? e.message : String(e);
-    });
+    const load = async () => {
+      if (!path || !active || busy) return;
+      busy = true;
+      try {
+        const m = await api.blocks(path);
+        if (active) { matrix = m; matrixError = m ? null : `No block layout: ${path}`; }
+      } catch (e) {
+        if (active) matrixError = e instanceof Error ? e.message : String(e);
+      } finally { busy = false; }
+    };
+    refreshMatrix = () => { void load(); };
+    refreshMatrix();
     return () => { active = false; };
   });
 
-  onMount(() => {
+  $effect(() => {
+    const source = live.source;
     let active = true;
-    void Promise.all([api.treemap('/', 3), api.skew('/warehouse/events')]).then(([t, s]) => {
-      if (active) { tree = t; skew = s; }
-    }).catch((e) => {
-      if (active) namespaceError = e instanceof Error ? e.message : String(e);
-    });
+    let busy = false;
+    const load = async () => {
+      if (!active || busy || source === 'unknown') return;
+      busy = true;
+      try {
+        const [t, s, files] = await Promise.all([
+          api.treemap('/', 3), api.skew('/'),
+          source === 'gateway' ? api.files() : Promise.resolve([]),
+        ]);
+        if (!active) return;
+        tree = t; skew = s; namespaceError = null;
+        realFiles = files.map(f => f.path);
+        const choices = source === 'demo' ? FILES : realFiles;
+        const selected = untrack(() => matrixPath);
+        if (!choices.includes(selected)) matrixPath = choices[0] ?? '';
+      } catch (e) {
+        if (active) namespaceError = e instanceof Error ? e.message : String(e);
+      } finally { busy = false; }
+    };
+    refreshNamespace = () => { void load(); };
+    refreshNamespace();
     return () => { active = false; };
   });
 
   const repair = $derived(report?.repair ?? null);
   const skewRatio = $derived(skew ? skew.max / skew.median : 0);
 </script>
+
+<svelte:head><title>Distribution · Mammoth</title></svelte:head>
 
 <header class="page">
   <h1>Distribution</h1>
@@ -138,6 +167,7 @@
   <p class="load-error" role="alert">Unable to load data: {message}</p>
 {/each}
 
+{#if live.report?.capabilities?.history !== false}
 <section class="timemachine">
   <div class="tm-head">
     <p class="eyebrow">Time machine</p>
@@ -165,7 +195,9 @@
   {/if}
 </section>
 
-{#if repair}
+{/if}
+
+{#if repair && report?.capabilities?.distributed_metrics !== false}
   <section class="repair" data-active={repair.queued > 0}>
     <div class="repair-head">
       <p class="eyebrow">Declustered repair</p>
@@ -221,7 +253,7 @@
   <Panel title="1 · Node heat grid" note={travelling ? `T−${minutesAgo}m` : 'live'} span={2}>
     {#snippet actions()}
       <div class="seg">
-        {#each METRICS as m (m.key)}
+        {#each METRICS.filter(m => live.report?.capabilities?.local ? ['usage', 'fragments'].includes(m.key) : true) as m (m.key)}
           <button aria-pressed={metric === m.key} onclick={() => (metric = m.key)}>{m.label}</button>
         {/each}
       </div>
@@ -236,7 +268,7 @@
   <Panel title="2 · Block placement matrix" note={matrix?.policy ?? ''} span={2}>
     {#snippet actions()}
       <select bind:value={matrixPath} aria-label="File">
-        {#each FILES as f (f)}<option value={f}>{f}</option>{/each}
+        {#each fileOptions as f (f)}<option value={f}>{f}</option>{/each}
       </select>
     {/snippet}
     {#if matrix?.inlined}
@@ -254,7 +286,7 @@
     {#snippet actions()}
       <div class="seg">
         <button aria-pressed={colourBy === 'age'} onclick={() => (colourBy = 'age')}>age</button>
-        <button aria-pressed={colourBy === 'reads'} onclick={() => (colourBy = 'reads')}>reads</button>
+        <button disabled={live.report?.capabilities?.local} aria-pressed={colourBy === 'reads'} onclick={() => (colourBy = 'reads')}>reads</button>
       </div>
     {/snippet}
     {#if tree}
@@ -293,8 +325,8 @@
 
   <Panel title="6 · Flow" note={flow ? `last ${flow.window_s}s` : ''}>
     {#if flow}
-      <FlowSankey {flow} />
-      {#if report}
+      {#if report?.capabilities?.distributed_metrics === false}<p class="quiet">Network flow measurements are unavailable in local mode.</p>{:else}<FlowSankey {flow} />{/if}
+      {#if report && report.capabilities?.distributed_metrics !== false}
         <p class="finding">
           cross-rack {rate(report.throughput.cross_rack_bps)} of
           {rate(report.throughput.cross_rack_capacity)} ·
@@ -312,7 +344,7 @@
   </Panel>
 </div>
 
-{#if report}
+{#if report && report.capabilities?.distributed_metrics !== false}
   <Panel title="Read path" note="what the one-shot read is actually doing">
     <div class="readbar">
       {#each [{ k: 'lease hit · 0 RTT', v: report.read_path.lease_hits, tone: 'ok' }, { k: 'worker resolve · 1 RTT', v: report.read_path.resolve_hits, tone: 'accent' }, { k: 'reached a master', v: report.read_path.master_hits, tone: 'warn' }] as seg (seg.k)}

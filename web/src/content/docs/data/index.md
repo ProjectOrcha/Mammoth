@@ -3,6 +3,15 @@ title: Data guide
 description: Block size, replication, the small-file problem, file formats, partitioning, skew, tiers and integrity.
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 Practical guidance that most Hadoop beginners learn the painful way.
 
 Practical guidance that belongs in your docs, and that most Hadoop beginners learn the painful way.

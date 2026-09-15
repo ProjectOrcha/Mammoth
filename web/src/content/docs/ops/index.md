@@ -3,6 +3,15 @@ title: Operations
 description: Running a Mammoth cluster.
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 - [Configuration](/ops/configuration/) — the single `mammoth.toml`
 - `mammoth doctor` — config, ports, disks, clock skew, ulimits
 - `mammoth admin fsck` — block-level integrity

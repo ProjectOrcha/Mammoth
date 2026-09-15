@@ -65,3 +65,17 @@ describe('gateway selection', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+describe('local gateway contract', () => {
+  it('accepts explicit unavailable metrics without replacing real data with demo data', async () => {
+    vi.stubEnv('VITE_DATA_SOURCE', 'gateway');
+    const report = { ...clusterReport(), capabilities: { local: true, distributed_metrics: false, history: false, jobs: false }, read_path: null, write_path: null, repair: null, start: null, throughput: null };
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response(JSON.stringify(report))));
+    const { api, currentSource } = await import('./api');
+    const local = await api.clusterReport();
+    expect(currentSource()).toBe('gateway');
+    expect(local.capabilities?.local).toBe(true);
+    expect(Number.isNaN(local.read_path.p99_ms)).toBe(true);
+    expect(local.nodes).toEqual(report.nodes);
+  });
+});

@@ -19,15 +19,23 @@
   );
 </script>
 
+<svelte:head><title>Cluster · Mammoth</title></svelte:head>
+
 <header class="page">
   <h1>Cluster</h1>
   <p class="eyebrow">
-    {report ? `raft · ${report.raft.filter((m) => m.role !== 'learner').length} voters · leader ${report.leader}` : 'loading'}
+    {report?.capabilities?.local ? 'local storage · six simulated workers' : report ? `raft · ${report.raft.filter((m) => m.role !== 'learner').length} voters · leader ${report.leader}` : 'loading'}
   </p>
 </header>
 
 {#if !report || !start}
   <p class="quiet mono">reading cluster report…</p>
+{:else if report.capabilities?.local}
+  <Panel title="Local storage" note="persistent data on this machine">
+    <p>Six worker directories store checksummed replicas across three simulated racks. Namespace updates are committed atomically and survive restarts.</p>
+    <p>Capacity values are simulated reference values. There is no Raft quorum, separate worker process, or distributed failover in this mode.</p>
+    <p>{count(report.nodes.length)} workers · {bibytes(report.used)} of replica data · {report.placement} placement</p>
+  </Panel>
 {:else}
   <div class="stats">
     <Stat label="Last start" value={duration(start.last_start_ms / 1000)} note={ago(start.started_at)} tone="ok" />

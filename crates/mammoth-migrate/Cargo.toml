@@ -9,3 +9,9 @@ repository.workspace   = true
 
 [dependencies]
 mammoth-core = { workspace = true }
+
+futures-util = { workspace = true }
+tokio-util = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+tempfile = { workspace = true }

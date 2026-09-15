@@ -23,3 +23,20 @@ owo-colors  = { workspace = true }
 serde       = { workspace = true }
 serde_json  = { workspace = true }
 tokio       = { workspace = true }
+
+mammoth-migrate = { workspace = true }
+mammoth-compute = { workspace = true }
+mammoth-gateway = { workspace = true }
+mammoth-client = { workspace = true }
+mammoth-storage = { workspace = true }
+futures-util = { workspace = true }
+tokio-util = { workspace = true }
+bytes = { workspace = true }
+tempfile = { workspace = true }
+crc32c = { workspace = true }
+clap_complete = "4"
+serde_yaml = "0.9"
+csv = "1"
+toml = "0.8"
+
+[dev-dependencies]

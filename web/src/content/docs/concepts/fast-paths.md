@@ -3,6 +3,15 @@ title: The four fast paths
 description: One-shot reads, fan-out dispersal writes, declustered parallel repair and warm start — the four places Hadoop's design costs the most, and what Mammoth does instead.
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 Four operations dominate how a cluster *feels*: opening a file, writing one,
 rebuilding redundancy after a machine dies, and starting the master back up.
 Hadoop's answers to all four were designed for 1 Gb networks and spinning disks,

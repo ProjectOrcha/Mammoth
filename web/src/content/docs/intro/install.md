@@ -1,34 +1,45 @@
 ---
 title: Install
-description: Four ways in, all under 30 seconds.
+description: Build the local Mammoth service with its dashboard.
 sidebar:
   order: 3
 ---
 
-:::caution[Pre-release]
-Mammoth has not cut its first release yet. Only the build-from-source path below
-works today for CLI help and teaching examples. Storage and gateway commands
-remain unimplemented; `quickstart` returns `E0002`. The others land with `v0.1.0` — see the [roadmap](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/ROADMAP.md).
-:::
-
-## From source
+Mammoth has not published its first release. Build the working local application
+from the `AI_coded` branch with **Rust 1.85+**, **Node.js 22.12+ (22.x)** and Git.
 
 ```bash
-git clone https://github.com/ProjectOrcha/Mammoth
+git clone --branch AI_coded https://github.com/ProjectOrcha/Mammoth.git
 cd Mammoth
-cargo build --release -p mammoth-cli
-./target/release/mammoth --help
-./target/release/mammoth --version
+npm --prefix ui ci
+npm --prefix ui run build
+cargo build --release --locked -p mammoth-cli
+./target/release/mammoth --local-root .mammoth quickstart
 ```
 
-## Planned, at v0.1.0
+Open [localhost:8080](http://localhost:8080) for the live dashboard. The service
+stores files under `.mammoth`; restarting it preserves your data. Press Ctrl+C
+to stop it. Use `target/release/mammoth.exe` on Windows.
+
+Build the UI **before** the Rust binary so it embeds the production dashboard.
+Without UI assets the gateway serves a setup page.
+
+## Docker
+
+From the repository root:
 
 ```bash
-curl -fsSL https://projectorcha.github.io/Mammoth/install.sh | sh
-cargo install mammoth-cli --locked
-brew install ProjectOrcha/tap/mammoth
-docker run -p 8080:8080 -p 9000:9000 ghcr.io/projectorcha/mammoth quickstart
+docker compose -f deploy/compose/docker-compose.yml up --build
 ```
 
-Linux binaries are static `musl` builds — no glibc version hell, and they run on
-any kernel back to 3.2.
+The compose file runs one local development service with a persistent volume.
+It is not a multi-machine deployment. See the [quickstart](/intro/quickstart/)
+for file operations and the current limits.
+
+## Release packaging
+
+Run `cargo xtask dist` to create a native archive in `target/dist/`.
+
+The draft-release workflow builds Linux x86-64, macOS ARM64 and Windows x86-64
+archives when a version tag is pushed. Published installers, Homebrew packages,
+container images and multi-node Helm deployment remain future work.

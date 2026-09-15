@@ -13,3 +13,5 @@ bytes        = { workspace = true }
 futures-core = { workspace = true }
 serde        = { workspace = true }
 thiserror    = { workspace = true }
+
+figment = { workspace = true }

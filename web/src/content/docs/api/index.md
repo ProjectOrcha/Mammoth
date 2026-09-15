@@ -3,6 +3,15 @@ title: HTTP API
 description: The endpoints the CLI and the Web UI both consume.
 ---
 
+:::note[Design reference]
+This page describes the full project design, including future distributed
+features and command options. For the working local application on `AI_coded`,
+follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
+See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
+for supported behavior and remaining milestones.
+:::
+
+
 The CLI is just another client of this API. Anything the UI can show, a script
 can fetch — which is what stops the two from drifting apart.
 
