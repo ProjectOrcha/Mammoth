@@ -8,7 +8,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-mammoth-memory = { path = "../mammoth-memory" }
+mammoth-memory = { path = "../mammoth-memory", version = "0.1.0" }
 rmcp = { version = "=3.4.0", features = ["transport-io"] }
 schemars = "1"
 clap.workspace = true

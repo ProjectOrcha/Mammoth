@@ -7,6 +7,9 @@ wildcards         = "deny"
 
 [advisories]
 yanked = "deny"
+# Match the AI_coded policy for the shared legacy Ratatui 0.28 dependency.
+# This advisory is unmaintained status, not a known vulnerability.
+ignore = [{ id = "RUSTSEC-2024-0436", reason = "Legacy Ratatui build-time paste dependency; terminal UI upgrade tracked separately" }]
 
 [sources]
 unknown-registry = "deny"

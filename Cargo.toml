@@ -39,7 +39,7 @@ figment      = { version = "0.10", features = ["toml", "env"] }
 # 7.2 uses let-chains requiring Rust 1.88; keep our tested 1.85 floor.
 comfy-table  = "=7.1.4"
 ratatui      = "0.28"
-indicatif    = "0.17"
+indicatif    = "0.18"
 owo-colors   = { version = "4", features = ["supports-colors"] }
 bytes        = "1"
 thiserror    = "2"

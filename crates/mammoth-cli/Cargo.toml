@@ -13,7 +13,7 @@ name = "mammoth"
 path = "src/main.rs"
 
 [dependencies]
-mammoth-mcp = { path = "../mammoth-mcp" }
+mammoth-mcp = { path = "../mammoth-mcp", version = "0.1.0" }
 mammoth-core  = { workspace = true }
 mammoth-local = { workspace = true }
 mammoth-viz   = { workspace = true }
