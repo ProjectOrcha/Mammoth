@@ -86,4 +86,70 @@ fn future_schema_fails_closed() {
     conn.pragma_update(None, "user_version", 99).unwrap();
     assert!(Store::open(dir.path()).is_err());
     assert_eq!(conn.pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0)).unwrap(), 99);
+    assert_eq!(
+        conn.pragma_query_value(None, "journal_mode", |r| r.get::<_, String>(0)).unwrap(),
+        "delete"
+    );
+}
+
+#[test]
+fn opening_an_initialized_store_does_not_wait_for_a_writer() {
+    let dir = tempfile::tempdir().unwrap();
+    Store::open(dir.path()).unwrap().remember("app", note("key", "Committed")).unwrap();
+    let mut writer = rusqlite::Connection::open(dir.path().join("agent-memory.sqlite3")).unwrap();
+    let _transaction =
+        writer.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate).unwrap();
+    // A new CLI/MCP connection must still read committed context during a write.
+    let reader = Store::open(dir.path()).unwrap();
+    assert_eq!(reader.get("app", "key").unwrap().content, "Committed");
+}
+
+#[test]
+fn version_one_upgrade_preserves_history_and_deleted_key_revisions() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut store = Store::open(dir.path()).unwrap();
+    store.remember("app", note("kept", "Original")).unwrap();
+    let mut update = note("kept", "Updated");
+    update.expected_revision = Some(1);
+    store.remember("app", update).unwrap();
+    store.remember("app", note("removed", "Old content")).unwrap();
+    store.forget("app", "removed", 1).unwrap();
+    drop(store);
+    let conn = rusqlite::Connection::open(dir.path().join("agent-memory.sqlite3")).unwrap();
+    // Version 1 predates the one-time migration marker; early v1 stores also
+    // need their active revision heads backfilled.
+    conn.execute("DELETE FROM revision_heads WHERE key='kept'", []).unwrap();
+    conn.pragma_update(None, "user_version", 1).unwrap();
+    let mut upgraded = Store::open(dir.path()).unwrap();
+    assert_eq!(upgraded.get("app", "kept").unwrap().revision, 2);
+    assert_eq!(upgraded.history("app", "kept", 10).unwrap().len(), 2);
+    assert_eq!(upgraded.recall("app", "updated", 10, 16000).unwrap().memories.len(), 1);
+    assert_eq!(upgraded.remember("app", note("removed", "New content")).unwrap().revision, 2);
+    let mut update = note("kept", "Next update");
+    update.expected_revision = Some(2);
+    assert_eq!(upgraded.remember("app", update).unwrap().revision, 3);
+    assert_eq!(conn.pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0)).unwrap(), 2);
+}
+
+#[test]
+fn concurrent_first_open_initializes_one_store() {
+    let dir = tempfile::tempdir().unwrap();
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(4));
+    let handles = (0..4)
+        .map(|i| {
+            let root = dir.path().to_owned();
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                Store::open(root).unwrap().remember("app", note(&i.to_string(), "Concurrent"))
+            })
+        })
+        .collect::<Vec<_>>();
+    for handle in handles {
+        assert_eq!(handle.join().unwrap().unwrap().revision, 1);
+    }
+    assert_eq!(
+        Store::open(dir.path()).unwrap().recall("app", "", 10, 16000).unwrap().memories.len(),
+        4
+    );
 }

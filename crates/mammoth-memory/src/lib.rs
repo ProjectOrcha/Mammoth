@@ -6,10 +6,12 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::{
     path::Path,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 pub type Result<T> = std::result::Result<T, Error>;
+const SCHEMA_VERSION: i64 = 2;
+const LOCK_TIMEOUT: Duration = Duration::from_secs(10);
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0}")]
@@ -98,23 +100,55 @@ fn parse_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<String> {
     row.get(0)
 }
 
+fn schema_version(conn: &Connection) -> Result<i64> {
+    let version = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
+    if version > SCHEMA_VERSION {
+        return Err(Error::Invalid(
+            "memory database was created by a newer Mammoth version".into(),
+        ));
+    }
+    Ok(version)
+}
+
 impl Store {
     /// Opens agent-memory.sqlite3 beneath the selected Mammoth root.
     /// WAL + FULL synchronous commits survive process restarts on a healthy local filesystem.
     pub fn open(root: impl AsRef<Path>) -> Result<Self> {
         std::fs::create_dir_all(root.as_ref())?;
-        let mut conn = Connection::open(root.as_ref().join("agent-memory.sqlite3"))?;
-        conn.busy_timeout(Duration::from_secs(10))?;
+        let path = root.as_ref().join("agent-memory.sqlite3");
+        let deadline = Instant::now() + LOCK_TIMEOUT;
+        loop {
+            match Self::open_connection(&path, deadline.saturating_duration_since(Instant::now())) {
+                // Switching a new database to WAL can return BUSY without invoking
+                // SQLite's busy handler. Retry initialization on a fresh connection;
+                // failed schema transactions have rolled back before this point.
+                Err(Error::Sql(error))
+                    if error.sqlite_error_code() == Some(rusqlite::ErrorCode::DatabaseBusy)
+                        && Instant::now() < deadline =>
+                {
+                    std::thread::sleep(
+                        Duration::from_millis(10)
+                            .min(deadline.saturating_duration_since(Instant::now())),
+                    );
+                }
+                result => return result,
+            }
+        }
+    }
+
+    fn open_connection(path: &Path, timeout: Duration) -> Result<Self> {
+        let mut conn = Connection::open(path)?;
+        conn.busy_timeout(timeout)?;
+        let version = schema_version(&conn)?;
         conn.pragma_update(None, "journal_mode", "WAL")?;
         conn.pragma_update(None, "synchronous", "FULL")?;
-        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let version: i64 = tx.pragma_query_value(None, "user_version", |r| r.get(0))?;
-        if version > 1 {
-            return Err(Error::Invalid(
-                "memory database was created by a newer Mammoth version".into(),
-            ));
-        }
-        tx.execute_batch("CREATE TABLE IF NOT EXISTS memories (
+        // Reads open independent connections. Only initialize/migrate once, so
+        // opening an established store neither scans all rows nor takes a write lock.
+        if version < SCHEMA_VERSION {
+            let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            // Another process may have completed the migration while we waited.
+            if schema_version(&tx)? < SCHEMA_VERSION {
+                tx.execute_batch("CREATE TABLE IF NOT EXISTS memories (
             id INTEGER PRIMARY KEY, project TEXT NOT NULL, key TEXT NOT NULL,
             title TEXT NOT NULL, content TEXT NOT NULL, tags TEXT NOT NULL,
             revision INTEGER NOT NULL, updated_at INTEGER NOT NULL, document TEXT NOT NULL,
@@ -135,8 +169,11 @@ impl Store {
             CREATE TRIGGER IF NOT EXISTS memory_update AFTER UPDATE ON memories BEGIN
                 INSERT INTO memory_search(memory_search,rowid,title,content,tags) VALUES('delete',old.id,old.title,old.content,old.tags);
                 INSERT INTO memory_search(rowid,title,content,tags) VALUES(new.id,new.title,new.content,new.tags); END;
-            PRAGMA user_version=1;")?;
-        tx.commit()?;
+            PRAGMA user_version=2;")?;
+            }
+            tx.commit()?;
+        }
+        conn.busy_timeout(LOCK_TIMEOUT)?;
         Ok(Self { conn })
     }
     pub fn remember(&mut self, project: &str, input: Remember) -> Result<Memory> {

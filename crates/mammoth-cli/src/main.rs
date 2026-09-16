@@ -15,12 +15,16 @@ mod commands;
 mod output;
 
 use clap::Parser;
+use std::io::Write;
 
 #[tokio::main]
 async fn main() -> std::process::ExitCode {
     let cli = cli::Cli::parse();
     match run(cli).await {
         Ok(()) => std::process::ExitCode::SUCCESS,
+        Err(mammoth_core::Error::Io(e)) if e.kind() == std::io::ErrorKind::BrokenPipe => {
+            std::process::ExitCode::SUCCESS
+        }
         Err(e) => {
             output::print_error(&e);
             std::process::ExitCode::FAILURE
@@ -40,11 +44,12 @@ async fn run(cli: cli::Cli) -> mammoth_core::Result<()> {
             let value = mammoth_mcp::run_memory(root, args)
                 .await
                 .map_err(|e| mammoth_core::Error::Config(e.to_string()))?;
-            println!(
+            writeln!(
+                std::io::stdout().lock(),
                 "{}",
                 serde_json::to_string_pretty(&value)
                     .map_err(|e| mammoth_core::Error::Config(e.to_string()))?
-            );
+            )?;
             Ok(())
         }
         cli::Command::Mcp(args) => {

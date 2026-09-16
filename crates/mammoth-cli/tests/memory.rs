@@ -1,11 +1,48 @@
 use std::process::Command;
 fn run(root: &std::path::Path, args: &[&str]) -> std::process::Output {
     Command::new(env!("CARGO_BIN_EXE_mammoth"))
+        .env_remove("MAMMOTH_MASTERS")
+        .env_remove("MAMMOTH_CONFIG")
         .arg("--local-root")
         .arg(root)
         .args(args)
         .output()
         .unwrap()
+}
+
+#[test]
+fn memory_output_handles_a_closed_pipe_without_panicking() {
+    let dir = tempfile::tempdir().unwrap();
+    assert!(run(
+        dir.path(),
+        &[
+            "memory",
+            "--project",
+            "app",
+            "remember",
+            "long",
+            "--title",
+            "Long memory",
+            "--content",
+            &"x".repeat(16 * 1024),
+        ]
+    )
+    .status
+    .success());
+    let mut child = Command::new(env!("CARGO_BIN_EXE_mammoth"))
+        .env_remove("MAMMOTH_MASTERS")
+        .env_remove("MAMMOTH_CONFIG")
+        .arg("--local-root")
+        .arg(dir.path())
+        .args(["memory", "--project", "app", "get", "long"])
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .unwrap();
+    drop(child.stdout.take());
+    let result = child.wait_with_output().unwrap();
+    assert!(result.status.success(), "{}", String::from_utf8_lossy(&result.stderr));
+    assert!(result.stderr.is_empty());
 }
 #[test]
 fn cli_memory_survives_process_exit_and_reports_conflicts() {
