@@ -63,15 +63,20 @@ jobs:
       - name: Workspace tests with failure details
         shell: bash
         run: |
-          if cargo nextest run --workspace --all-features --locked > nextest.log 2>&1; then
+          if cargo nextest run --workspace --all-features --locked --no-fail-fast > nextest.log 2>&1; then
             cat nextest.log
           else
             cat nextest.log
             python3 - <<'PYREPORT'
           from pathlib import Path
-          report = "\n".join(Path("nextest.log").read_text(errors="replace").splitlines()[-120:])
-          report = report.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-          print(f"::error title=Workspace tests failed::{report}")
+          import re
+          report = re.sub(r"\x1b\[[0-9;]*m", "", Path("nextest.log").read_text(errors="replace"))
+          report = "\n".join(line for line in report.splitlines() if "Compiling " not in line)[-20000:]
+          # GitHub truncates individual annotations; keep each detail below 4 KiB.
+          for offset in range(0, len(report), 2500):
+              part = report[offset:offset + 2500]
+              part = part.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+              print(f"::error title=Workspace tests failed (part {offset // 2500 + 1})::{part}")
           PYREPORT
             exit 1
           fi
