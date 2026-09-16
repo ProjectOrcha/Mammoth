@@ -42,15 +42,16 @@ impl Cli {
     /// Root help includes the otherwise hidden nested commands from the same
     /// tree used to generate the website reference.
     pub fn help_command() -> clap::Command {
-        let nested = Self::catalog()
+        let command = Self::command();
+        let nested = Self::catalog(&command)
             .into_iter()
             .filter(|(name, _)| name.contains(' '))
             .map(|(name, about)| format!("  {name:<24} {about}"))
             .collect::<Vec<_>>()
             .join("\n");
-        Self::command().after_help(format!("Nested commands:\n{nested}\n\nExamples:\n  mammoth memory --project my-app recall\n  mammoth mcp --project my-app\n\nUse mammoth <command> --help for options, or mammoth commands for the full list.\nDocs: https://projectorcha.github.io/Mammoth/cli/"))
+        command.after_help(format!("Nested commands:\n{nested}\n\nExamples:\n  mammoth memory --project my-app recall\n  mammoth mcp --project my-app\n\nUse mammoth <command> --help for options, or mammoth commands for the full list.\nDocs: https://projectorcha.github.io/Mammoth/cli/"))
     }
-    pub fn catalog() -> Vec<(String, String)> {
+    pub fn catalog(command: &clap::Command) -> Vec<(String, String)> {
         fn walk(command: &clap::Command, prefix: &str, entries: &mut Vec<(String, String)>) {
             for child in command.get_subcommands().filter(|child| child.get_name() != "help") {
                 let name = format!("{prefix}{}", child.get_name());
@@ -64,7 +65,7 @@ impl Cli {
             }
         }
         let mut entries = vec![];
-        walk(&Self::command(), "", &mut entries);
+        walk(command, "", &mut entries);
         entries
     }
     pub fn format(&self) -> OutputFormat {

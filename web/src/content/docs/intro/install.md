@@ -30,10 +30,14 @@ cargo install --locked --path crates/mammoth-mcp
 Ensure Cargo's binary directory is on your PATH. MCP clients should use an absolute
 binary path because their environment may differ from your terminal.
 
-Memory defaults to `~/.mammoth/local/agent-memory.sqlite3`. To select a store:
+Memory defaults to `~/.mammoth/local/agent-memory.sqlite3`. An existing
+`MAMMOTH_LOCAL_ROOT` export changes that default. To select a store explicitly:
 
 ```bash
 mammoth --local-root /absolute/path/to/memory-store memory --project my-app recall
 ```
 
-Use the same absolute root in your [MCP configuration](/memory/mcp/).
+Use the same absolute root in your [MCP configuration](/memory/mcp/) and dashboard.
+Follow [Choose one storage folder](/memory/cli/#choose-one-storage-folder) to set
+the export for your terminal and keep it across sessions. If `mammoth ls` shows
+different files from your dashboard, check that both tools use that same folder.

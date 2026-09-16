@@ -4,7 +4,7 @@ mod cli;
 mod commands;
 mod output;
 mod service;
-use clap::{CommandFactory, FromArgMatches};
+use clap::FromArgMatches;
 use cli::*;
 use futures_util::{StreamExt, TryStreamExt};
 use mammoth_core::{
@@ -47,7 +47,7 @@ async fn main() -> std::process::ExitCode {
         println!();
         return std::process::ExitCode::SUCCESS;
     }
-    let matches = help.get_matches_from(args);
+    let matches = help.try_get_matches_from_mut(args).unwrap_or_else(|error| error.exit());
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|error| error.exit());
     mammoth_viz::style::set_color(match cli.color {
         clap::ColorChoice::Auto => None,
@@ -55,7 +55,14 @@ async fn main() -> std::process::ExitCode {
         clap::ColorChoice::Never => Some(false),
     });
     let fmt = cli.format();
-    match run(cli).await {
+    // Reuse the parsed command tree. Rebuilding the large derived tree inside
+    // backend dispatch can overflow Windows' main-thread stack in debug builds.
+    let result = match &cli.command {
+        Command::Commands => emit_catalog(&help, fmt),
+        Command::Completions { shell } => emit_completions(&mut help, shell),
+        _ => run(cli).await,
+    };
+    match result {
         Ok(()) => std::process::ExitCode::SUCCESS,
         Err(Error::Io(e)) if e.kind() == std::io::ErrorKind::BrokenPipe => {
             std::process::ExitCode::SUCCESS
@@ -66,6 +73,19 @@ async fn main() -> std::process::ExitCode {
         }
     }
 }
+fn emit_catalog(command: &clap::Command, fmt: OutputFormat) -> Result<()> {
+    let entries = Cli::catalog(command)
+        .into_iter()
+        .map(|(command, description)| json!({"command":command,"description":description}))
+        .collect::<Vec<_>>();
+    output::emit(&entries, fmt)
+}
+fn emit_completions(command: &mut clap::Command, shell: &str) -> Result<()> {
+    let shell =
+        shell.parse::<clap_complete::Shell>().map_err(|e| Error::InvalidInput(e.to_string()))?;
+    clap_complete::generate(shell, command, "mammoth", &mut std::io::stdout());
+    Ok(())
+}
 fn default_root() -> PathBuf {
     mammoth_mcp::default_root()
 }
@@ -75,13 +95,6 @@ async fn run(cli: Cli) -> Result<()> {
     if matches!(cli.command, Command::Logo) {
         println!("{}", mammoth_viz::style::paint(BANNER, mammoth_viz::style::Tone::Accent));
         return Ok(());
-    }
-    if matches!(cli.command, Command::Commands) {
-        let entries = Cli::catalog()
-            .into_iter()
-            .map(|(command, description)| json!({"command":command,"description":description}))
-            .collect::<Vec<_>>();
-        return output::emit(&entries, fmt);
     }
     let root = cli.local_root.clone().unwrap_or_else(default_root);
     match cli.command {
@@ -139,13 +152,6 @@ async fn run(cli: Cli) -> Result<()> {
             &json!({"name":"mammoth","version":env!("CARGO_PKG_VERSION"),"backend":"durable local / HTTP gateway"}),
             fmt,
         );
-    }
-    if let Command::Completions { shell } = &cli.command {
-        let shell = shell
-            .parse::<clap_complete::Shell>()
-            .map_err(|e| Error::InvalidInput(e.to_string()))?;
-        clap_complete::generate(shell, &mut Cli::command(), "mammoth", &mut std::io::stdout());
-        return Ok(());
     }
     let config = Config::load(cli.config.as_deref())?;
     if let Command::Config { command } = &cli.command {

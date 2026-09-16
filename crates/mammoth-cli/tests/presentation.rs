@@ -142,7 +142,8 @@ fn color_controls_preserve_machine_output_and_raw_files() {
 #[test]
 fn root_help_exposes_the_website_commands_and_color_options() {
     let dir = tempfile::tempdir().unwrap();
-    let help = text(dir.path(), &["--help"]);
+    let root = dir.path().join("uninitialized");
+    let help = text(&root, &["--help"]);
     for name in [
         "viz blocks",
         "viz cluster",
@@ -167,10 +168,42 @@ fn root_help_exposes_the_website_commands_and_color_options() {
         assert!(help.contains(name), "missing {name}");
     }
     let catalog: Vec<serde_json::Value> =
-        serde_json::from_str(&text(dir.path(), &["commands", "--json"])).unwrap();
+        serde_json::from_str(&text(&root, &["commands", "--json"])).unwrap();
     for entry in catalog {
         assert!(!entry["description"].as_str().unwrap().is_empty(), "{entry}");
     }
-    assert!(text(dir.path(), &["--color=always", "--help"]).contains('\u{1b}'));
-    assert!(!text(dir.path(), &["--color=never", "--help"]).contains('\u{1b}'));
+    assert!(text(&root, &["--color=always", "--help"]).contains('\u{1b}'));
+    assert!(!text(&root, &["--color=never", "--help"]).contains('\u{1b}'));
+    for shell in ["bash", "zsh", "fish", "powershell", "elvish"] {
+        let completions = text(&root, &["completions", shell]);
+        assert!(completions.contains("memory"), "{shell}");
+        assert!(completions.contains("mcp"), "{shell}");
+    }
+    assert!(!root.exists(), "Help and completions must not initialize storage");
+}
+
+#[test]
+fn ls_uses_the_exported_store_and_allows_an_explicit_override() {
+    let dir = tempfile::tempdir().unwrap();
+    let exported = dir.path().join("exported-store");
+    let explicit = dir.path().join("explicit-store");
+    text(&exported, &["mkdir", "/from-export"]);
+    text(&explicit, &["mkdir", "/from-flag"]);
+    for override_root in [false, true] {
+        let mut command = Command::new(env!("CARGO_BIN_EXE_mammoth"));
+        command
+            .env_remove("MAMMOTH_MASTERS")
+            .env_remove("MAMMOTH_CONFIG")
+            .env("MAMMOTH_LOCAL_ROOT", &exported)
+            .current_dir(dir.path());
+        if override_root {
+            command.arg("--local-root").arg(&explicit);
+        }
+        let out = command.args(["ls", "/", "--json"]).output().unwrap();
+        assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+        let entries: Vec<serde_json::Value> = serde_json::from_slice(&out.stdout).unwrap();
+        assert_eq!(entries.len(), 1, "ls must list stored paths, not the working directory");
+        assert_eq!(entries[0]["path"], if override_root { "/from-flag" } else { "/from-export" });
+        assert_eq!(entries[0]["is_dir"], true);
+    }
 }
