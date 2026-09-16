@@ -1,15 +1,15 @@
 # The parts
 
-Sixteen small programs. Each one takes a **single idea** out of Mammoth, puts it
+Seventeen small programs. Each one takes a **single idea** out of Mammoth, puts it
 in one file with nothing else around it, and lets you run it.
 
 They exist because reading chapter 6 is much easier once you have watched a
 `ByteStream` hand out chunks on your own screen, and because "add colour to the
 CLI" is a much smaller job when there is a working palette to copy.
 
-Nothing here is a toy: the types come from `mammoth-core`, the patterns are the
-ones the real crates use, and every file compiles under
-`cargo clippy -- -D warnings`.
+These are teaching programs. Several use `mammoth-core` types; others isolate
+a Rust concept. They are not the production filesystem. Every example is checked
+with strict Clippy.
 
 ---
 
@@ -33,7 +33,7 @@ output you are meant to look at:
 cargo run -q -p mammoth-parts --example 13-block-matrix
 ```
 
-Build all sixteen at once, to check your toolchain:
+Build all seventeen at once, to check your toolchain:
 
 ```bash
 cargo build -p mammoth-parts --examples
@@ -124,3 +124,12 @@ are **product demos**: what Mammoth looks like to someone using it. This
 directory is the opposite — what Mammoth looks like to someone building it.
 
 Start here if you are on the team. Start there if you are evaluating the thing.
+
+### Correctness before performance
+
+| # | Example | It answers | Read with |
+| --- | --- | --- | --- |
+| 17 | [`17-atomic-publication`](examples/17-atomic-publication.rs) | Why must create-if-absent be atomic, and how does a read keep its original generation? | [Chapter 14](../../docs/guide/14-readiness-and-benchmarks.md) |
+
+This example uses memory only. It deliberately leaves disk persistence and the
+Backend implementation for your team. Start from `main`; see [branch roles](../../docs/guide/BRANCHES.md).

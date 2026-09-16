@@ -32,6 +32,10 @@ separate teaching model; the storage service and `LocalBackend` remain unfinishe
 
 ## What it is
 
+**This is the manual build track (`main`).** Use the [team branch guide](docs/guide/BRANCHES.md).
+The separate `AI_coded` branch contains a working local reference; its features
+and benchmark scores are not claims about this scaffold.
+
 You have a 10 TB file. No single machine has 10 TB of fast disk, and reading it
 at 200 MB/s would take 14 hours. So you chop it into pieces, put the pieces on
 100 machines, and read all 100 at once. Now it takes 8 minutes.
@@ -40,14 +44,14 @@ That is the whole idea. Everything else is bookkeeping — an index of where eac
 piece went, redundant copies so machine death is survivable, and a scheduler to
 run code next to the data instead of shipping the data to the code.
 
-HDFS does that job. Mammoth does it as **one binary** with **one TOML file**,
+HDFS does that job. The planned Mammoth architecture aims to provide it as **one binary** with **one TOML file**,
 with no garbage collector pauses, no ZooKeeper, no JournalNodes, no XML, and an
 **S3 API** so the tools you already use work unchanged.
 
 New to any of this? Read
 **[Hadoop architecture in 10 minutes](web/src/content/docs/intro/hadoop-primer.md)** first.
 
-## Why bother
+## Planned design choices
 
 | Hadoop's problem | What it costs you | Mammoth's answer |
 | --- | --- | --- |
@@ -76,7 +80,7 @@ team have a separate [fork-to-PR guide](docs/guide/EXTERNAL-CONTRIBUTORS.md).
 
 
 ```bash
-git clone https://github.com/ProjectOrcha/Mammoth
+git clone --branch main https://github.com/ProjectOrcha/Mammoth
 cd Mammoth
 cargo build --release -p mammoth-cli
 ./target/release/mammoth --help
@@ -106,14 +110,9 @@ $ mammoth quickstart
   Web UI  →  http://localhost:8080
 ```
 
-At `v0.1.0` this becomes a 30-second install:
-
-```bash
-curl -fsSL https://projectorcha.github.io/Mammoth/install.sh | sh
-cargo install mammoth-cli --locked
-brew install ProjectOrcha/tap/mammoth
-docker run -p 8080:8080 -p 9000:9000 ghcr.io/projectorcha/mammoth quickstart
-```
+Distribution packages, installer scripts, Homebrew and container releases remain
+future work. Use the source build above; `cargo xtask dist` deliberately reports
+that this scaffold has no release packager.
 
 ## You can see your data
 
@@ -279,7 +278,7 @@ mammoth/
 ├── ui/                Svelte 5 + Vite admin GUI, embedded via rust-embed
 ├── web/               Astro Starlight site + docs → GitHub Pages
 ├── deploy/            Dockerfile · Compose · systemd · Helm
-├── examples/          product walkthroughs, plus parts/ — 16 runnable one-idea programs
+├── examples/          product walkthroughs, plus parts/ — 17 runnable one-idea programs
 ├── tests/             e2e · deterministic sim · Hadoop compat
 ├── benches/           criterion micro-benchmarks
 ├── bench-suite/       full-cluster, publishable benchmarks
@@ -302,7 +301,7 @@ mammoth/
 | [05 · Word count](examples/05-wordcount/) | the DAG engine and the shuffle |
 
 And for people **building** Mammoth rather than using it,
-[`examples/parts/`](examples/parts/) has sixteen small runnable programs — one
+[`examples/parts/`](examples/parts/) has seventeen small runnable programs — one
 idea each: ownership, traits, async and streams, the clap command tree,
 table-or-JSON output, colour, the block matrix, progress bars, and a live TUI
 dashboard.
@@ -342,8 +341,9 @@ The site is built from `web/` and published to GitHub Pages.
 
 New to Rust, or to distributed systems? **[The Mammoth build guide](docs/guide/)**
 takes you from an empty machine to a working filesystem with block
-visualization, in fourteen chapters, with every code block compiled and tested.
-It assumes no Rust and no Hadoop, and it is written for a team of three.
+visualization, through numbered chapters and runnable examples. Validate each implementation
+with the chapter’s acceptance tests.
+It assumes no Rust and no Hadoop, and it is written for a team of four.
 
 | | |
 | --- | --- |
@@ -405,3 +405,6 @@ Dual-licensed under either of
 - MIT licence ([LICENSE-MIT](LICENSE-MIT))
 
 at your option. Contributions are dual-licensed on the same terms.
+
+After local integration, follow [readiness and benchmarking](docs/guide/14-readiness-and-benchmarks.md)
+and run [atomic publication example 17](examples/parts/examples/17-atomic-publication.rs).

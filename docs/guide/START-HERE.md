@@ -1,5 +1,8 @@
 # Your first hour in Mammoth
 
+**Manual build track: `main`.** Follow the [branch guide](BRANCHES.md) to keep
+your implementation separate from the working `AI_coded` reference.
+
 This page is for someone who has never contributed to a Rust project. You can
 make a useful change without understanding the whole distributed system.
 
@@ -11,11 +14,11 @@ Mammoth is a learning scaffold, not a working storage service yet.
 | --- | --- | --- |
 | Rust CLI | `--help`, subcommand help, `--version`, friendly unsupported-command errors | File operations, `quickstart`, `serve`, terminal dashboards |
 | Rust core | Shared types, errors, configuration structures, `Backend` trait | Concrete filesystem behavior and configuration loading |
-| Examples | 16 small runnable Rust programs | These do not store your real files |
+| Examples | 17 small runnable Rust programs | These do not store your real files |
 | GFS teaching model | `cargo run -p mammoth-local --example gfs-demo`; real in-memory chunk bytes, repair, write ordering and takeover | Durable storage, network services, Raft and real DNS; see [coverage](GFS-COVERAGE.md) |
 | `ui/` | Six dashboard sections, simulated data, light/dark themes | A Rust HTTP API matching the dashboard contract |
 | `web/` | Documentation website | Product examples describe the intended system |
-| Repository tools | `cargo xtask docs`, `build-ui`, `assets`; `dist` delegates to cargo-dist | A release-ready product |
+| Repository tools | `cargo xtask docs`, `build-ui`, `assets`; `dist` reports an explicit unsupported-release error | A release-ready product |
 
 A **scaffold** is a project skeleton: names and interfaces exist before their
 behavior is implemented. `cargo test` succeeding does not mean a filesystem
@@ -37,7 +40,7 @@ PowerShell; shell-specific commands such as `export` do not.
 From the folder where you want to keep projects:
 
 ```bash
-git clone https://github.com/ProjectOrcha/Mammoth.git
+git clone --branch main https://github.com/ProjectOrcha/Mammoth.git
 cd Mammoth
 cargo build --workspace --locked
 cargo run -p mammoth-cli -- --help

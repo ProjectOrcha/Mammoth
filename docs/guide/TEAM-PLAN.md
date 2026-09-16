@@ -1,5 +1,8 @@
 # The four-person team plan
 
+**Manual build track: `main`.** Follow the [branch guide](BRANCHES.md) to keep
+your implementation separate from the working `AI_coded` reference.
+
 This guide is for **four people total: you and three teammates**. It assumes
 everyone is learning Rust. Use the role labels below until you fill in real
 names. Outside contributors should use the [external guide](EXTERNAL-CONTRIBUTORS.md).
@@ -49,6 +52,7 @@ checks pass. Each person keeps at most one active implementation issue.
 | 2: local filesystem | Write/read/remove, partial-block tests | Wire `ls` / `stat`, then `put` / `cat` | Validate UI against agreed fixture shapes | HTTP routing, errors, storage-to-UI adapters |
 | 3: integration | Verify round trips and placement | Block visualization, CLI smoke checks | Real API mode and failure states | Connect backend, static assets, live updates |
 | 4: shared demo | Explain storage | Explain CLI | Explain UI | Explain integration |
+| 5: qualify local behavior | Atomic publication, failure tests | Overwrite controls, lifecycle | Errors, labels, accessibility | Origin checks, recovery drill, CI |
 
 At the end of round 4, each person runs someone else's instructions from a
 fresh checkout. Record what is actually implemented in the roadmap and guide.
@@ -169,3 +173,6 @@ Do not bypass the same protected-branch process you rely on for normal changes.
 - [ ] An outside contributor can follow the separate fork workflow without team access.
 
 Back to [the guide](README.md) · [Git workflow](03-team-workflow.md) · [checklists](CHECKLISTS.md).
+
+Round 5 is detailed in [the readiness chapter](14-readiness-and-benchmarks.md).
+A successful local round does not complete the distributed milestones.

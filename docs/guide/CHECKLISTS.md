@@ -45,7 +45,7 @@ permissions, the merge button — out of the way while nothing is at stake.
 - [ ] Read chapter 1's six sections
 - [ ] Built and ran the `rust-warmup` scratch project
 - [ ] Saw the three-node bar chart print
-- [ ] Ran `cargo build -p mammoth-parts --examples` — all sixteen compile
+- [ ] Ran `cargo build -p mammoth-parts --examples` — all seventeen compile
 - [ ] Ran examples 01 (ownership) and 04 (traits) and read the source
 - [ ] Bookmarked [the Rust reference](RUST-REFERENCE.md) and its
       [error decoder](RUST-REFERENCE.md#the-compiler-error-decoder)

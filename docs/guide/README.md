@@ -1,5 +1,8 @@
 # The Mammoth build guide
 
+**Manual build track: `main`.** Follow the [branch guide](BRANCHES.md) to keep
+your implementation separate from the working `AI_coded` reference.
+
 A step-by-step guide to building Mammoth from the scaffold in this repository,
 written for people who have not built a distributed system before.
 
@@ -33,7 +36,7 @@ behavior from the remaining service work, item by item.
 | **New to distributed systems** | [Distributed storage, from zero](CONCEPTS.md) |
 | **Checking the GFS video against this project** | [Coverage audit](GFS-COVERAGE.md), then [run the model](13-gfs-reliability.md) |
 | **New to Rust** | [Chapter 1](01-rust-you-need.md), then [the Rust reference](RUST-REFERENCE.md) |
-| **Learning best by running things** | [`examples/parts/`](../../examples/parts/) — 16 runnable programs |
+| **Learning best by running things** | [`examples/parts/`](../../examples/parts/) — 17 runnable programs |
 | **Lost in a word you do not recognise** | [The glossary](GLOSSARY.md) |
 | **About to commit, or review a PR** | [The checklists](CHECKLISTS.md) |
 | **Wondering what you are even building** | the next section |
@@ -353,3 +356,9 @@ forget — is in [the checklists](CHECKLISTS.md#before-every-commit-the-30-secon
    boxes and it usually ends before the last one.
 7. **Ask.** Open a [discussion](https://github.com/ProjectOrcha/Mammoth/discussions)
    or an issue. Paste the *full* error, not a screenshot of part of it.
+
+## After the local integration milestone
+
+[14 · Readiness and benchmarks](14-readiness-and-benchmarks.md) covers atomic
+publication, bounded work, safe listeners, recovery drills and fair comparisons.
+Run example 17 alongside it; implement the production behavior yourselves.

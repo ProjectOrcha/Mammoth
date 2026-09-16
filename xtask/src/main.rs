@@ -47,7 +47,7 @@ fn run(root: &Path, task: Option<&str>) -> Result<(), Box<dyn std::error::Error>
                 std::fs::copy(&logo, root.join(destination))?;
             }
         }
-        Some("dist") => command(root, "cargo", &["dist", "build"])?,
+        Some("dist") => return Err("release packaging is not implemented on the manual main track; complete and validate the readiness gates in docs/guide/14-readiness-and-benchmarks.md first".into()),
         _ => return Err("usage: cargo xtask <build-ui|docs|assets|dist>".into()),
     }
     Ok(())

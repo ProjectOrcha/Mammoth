@@ -23,7 +23,7 @@ short version:
   here in far more depth, plus modules, collections, iterators, formatting,
   testing, cargo, and a decoder table for the compiler errors you will actually
   hit. Do not read it end to end; `Ctrl-F` it when something confuses you.
-- [**`examples/parts/`**](../../examples/parts/) — sixteen small programs, one
+- [**`examples/parts/`**](../../examples/parts/) — seventeen small programs, one
   idea each. Every section below names one. **Run them.** Watching a borrow
   error happen teaches more in two minutes than any paragraph can.
 
