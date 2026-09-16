@@ -42,7 +42,7 @@ impl Service {
             .truncate(false)
             .open(root.join("service.lock"))?;
         fs2::FileExt::try_lock_exclusive(&lock).map_err(|error| {
-            if error.kind() == std::io::ErrorKind::WouldBlock {
+            if error.raw_os_error() == fs2::lock_contended_error().raw_os_error() {
                 Error::InvalidInput(format!("a service is already running for {}; use mammoth --local-root {:?} status or stop", root.display(), root))
             } else { Error::Io(error) }
         })?;
@@ -131,7 +131,9 @@ fn running(root: &Path) -> Result<bool> {
     };
     match fs2::FileExt::try_lock_exclusive(&lock) {
         Ok(()) => Ok(false),
-        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => Ok(true),
+        Err(error) if error.raw_os_error() == fs2::lock_contended_error().raw_os_error() => {
+            Ok(true)
+        }
         Err(error) => Err(error.into()),
     }
 }

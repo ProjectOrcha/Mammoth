@@ -563,3 +563,36 @@ async fn memory_dashboard_shares_durable_store_and_rejects_conflicts() {
         "handoff"
     );
 }
+
+#[tokio::test]
+async fn memory_dashboard_accepts_the_same_content_limit_as_the_store() {
+    let dir = tempfile::tempdir().unwrap();
+    let app = mammoth_gateway::router_with_dashboard(
+        Arc::new(LocalBackend::open(dir.path()).unwrap()),
+        mammoth_gateway::Dashboard::new(
+            mammoth_core::config::Config::default(),
+            dir.path().join("benchmarks"),
+        ),
+    );
+    // JSON escaping can expand a valid 64 KiB entry to almost 384 KiB on the wire.
+    let content = "\u{0001}".repeat(64 * 1024);
+    let data = serde_json::to_vec(&serde_json::json!({
+        "key":"escaped", "title":"Escaped content", "content":content, "kind":"note"
+    }))
+    .unwrap();
+    let (status, _, bytes) =
+        request(app.clone(), "POST", "/api/v1/memory?project=app", &data).await;
+    assert_eq!(status, StatusCode::OK, "{}", String::from_utf8_lossy(&bytes));
+    assert_eq!(
+        mammoth_memory::Store::open(dir.path()).unwrap().get("app", "escaped").unwrap().content,
+        content
+    );
+    let oversized = serde_json::to_vec(&serde_json::json!({
+        "key":"too-large", "title":"Too large", "content":"a".repeat(65537), "kind":"note"
+    }))
+    .unwrap();
+    assert_eq!(
+        request(app, "POST", "/api/v1/memory?project=app", &oversized).await.0,
+        StatusCode::BAD_REQUEST
+    );
+}

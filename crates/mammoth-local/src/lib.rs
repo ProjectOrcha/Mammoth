@@ -165,7 +165,7 @@ impl LocalBackend {
         let file = lock_file(&self.root.join("activity.lock"))?;
         match fs2::FileExt::try_lock_exclusive(&file) {
             Ok(()) => Ok(Some(file)),
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
+            Err(e) if e.raw_os_error() == fs2::lock_contended_error().raw_os_error() => Ok(None),
             Err(e) => Err(e.into()),
         }
     }

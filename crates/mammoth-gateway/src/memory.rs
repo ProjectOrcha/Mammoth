@@ -16,7 +16,9 @@ pub async fn handle(
         .cloned()
         .ok_or_else(|| Error::InvalidInput("project is required".into()))?;
     let input: Option<Remember> = if method == Method::POST && op == "memory" {
-        let bytes = axum::body::to_bytes(body, 128 * 1024)
+        // JSON escapes can expand each valid content byte to six wire bytes.
+        // Keep a bounded request while admitting the store's 64 KiB content limit.
+        let bytes = axum::body::to_bytes(body, 512 * 1024)
             .await
             .map_err(|e| Error::InvalidInput(e.to_string()))?;
         Some(serde_json::from_slice(&bytes).map_err(|e| Error::InvalidInput(e.to_string()))?)

@@ -92,11 +92,12 @@ async fn run(cli: Cli) -> Result<()> {
             let value = mammoth_mcp::run_memory(root, args)
                 .await
                 .map_err(|e| Error::InvalidInput(e.to_string()))?;
-            println!(
+            writeln!(
+                std::io::stdout().lock(),
                 "{}",
                 serde_json::to_string_pretty(&value)
                     .map_err(|e| Error::InvalidInput(e.to_string()))?
-            );
+            )?;
             return Ok(());
         }
         Command::Mcp(args) => {

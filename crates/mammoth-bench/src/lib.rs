@@ -161,7 +161,7 @@ pub fn acquire(parent: &Path) -> Result<File> {
         .write(true)
         .open(parent.join("run.lock"))?;
     fs2::FileExt::try_lock_exclusive(&file).map_err(|error| {
-        if error.kind() == std::io::ErrorKind::WouldBlock {
+        if error.raw_os_error() == fs2::lock_contended_error().raw_os_error() {
             Error::InvalidInput("a benchmark is already running for this store".into())
         } else {
             Error::Io(error)
@@ -556,7 +556,9 @@ mod tests {
         }
         let dir = tempfile::tempdir().unwrap();
         let lock = acquire(dir.path()).unwrap();
-        assert!(acquire(dir.path()).is_err());
+        assert!(
+            matches!(acquire(dir.path()), Err(Error::InvalidInput(message)) if message.contains("already running"))
+        );
         drop(lock);
         assert!(acquire(dir.path()).is_ok());
         assert_eq!(percentile(&mut [1., 2., 3., 4.], 99), 4.);

@@ -40,6 +40,14 @@ network filesystem. To back up, stop all Mammoth processes using the root and co
 the database together with any `-wal` and `-shm` sidecars. Keep the original files
 together when restoring. A newer unknown schema is rejected without migration.
 
+Schema version 2 performs initialization and the revision-counter backfill once,
+instead of repeating them on every connection. Existing version 1 stores upgrade
+automatically in one transaction, preserving entries, history, and deleted-key
+revision counters. Stop older Mammoth processes and update both the CLI and MCP
+server before opening an upgraded store; older binaries reject version 2.
+Opening an initialized store does not acquire a write transaction, so reads can
+continue while another connection is saving context.
+
 The memory database is independent of the legacy block-storage namespace. It does
 not use simulated replicas, the block cache, or the old distributed scheduler.
 It has no cloud sync, encryption, embeddings, automatic compaction, or remote MCP

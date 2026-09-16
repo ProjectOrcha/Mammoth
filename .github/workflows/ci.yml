@@ -60,7 +60,21 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - uses: taiki-e/install-action@nextest
-      - run: cargo nextest run --workspace --all-features --locked
+      - name: Workspace tests with failure details
+        shell: bash
+        run: |
+          if cargo nextest run --workspace --all-features --locked > nextest.log 2>&1; then
+            cat nextest.log
+          else
+            cat nextest.log
+            python3 - <<'PYREPORT'
+          from pathlib import Path
+          report = "\n".join(Path("nextest.log").read_text(errors="replace").splitlines()[-120:])
+          report = report.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print(f"::error title=Workspace tests failed::{report}")
+          PYREPORT
+            exit 1
+          fi
       - run: cargo test --workspace --doc --locked
       - run: cargo test -p mammoth-parts --examples --locked
 

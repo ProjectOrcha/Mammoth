@@ -37,7 +37,7 @@ axum         = "0.7"
 serde        = { version = "1", features = ["derive"] }
 serde_json   = "1"
 figment      = { version = "0.10", features = ["toml", "env"] }
-# 7.2 uses let-chains requiring Rust 1.88; keep our tested 1.85 floor.
+# Keep table rendering stable; the workspace MSRV is declared above.
 comfy-table  = "=7.1.4"
 ratatui      = "0.28"
 indicatif    = "0.18"
