@@ -8,7 +8,7 @@ license.workspace      = true
 publish      = false
 
 [dependencies]
-mammoth-mcp = { path = "../crates/mammoth-mcp" }
+mammoth-mcp = { path = "../crates/mammoth-mcp", version = "0.1.0" }
 clap.workspace = true
 serde_json.workspace = true
 sha2 = "0.10.9"

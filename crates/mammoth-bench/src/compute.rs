@@ -71,7 +71,7 @@ async fn validate(
         let chunk = chunk?;
         pending.extend_from_slice(&chunk);
         let whole = pending.len() / WIDTH as usize * WIDTH as usize;
-        for line in pending[..whole].chunks_exact(WIDTH as usize) {
+        for line in pending[..whole].as_chunks::<{ WIDTH as usize }>().0 {
             if &line[4..] != b" mammoth rust memory\n" {
                 return Err(invalid());
             }
