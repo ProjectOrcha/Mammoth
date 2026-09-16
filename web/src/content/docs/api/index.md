@@ -3,6 +3,9 @@ title: HTTP API
 description: The endpoints the CLI and the Web UI both consume.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 This page covers the implemented local HTTP gateway on `AI_coded`. It has no
 authentication or TLS. Use the loopback defaults and read the
 [operating limits](/ops/local-service/) before changing listener addresses.

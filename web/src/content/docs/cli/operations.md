@@ -5,6 +5,9 @@ sidebar:
   order: 4
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 ## Lifecycle
 
 Build the dashboard before compiling the Rust binary so it contains the latest

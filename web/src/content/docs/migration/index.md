@@ -3,6 +3,9 @@ title: Migration
 description: Six steps to move a Hadoop cluster's data into Mammoth without a maintenance window — plan, run, resume, verify, sync, cut over — and how to upgrade Mammoth itself.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 :::note[Design reference]
 This page describes the full project design, including future distributed
 features and command options. For the working local application on `AI_coded`,

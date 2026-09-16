@@ -8,10 +8,9 @@ wildcards         = "deny"
 
 [advisories]
 yanked = "deny"
-# Ratatui 0.28 uses this build-time macro. Its removal requires Ratatui 0.30
-# (Rust >=1.86), beyond the guide's Rust 1.85 MSRV. This advisory is about
-# maintenance, not a known vulnerability. Revisit when raising the MSRV.
-ignore = [{ id = "RUSTSEC-2024-0436", reason = "Ratatui build-time paste dependency; retain Rust 1.85 compatibility" }]
+# The legacy Ratatui 0.28 UI still uses this build-time macro. The advisory
+# reports unmaintained status, not a known vulnerability; upgrade that UI separately.
+ignore = [{ id = "RUSTSEC-2024-0436", reason = "Legacy Ratatui build-time paste dependency; terminal UI upgrade tracked separately" }]
 
 [sources]
 unknown-registry = "deny"

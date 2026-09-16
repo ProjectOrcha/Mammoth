@@ -8,6 +8,7 @@ license.workspace      = true
 repository.workspace   = true
 
 [dependencies]
+mammoth-memory = { path = "../mammoth-memory" }
 mammoth-core = { workspace = true }
 mammoth-compute = { workspace = true }
 mammoth-bench = { workspace = true }

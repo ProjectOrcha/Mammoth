@@ -3,6 +3,9 @@ title: The four fast paths
 description: One-shot reads, fan-out dispersal writes, declustered parallel repair and warm start — the four places Hadoop's design costs the most, and what Mammoth does instead.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 :::note[Design reference]
 This page describes the full project design, including future distributed
 features and command options. For the working local application on `AI_coded`,

@@ -3,6 +3,9 @@ title: Operate the local service
 description: Startup, readiness, safe shutdown, backups and the local preview release boundary.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 `AI_coded` is a durable **local preview**. Six worker directories share one host.
 Authentication, authorization, TLS, independent worker processes, high
 availability and distributed shuffle are not implemented. Do not expose it as a

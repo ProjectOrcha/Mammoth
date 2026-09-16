@@ -38,7 +38,7 @@ jobs:
           cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
           cargo test --workspace --locked
           cargo test -p mammoth-parts --examples --locked
-          cargo build --release --locked -p mammoth-cli --target '${{ matrix.target }}'
+          cargo build --release --locked -p mammoth-cli -p mammoth-mcp --target '${{ matrix.target }}'
       - name: Package
         shell: bash
         run: |

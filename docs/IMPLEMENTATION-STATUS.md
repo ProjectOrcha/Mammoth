@@ -1,5 +1,9 @@
 # Implementation status on AI_coded
 
+> **Storage archive.** Mammoth now focuses on [durable coding-agent memory](AGENT-MEMORY.md).
+> The material below describes the earlier storage track and its historical checks.
+> Current memory builds require Rust 1.88+.
+
 ## Working application
 
 | Area | Implemented behavior |

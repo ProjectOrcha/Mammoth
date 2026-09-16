@@ -3,6 +3,9 @@ title: Configuration
 description: Supported local settings, validation and restart behavior on AI_coded.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 The `AI_coded` service uses the following settings today. Generate this starter
 with `mammoth config template`, or download a validated draft from **Configure**.
 Validation does not change a running service.

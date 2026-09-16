@@ -13,14 +13,9 @@
   let { children } = $props();
 
   const NAV = [
-    { href: '/', label: 'Overview', glyph: '◈' },
-    { href: '/nodes', label: 'Nodes', glyph: '▦' },
-    { href: '/files', label: 'Files', glyph: '▤' },
-    { href: '/distribution', label: 'Distribution', glyph: '◉' },
-    { href: '/jobs', label: 'Jobs', glyph: '▶' },
-    { href: '/benchmarks', label: 'Benchmarks', glyph: '↗' },
-    { href: '/cluster', label: 'Cluster', glyph: '◇' },
-    { href: '/configure', label: 'Configure', glyph: '⚙' },
+    { href: '/', label: 'Agent memory', glyph: '◈' },
+    { href: '/storage', label: 'Storage archive', glyph: '▤' },
+
   ];
 
   let theme = $state<'dark' | 'light'>('dark');
@@ -29,7 +24,7 @@
   onMount(() => {
     theme =
       (document.documentElement.dataset.theme as 'dark' | 'light') ?? 'dark';
-    return live.attach();
+
   });
 
   function toggleTheme() {
@@ -42,6 +37,8 @@
     }
   }
 
+  const isMemory = $derived(page.url.pathname === "/");
+  $effect(() => { if (!isMemory) return live.attach(); });
   const report = $derived(live.report);
   const active = $derived((href: string) =>
     href === '/'
@@ -73,6 +70,7 @@
     </ul>
 
     <div class="rail-foot">
+      {#if !isMemory}
       <p class="eyebrow">Capacity</p>
       {#if report}
         <Meter value={pctValue(report.used, report.capacity)} />
@@ -87,6 +85,7 @@
         <Meter value={0} />
         <p class="mono foot-line">—</p>
       {/if}
+      {:else}<p class="eyebrow">Durable project context</p>{/if}
       <button class="theme" onclick={toggleTheme}>
         {theme === 'dark' ? '☾ dark' : '☀ light'}
       </button>
@@ -94,6 +93,7 @@
   </nav>
 
   <div class="main">
+    {#if isMemory}<header class="topbar"><div class="left"><span class="name">Mammoth / Agent memory</span></div><button class="pill" onclick={toggleTheme} aria-label="Toggle theme">{theme === 'dark' ? 'Light theme' : 'Dark theme'}</button></header>{:else}
     <header class="topbar">
       <div class="cluster">
         <select class="workspace" aria-label="Workspace" value={live.source === 'demo' ? 'demo' : 'gateway'} onchange={(event) => switchWorkspace(event.currentTarget.value as Workspace)}>
@@ -149,8 +149,9 @@
         </button>
       </div>
     </header>
+    {/if}
 
-    {#if live.source === 'demo' && !dismissedBanner}
+    {#if !isMemory && live.source === 'demo' && !dismissedBanner}
       <div class="banner" role="status">
         <div>
           <strong>Example cluster.</strong>
@@ -164,11 +165,11 @@
       </div>
     {/if}
 
-    {#if report?.capabilities?.local}
+    {#if !isMemory && report?.capabilities?.local}
       <div class="banner" role="status"><div><strong>My storage.</strong> Your files are persistent. Worker directories and reference capacities model three racks on this machine.</div><button onclick={() => switchWorkspace('demo')}>Explore example cluster →</button></div>
     {/if}
 
-    {#if live.error}
+    {#if !isMemory && live.error}
       <div class="banner danger" role="alert">
         <div>
           <strong>API error.</strong>

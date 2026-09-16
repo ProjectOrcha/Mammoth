@@ -50,3 +50,8 @@ target/distrib/
 # Python benchmark tooling
 __pycache__/
 *.pyc
+
+# Durable agent context is local data, never source
+agent-memory.sqlite3
+agent-memory.sqlite3-wal
+agent-memory.sqlite3-shm

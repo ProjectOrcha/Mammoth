@@ -67,11 +67,9 @@ async fn main() -> std::process::ExitCode {
     }
 }
 fn default_root() -> PathBuf {
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join(".mammoth/local")
+    mammoth_mcp::default_root()
 }
+
 async fn run(cli: Cli) -> Result<()> {
     let fmt = cli.format();
     if matches!(cli.command, Command::Logo) {
@@ -86,6 +84,31 @@ async fn run(cli: Cli) -> Result<()> {
         return output::emit(&entries, fmt);
     }
     let root = cli.local_root.clone().unwrap_or_else(default_root);
+    match cli.command {
+        Command::Memory(args) => {
+            if !cli.masters.is_empty() {
+                return Err(Error::InvalidInput("memory uses --local-root, not --masters".into()));
+            }
+            let value = mammoth_mcp::run_memory(root, args)
+                .await
+                .map_err(|e| Error::InvalidInput(e.to_string()))?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&value)
+                    .map_err(|e| Error::InvalidInput(e.to_string()))?
+            );
+            return Ok(());
+        }
+        Command::Mcp(args) => {
+            if !cli.masters.is_empty() {
+                return Err(Error::InvalidInput("MCP uses --local-root, not --masters".into()));
+            }
+            return mammoth_mcp::serve(root, args)
+                .await
+                .map_err(|e| Error::InvalidInput(e.to_string()));
+        }
+        _ => {}
+    }
     if matches!(
         cli.command,
         Command::Status | Command::Stop { .. } | Command::Quickstart { .. } | Command::Serve { .. }
@@ -210,6 +233,7 @@ async fn run(cli: Cli) -> Result<()> {
     };
     let be = backend.as_ref();
     match cli.command {
+        Command::Memory(_) | Command::Mcp(_) => unreachable!("handled before opening storage"),
         Command::Init => {
             let target = root.join("mammoth.toml");
             if !target.exists() {

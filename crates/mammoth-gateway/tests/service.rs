@@ -530,3 +530,36 @@ async fn browser_guards_block_foreign_mutations_and_rebinding_without_blocking_c
         409
     );
 }
+
+#[tokio::test]
+async fn memory_dashboard_shares_durable_store_and_rejects_conflicts() {
+    let dir = tempfile::tempdir().unwrap();
+    let be = Arc::new(LocalBackend::open(dir.path()).unwrap());
+    let app = mammoth_gateway::router_with_dashboard(
+        be,
+        mammoth_gateway::Dashboard::new(
+            mammoth_core::config::Config::default(),
+            dir.path().join("benchmarks"),
+        ),
+    );
+    let note=br#"{"key":"handoff","title":"Next step","content":"Run pagination tests","kind":"handoff"}"#;
+    let (status, _, _) = request(app.clone(), "POST", "/api/v1/memory?project=app", note).await;
+    assert_eq!(status, StatusCode::OK);
+    let store = mammoth_memory::Store::open(dir.path()).unwrap();
+    assert_eq!(store.get("app", "handoff").unwrap().revision, 1);
+    let (status, _, _) = request(app.clone(), "POST", "/api/v1/memory?project=app", note).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    let (_, _, bytes) = request(app.clone(), "GET", "/api/v1/memory?project=other", b"").await;
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["memories"],
+        serde_json::json!([])
+    );
+    let (status, _, _) = request(app.clone(), "GET", "/api/v1/memory", b"").await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let (_, _, bytes) =
+        request(app, "GET", "/api/v1/memory?project=app&query=pagination", b"").await;
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&bytes).unwrap()["memories"][0]["key"],
+        "handoff"
+    );
+}

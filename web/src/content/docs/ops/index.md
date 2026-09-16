@@ -3,6 +3,9 @@ title: Operations
 description: Operate, inspect and maintain the local Mammoth preview.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 Start with [the local-service runbook](/ops/local-service/) for startup, readiness,
 shutdown, backup and restore. This branch runs one durable local service with six
 worker directories. Real distributed workers, authentication, TLS and high

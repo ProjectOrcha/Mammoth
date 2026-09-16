@@ -5,6 +5,9 @@ sidebar:
   order: 3
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 The terminal and dashboard both read the same stored files and replica layout.
 Use the same local root or HTTP gateway as the service. These are the current
 commands; the [generated reference](/cli/reference/) lists their options.

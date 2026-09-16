@@ -1,4 +1,29 @@
-# The Mammoth web UI
+# Mammoth memory dashboard
+
+The primary page saves, recalls, and edits durable project context. It uses the
+same agent-memory.sqlite3 database as CLI and MCP and never substitutes demo
+memories when the service is unavailable. The original storage overview is at
+`/storage`; its engineering screens remain as an archive.
+
+The local HTTP adapter is implemented on AI_coded. To run the complete dashboard
+on that branch, build the UI before the binary and select your memory root:
+
+```bash
+npm --prefix ui ci
+npm --prefix ui run build
+cargo build --locked -p mammoth-cli
+./target/debug/mammoth --local-root /absolute/path/to/memory-store quickstart --no-sample
+```
+
+Open http://127.0.0.1:8080 and use the same project name as your MCP connection.
+The main branch's frontend can connect to this API, but its legacy gateway remains
+a scaffold. CLI and MCP memory work independently on both branches.
+
+For development, run `npm run dev` in ui/ with the AI_coded service at port 8080.
+`npm run check`, `npm test`, and `npm run build` validate the frontend.
+
+## Legacy storage dashboard notes
+
 
 The Svelte 5 admin dashboard for the persistent local storage service. Production
 assets are embedded in the Rust binary by `mammoth-gateway`. Beginner walkthrough: [chapter 9](../docs/guide/09-web-ui.md).

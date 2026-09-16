@@ -1,5 +1,9 @@
 # Release readiness
 
+> **Storage archive.** Mammoth now focuses on [durable coding-agent memory](AGENT-MEMORY.md).
+> The material below describes the earlier storage track and its historical checks.
+> Current memory builds require Rust 1.88+.
+
 `AI_coded` contains a hardened **local preview**, not a qualified production
 cluster. The gates below define the difference. Passing build checks does not
 waive missing system capabilities. Benchmark snapshots identify their measured

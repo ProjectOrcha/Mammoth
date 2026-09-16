@@ -5,15 +5,16 @@ RUN npm ci
 COPY ui/ ./
 RUN npm run check && npm test && npm run build
 
-FROM rust:1.85-bookworm AS builder
+FROM rust:1.88-bookworm AS builder
 WORKDIR /build
 COPY . .
 COPY --from=ui /src/ui/build ./ui/build
-RUN cargo build --release --locked -p mammoth-cli
+RUN cargo build --release --locked -p mammoth-cli -p mammoth-mcp
 
 FROM debian:bookworm-slim
 RUN useradd --system --uid 10001 --create-home mammoth && mkdir -p /data && chown mammoth:mammoth /data
 COPY --from=builder /build/target/release/mammoth /usr/local/bin/mammoth
+COPY --from=builder /build/target/release/mammoth-mcp /usr/local/bin/mammoth-mcp
 USER mammoth
 ENV MAMMOTH_LOCAL_ROOT=/data
 EXPOSE 8080 9000

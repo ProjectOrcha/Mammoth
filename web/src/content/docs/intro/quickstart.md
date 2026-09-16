@@ -1,64 +1,53 @@
 ---
-title: 5-minute local service
-description: Build Mammoth and run a persistent local filesystem with a live dashboard.
-sidebar:
-  order: 4
+title: Your first durable memory
+description: Save a decision, close the process, and recall it in a new session.
 ---
 
-On `AI_coded`, the guided local service runs with real persistent files.
-Six worker directories simulate three racks on one host. This is a development
-service; separate distributed workers, Raft and HA remain future work.
+[Install Mammoth](/intro/install/), then choose a stable project name:
 
-## Build and run
+```bash
+mammoth memory --project my-app remember pagination \
+  --title "API pagination" --kind decision \
+  --content "Use cursor pagination for the event log." \
+  --tag api --source src/events.rs
+```
 
-Requires Rust 1.85+ and Node 22.x. From the repository root:
+The response includes `revision: 1`. That process can exit; the entry is on disk.
+In another terminal or session, recall it from the same local root:
+
+```bash
+mammoth memory --project my-app recall "pagination"
+mammoth memory --project my-app get pagination
+```
+
+Save a handoff when you finish working:
+
+```bash
+mammoth memory --project my-app remember current-handoff \
+  --title "Next session" --kind handoff \
+  --content "Pagination decision saved. Next: implement cursor validation and tests."
+```
+
+[Connect your coding agent through MCP](/memory/mcp/) to use the same store.
+The agent must call remember and recall; Mammoth does not automatically capture
+conversations. Read the [workflow](/memory/workflow/) for suggested instructions.
+
+To revise an entry, first get its revision and pass `--expected-revision` when
+remembering it again. This prevents two agents overwriting one another's work.
+See the [CLI guide](/memory/cli/) for history and deletion.
+
+## Optional memory dashboard
+
+On `AI_coded`, build the UI before the CLI, then start the local service using
+the same root as your MCP connection:
 
 ```bash
 npm --prefix ui ci
 npm --prefix ui run build
 cargo build --locked -p mammoth-cli
-./target/debug/mammoth --local-root .mammoth quickstart
+./target/debug/mammoth --local-root /absolute/path/to/memory-store quickstart --no-sample
 ```
 
-Open [the dashboard](http://127.0.0.1:8080). The S3 endpoint listens on
-`127.0.0.1:9000`. Press Ctrl-C to stop; restart with the same root to keep data.
-Build the dashboard before the Rust binary, because its files are embedded.
-
-Prefer typing just `mammoth`? Build the release binary and follow the
-[command shortcut setup](/intro/install/#use-mammoth-from-any-folder).
-
-In another terminal:
-
-```bash
-export MAMMOTH_LOCAL_ROOT="$PWD/.mammoth"
-./target/debug/mammoth ls /sample
-./target/debug/mammoth put README.md /sample/readme.md
-./target/debug/mammoth cat /sample/readme.md
-./target/debug/mammoth viz blocks /sample/blocks.bin --output table
-./target/debug/mammoth top
-```
-
-Small files live directly in the namespace snapshot. Larger files use immutable
-checksummed blocks replicated across the simulated racks. Read errors on one
-copy cause the backend to try another copy. `mammoth admin repair` restores
-bad or missing copies from a checked source.
-
-## DuckDB
-
-Upload a local Parquet file with a path-style, unsigned S3 client, then query it:
-
-```sql
-INSTALL httpfs;
-LOAD httpfs;
-CREATE SECRET mammoth (
-  TYPE S3,
-  ENDPOINT '127.0.0.1:9000',
-  URL_STYLE 'path',
-  USE_SSL false
-);
-SELECT count(*) FROM read_parquet('s3://warehouse/*.parquet');
-```
-
-The development S3 subset supports objects, buckets, listings and byte ranges.
-It does not implement multipart upload or authentication. Keep the default
-loopback listeners for local use.
+Open [localhost:8080](http://localhost:8080) to save, search, read, and edit project
+memories. The dashboard never substitutes simulated memories. The HTTP adapter is
+on AI_coded; CLI and MCP memory work on both branches without the dashboard.

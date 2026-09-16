@@ -1,5 +1,9 @@
 # Operating the local service on AI_coded
 
+> **Storage archive.** Mammoth now focuses on [durable coding-agent memory](AGENT-MEMORY.md).
+> The material below describes the earlier storage track and its historical checks.
+> Current memory builds require Rust 1.88+.
+
 This runbook covers the durable single-host application. It is suitable for
 controlled local evaluation and development. It is not a production distributed
 storage service: authentication, authorization, TLS, quotas, real worker

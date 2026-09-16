@@ -3,6 +3,9 @@ title: Performance
 description: Implemented memory reuse, parallel compute and durable streaming, with measurable limits.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 ## Implemented in the local engine
 
 Mammoth's current `local-memory-parallel-v3` engine targets avoidable work in

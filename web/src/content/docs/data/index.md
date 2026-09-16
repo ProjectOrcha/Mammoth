@@ -3,6 +3,9 @@ title: Data guide
 description: Block size, replication, the small-file problem, file formats, partitioning, skew, tiers and integrity.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 :::note[Design reference]
 This page describes the full project design, including future distributed
 features and command options. For the working local application on `AI_coded`,

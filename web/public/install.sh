@@ -11,6 +11,6 @@ echo "mammoth: no released binaries yet."
 echo
 echo "build from source instead:"
 echo "  git clone https://github.com/ProjectOrcha/Mammoth"
-echo "  cd Mammoth && cargo build --release -p mammoth-cli"
-echo "  ./target/release/mammoth quickstart"
+echo "  cd Mammoth && cargo build --release --locked -p mammoth-cli -p mammoth-mcp"
+echo "  ./target/release/mammoth memory --project my-app recall"
 exit 1

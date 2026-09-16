@@ -5,6 +5,9 @@ sidebar:
   order: 2
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 You cannot simplify something you do not understand. This is the short version of
 Hadoop architecture. If you already know it, skip ahead to [What is Mammoth?](/intro/what/).
 

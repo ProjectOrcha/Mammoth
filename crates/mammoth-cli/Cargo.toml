@@ -1,6 +1,6 @@
 [package]
 name        = "mammoth-cli"
-description = "Distributed storage that doesn't need a JVM — the `mammoth` binary"
+description = "Durable context memory for coding agents — the `mammoth` binary"
 version.workspace      = true
 edition.workspace      = true
 rust-version.workspace = true
@@ -13,6 +13,7 @@ name = "mammoth"
 path = "src/main.rs"
 
 [dependencies]
+mammoth-mcp = { path = "../mammoth-mcp" }
 mammoth-core  = { workspace = true }
 mammoth-local = { workspace = true }
 mammoth-bench = { workspace = true }

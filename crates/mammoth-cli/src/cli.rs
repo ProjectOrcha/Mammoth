@@ -7,7 +7,7 @@ pub const BANNER: &str = include_str!("../assets/banner.txt");
     name = "mammoth",
     version,
     before_help = BANNER,
-    about = "Durable storage with a local cluster, CLI, dashboard and S3 API"
+    about = "Durable context memory for coding agents, with a local MCP server"
 )]
 pub struct Cli {
     #[arg(short, long, env = "MAMMOTH_CONFIG", global = true)]
@@ -48,7 +48,7 @@ impl Cli {
             .map(|(name, about)| format!("  {name:<24} {about}"))
             .collect::<Vec<_>>()
             .join("\n");
-        Self::command().after_help(format!("Nested commands:\n{nested}\n\nExamples:\n  mammoth ls /\n  mammoth viz treemap / --depth 2\n  mammoth viz cluster\n  mammoth top\n  mammoth status\n\nUse mammoth <command> --help for options, or mammoth commands for the full list.\nDocs: https://projectorcha.github.io/Mammoth/cli/"))
+        Self::command().after_help(format!("Nested commands:\n{nested}\n\nExamples:\n  mammoth memory --project my-app recall\n  mammoth mcp --project my-app\n\nUse mammoth <command> --help for options, or mammoth commands for the full list.\nDocs: https://projectorcha.github.io/Mammoth/cli/"))
     }
     pub fn catalog() -> Vec<(String, String)> {
         fn walk(command: &clap::Command, prefix: &str, entries: &mut Vec<(String, String)>) {
@@ -77,6 +77,10 @@ impl Cli {
 }
 #[derive(Subcommand)]
 pub enum Command {
+    /// Save, recall, and manage durable project context (JSON output).
+    Memory(mammoth_mcp::MemoryArgs),
+    /// Serve project-scoped memory tools over MCP stdio.
+    Mcp(mammoth_mcp::McpArgs),
     /// Version and build information.
     Version,
     /// Print the Mammoth terminal logo.

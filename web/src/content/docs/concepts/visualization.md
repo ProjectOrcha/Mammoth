@@ -3,6 +3,9 @@ title: Data distribution visualization
 description: Every `mammoth viz` view, and the six charts on the web UI distribution page.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 This is the feature that makes Mammoth feel different from Hadoop. Hadoop shows you
 tables of numbers. Mammoth shows you where your data actually is.
 

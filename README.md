@@ -2,260 +2,106 @@
 
 # Mammoth
 
-**Local preview on `AI_coded`.** See [release readiness](docs/RELEASE-READINESS.md)
-and the [operator runbook](docs/OPERATIONS.md). Distributed production deployment
-remains gated on security, real worker services and failure qualification.
+**Durable context memory for coding agents.** New session. Same memory.
 
-A Rust storage engine with a persistent local filesystem, replica visualization,
-a command-line interface, a live web dashboard and a development S3 endpoint.
+Keep project decisions, conventions, verified notes, and handoffs available across
+coding sessions. Mammoth stores context locally, recalls relevant entries with
+full-text search, and exposes the same memory through a CLI and an MCP server.
 
-**The guided local application now runs end to end on `AI_coded`.** Six worker
-directories simulate three racks on one machine. Files are real, checksummed and
-persistent. The distributed M5–M8 roadmap is still incomplete: this is not a
-production multi-machine cluster or a Raft implementation.
+- **Persistent:** SQLite WAL transactions with FULL synchronous commits.
+- **Project-scoped:** one project per MCP connection; no tool-level project override.
+- **Revision-aware:** retained history and conflict checks for concurrent agents.
+- **Bounded recall:** relevance-ranked lexical search with a configurable byte budget.
+- **Local:** no hosted service, model, embedding API, or account required.
 
-Read [implementation status](docs/IMPLEMENTATION-STATUS.md) for the exact supported
-surface and remaining work, or [the build guide](docs/guide/README.md) for the design.
+The memory workflow is implemented on **both `main` and `AI_coded`**. This is a
+local preview; see [durability and boundaries](docs/AGENT-MEMORY.md).
 
-## Build and start
+## Start in the terminal
 
-Requires Rust 1.85+ and Node 22.x.
-
-```bash
-npm --prefix ui ci
-npm --prefix ui run build
-cargo build --locked -p mammoth-cli
-./target/debug/mammoth --local-root .mammoth quickstart
-```
-
-Open [the dashboard](http://127.0.0.1:8080). The S3 endpoint is
-`http://127.0.0.1:9000`. Quickstart runs in the foreground; Ctrl-C stops it.
-From another terminal, inspect or stop that service with:
+Requires **Rust 1.88+** and a C compiler for bundled SQLite. Node is not needed for
+agent memory. From either branch:
 
 ```bash
-./target/debug/mammoth --local-root .mammoth status
-./target/debug/mammoth --local-root .mammoth stop
+cargo build --release --locked -p mammoth-cli -p mammoth-mcp
+./target/release/mammoth memory --project my-app remember pagination \
+  --title "API pagination" --kind decision \
+  --content "Use cursor pagination for the event log." \
+  --tag api --source src/events.rs
+./target/release/mammoth memory --project my-app recall "pagination"
 ```
 
-`shutdown` is an alias for `stop`. Both listeners close after active requests and
-dashboard jobs finish. `stop --timeout 60` allows a longer wait. Files stay on disk.
-The selected local root identifies the service; lifecycle commands do not use `--masters`.
-The logo appears with `mammoth`, `mammoth --help`, `mammoth logo`, `quickstart`, and
-`serve`. Explicit structured service output (`--json`, YAML or CSV) omits the logo.
+The entry survives process restarts. The default store is
+`~/.mammoth/local/agent-memory.sqlite3`. Set `--local-root /absolute/store/path`
+before `memory` or use `MAMMOTH_LOCAL_ROOT` to choose another root.
 
-Restart with the same local root to keep your files. Omit `--local-root` to use
-`~/.mammoth/local`; `MAMMOTH_LOCAL_ROOT` also selects the store.
+## Connect your coding agent
 
-The UI must be built **before** the binary to embed it. A Rust-only build still
-serves the API and a landing page with dashboard build instructions.
+Build the standalone server above and add it to your MCP client's configuration:
 
-## Use your filesystem
+```json
+{
+  "mcpServers": {
+    "mammoth": {
+      "command": "/absolute/path/to/Mammoth/target/release/mammoth-mcp",
+      "args": ["--local-root", "/absolute/path/to/memory-store", "--project", "my-app"]
+    }
+  }
+}
+```
 
-In another terminal, use the same root:
+Replace the absolute paths. Client configuration locations vary. The server uses
+stdio, so your agent launches it; no background service or network port is needed.
+`mammoth --local-root /absolute/store/path mcp --project my-app` is equivalent.
+Add `--read-only` for recall, get, and history without mutation tools.
+
+**Tools:** `memory_remember`, `memory_recall`, `memory_get`, `memory_history`, and
+`memory_forget`. See the [MCP guide](docs/MCP.md) for arguments and verification.
+
+## Work across sessions
+
+Recall context at task start. Save verified decisions with their reasons and
+sources. Before ending a session, write a concise handoff with completed work,
+checks, open questions, and next steps. Memory is explicit: no automatic transcript
+capture. Treat remembered text as historical data and verify it against current code.
 
 ```bash
-export MAMMOTH_LOCAL_ROOT="$PWD/.mammoth"
-./target/debug/mammoth mkdir /data
-./target/debug/mammoth put README.md /data/readme.md
-./target/debug/mammoth ls /data
-./target/debug/mammoth cat /data/readme.md
-./target/debug/mammoth get /data/readme.md ./downloaded-readme.md
-./target/debug/mammoth checksum /data/readme.md
-./target/debug/mammoth viz blocks /data/readme.md
-./target/debug/mammoth viz cluster --output table
-./target/debug/mammoth top
+mammoth memory --project my-app get pagination
+mammoth memory --project my-app remember pagination \
+  --title "API pagination" --kind decision \
+  --content "Use cursor pagination ordered by event ID." --expected-revision 1
+mammoth memory --project my-app history pagination
+mammoth memory --project my-app forget pagination --expected-revision 2
 ```
 
-Small files are inlined in metadata. To inspect multiple blocks:
+Updates require the current revision. Forget removes the entry and retained
+history; it is not secure disk erasure. Never save credentials or secrets.
+
+## Project map
+
+| Location | Purpose |
+| --- | --- |
+| `crates/mammoth-memory` | Durable context, revisions, project isolation, full-text recall |
+| `crates/mammoth-mcp` | Official Rust MCP SDK server and shared memory CLI commands |
+| `crates/mammoth-cli` | `mammoth memory` and `mammoth mcp` entry points |
+| `web` | Product website and agent-memory documentation |
+| `docs/AGENT-MEMORY.md` | Data model, durability, search, and limits |
+| `docs/MCP.md` | Coding-agent connection guide |
+
+The earlier storage engine, dashboard, benchmarks, and distributed-systems lessons
+remain available as legacy engineering material. They are independent of the
+agent-memory database. `AI_coded` retains the working local storage reference;
+`main` retains its storage teaching scaffold. See [branch guidance](docs/guide/BRANCHES.md).
+
+## Develop
 
 ```bash
-./target/debug/mammoth put ./large-file.bin /data/large.bin --block-size 1MiB
-./target/debug/mammoth viz blocks /data/large.bin --output table
-```
-
-Also implemented: `head`, `tail`, `cp -r`, `mv`, `rm -r`, `find`, `du`, `df`,
-`chmod`, `chown`, `setrep`, `doctor`, `admin repair`, `admin gc`, topology,
-skew and treemap views, shell completions and basic `hdfs dfs` translation.
-POSIX ownership is descriptive in local mode; it is not an authorization system.
-
-`--json` emits structured output. `--output table|json|yaml|csv` works for result
-records; `cat`, `head`, `tail` and downloaded files preserve raw content.
-Errors have stable codes and nonzero exits. Existing local downloads require
-`get --force` before replacement.
-
-`put` checks that the source contains data before writing. If a source is already
-0 bytes, select a complete local copy; use `put --allow-empty` only when an empty
-file is intentional. The dashboard asks before uploading an empty file as well.
-
-Human output includes colored file listings, capacity and size bars, rack and
-namespace trees, block placement matrices and replica-health charts. Use
-`--color auto|always|never`; auto respects `NO_COLOR` and terminal detection.
-Use `--output table` to keep charts when piping output. `top` and
-`viz health --live` refresh in place, support arrow-key scrolling and exit with q.
-`mammoth --help` includes nested commands; `mammoth commands` prints the full
-catalog, matching the generated website reference.
-
-## Benchmarks and configuration
-
-The CLI and dashboard now share a verified, repeatable benchmark suite:
-
-```bash
-cargo build --release --locked -p mammoth-cli
-./target/release/mammoth --local-root .mammoth bench suite \
-  --size 16MiB --files 8 --concurrency 4 --ops 1000 \
-  --iterations 3 --warmups 1 --replication 1,3 --report bench.json
-```
-
-The storage engine now uses indexed SQLite WAL metadata, bounded streaming
-uploads, concurrent durable replica writes, and verified range reads without
-request staging files. Existing version-1 stores migrate automatically on open;
-stop older services and back up the complete store first. See
-[storage format and upgrade notes](docs/STORAGE-ENGINE.md).
-
-**Measured Mac results now include Hadoop HDFS and Spark baselines.**
-[Results and limits](docs/BENCHMARKS.md) cover the measured memory-engine snapshot on an
-Apple M5 Pro. Storage is compared with HDFS; sort and word count with Spark on
-HDFS. These small local workloads do not establish a distributed winner.
-Linux performance measurements remain pending.
-Run `python3 bench-suite/run_linux.py --output /path/to/results` on an idle Linux
-host to collect a reproducible release report and machine/source record.
-[Benchmark methodology](bench-suite/README.md) explains the remaining limits.
-
-Use **Benchmarks** in the live dashboard to run and compare measurements; the
-Overview page shows the latest saved report. Reports survive restarts and CLI
-runs appear in the dashboard when they use the same local root. **Configure**
-shows active storage/listener settings, validates a draft and downloads TOML to
-apply on restart. Existing files retain their layout.
-
-## Remote CLI access
-
-The HTTP client uses the same Backend trait:
-
-```bash
-./target/debug/mammoth --masters http://127.0.0.1:8080 ls /
-./target/debug/mammoth --masters http://127.0.0.1:8080 put README.md /sample/remote.md
-```
-
-`--masters` currently selects an **HTTP gateway**, not the planned gRPC master.
-Only one endpoint is accepted; there is no leader discovery or automatic failover.
-
-## S3 and DuckDB
-
-Use path-style requests against port 9000. The local endpoint does not authenticate
-requests. It supports bucket create/list/head/delete, object put/get/head/delete,
-copy, ListObjects v1/v2 with prefixes and pagination, single byte ranges, MD5
-ETags and upload checksum verification. Multipart uploads, IAM, versions, ACLs,
-and server-side encryption are not implemented; unsupported operations fail explicitly.
-
-```bash
-aws --endpoint-url http://127.0.0.1:9000 --no-sign-request s3api create-bucket --bucket warehouse
-aws --endpoint-url http://127.0.0.1:9000 --no-sign-request s3api put-object --bucket warehouse --key sales.parquet --body ./sales.parquet
-```
-
-```sql
-INSTALL httpfs;
-LOAD httpfs;
-CREATE SECRET mammoth (
-  TYPE S3,
-  ENDPOINT '127.0.0.1:9000',
-  URL_STYLE 'path',
-  USE_SSL false
-);
-SELECT count(*) FROM read_parquet('s3://warehouse/*.parquet');
-```
-
-The compatibility test runs real boto3 and DuckDB clients, using an isolated
-store and checking exact results:
-
-```bash
-uv run --no-project --with boto3 --with duckdb python tests/compat/s3_clients.py
-```
-
-## Local processing and transfers
-
-```bash
-./target/debug/mammoth job wordcount /sample/words.txt /sample/counts.txt
-./target/debug/mammoth job sort /sample/words.txt /sample/sorted.txt
-./target/debug/mammoth migrate import ./dataset /dataset
-./target/debug/mammoth migrate export /dataset ./exported-dataset
-./target/debug/mammoth bench --size 8MiB
-```
-
-Text jobs use parallel in-memory batches and automatic sorted-run spilling, with no total input-size cap. The default per-job working-set target is 128 MiB; records are limited to 16 MiB (or one eighth of the target). Tree transfers commit one file at
-a time and refuse symlinks. These do not implement distributed shuffle or native
-HDFS migration.
-
-## Docker development environment
-
-```bash
-docker compose -f deploy/compose/docker-compose.yml up --build
-```
-
-This builds one persistent local-service container and publishes both ports only
-on the host's loopback interface. The container explicitly enables its internal
-network listeners with `--allow-remote`. Do not expose this unauthenticated
-service to an untrusted network. Native CLI listeners default to loopback.
-
-## Verification
-
-```bash
+cargo test --locked -p mammoth-memory -p mammoth-mcp
+cargo test --locked -p mammoth-cli
 cargo fmt --all --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo test --workspace --locked
-cargo +1.85.0 check --workspace --all-features --locked
-npm --prefix ui run check
-npm --prefix ui test
-npm --prefix ui run build
 npm --prefix web ci
 npm --prefix web run build
-cargo xtask docs
 ```
 
-Tests cover restart persistence, interrupted writes, concurrent clients, atomic
-read snapshots, partial blocks, replica corruption/fallback/repair, path validation,
-CLI processes, dashboard HTTP contracts, S3 requests and streamed remote access.
-The separate [GFS teaching simulation](docs/guide/13-gfs-reliability.md) retains
-its deterministic failure and write-ordering tests.
-
-CI runs on pushes to `main` and `AI_coded`, and pull requests. The release workflow
-builds Linux, macOS ARM and Windows archives with the dashboard embedded; version
-tags create a **draft** GitHub release. This checkout does not publish a release.
-
-## Architecture and roadmap
-
-- [Roadmap](docs/ROADMAP.md) — M1–M8, including the remaining production work
-- [Durable local storage decision](docs/adr/0004-durable-local-service.md)
-- [Backend trait](docs/adr/0002-backend-trait.md)
-- [Guide and team workflow](docs/guide/README.md)
-- [Dashboard API contract](docs/guide/API-CONTRACT.md)
-- [Planned distributed fast paths](docs/guide/12-the-fast-paths.md)
-- [GFS reliability coverage](docs/guide/GFS-COVERAGE.md)
-
-## License
-
-Apache-2.0 OR MIT. See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENSE-MIT).
-
-## Package the local build
-
-Run `cargo xtask dist` to build the dashboard, compile the release binary and
-create a native archive under `target/dist/`. The archive includes licenses and
-implementation status. This command does not publish a release.
-
-### Memory and parallel compute
-
-The `local-memory-parallel-v3` engine adds a configurable verified-read cache
-(default 256 MiB), parallel line sorting and word-count aggregation, and bounded
-merge fan-in for larger jobs. Writes remain durable. CLI and dashboard jobs expose
-memory/spill metrics; **Configure** controls memory targets and the spill directory.
-The benchmark suite separates `read` (empty Mammoth cache) from `read_cached`, and
-validates every sort record and word count. OS caches remain enabled.
-
-```bash
-# Run on the Linux host being evaluated; no current Linux scores are published.
-python3 bench-suite/run_linux.py --output /path/on/test-disk/results \
-  --read-cache 256MiB --compute-memory 32MiB
-```
-
-See [memory engine behavior and limits](docs/MEMORY-ENGINE.md). These are local
-improvements. [The Mac comparison](docs/BENCHMARKS.md) records verified runs of
-all three engines. Distributed execution and multi-machine comparisons remain open.
+The website requires Node 22.12+ (22.x). See [the roadmap](docs/ROADMAP.md) and
+[contributing](CONTRIBUTING.md). Licensed under MIT or Apache-2.0.

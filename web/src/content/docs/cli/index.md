@@ -5,6 +5,9 @@ sidebar:
   order: 1
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 The CLI works with persistent local storage or one HTTP gateway. These pages
 describe the commands available in the current build. For installation, follow
 the [quickstart](/intro/quickstart/).

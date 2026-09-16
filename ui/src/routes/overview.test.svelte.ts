@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushSync, mount, unmount } from 'svelte';
-import Overview from './+page.svelte';
+import Overview from './storage/+page.svelte';
 import { live } from '$lib/live.svelte';
 import { clusterReport } from '$lib/demo';
 

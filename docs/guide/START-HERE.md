@@ -1,5 +1,9 @@
 # Your first hour in Mammoth
 
+> **Storage archive.** Mammoth now focuses on [durable coding-agent memory](../AGENT-MEMORY.md).
+> The material below describes the earlier storage track and its historical checks.
+> Current memory builds require Rust 1.88+.
+
 This page is for someone who has never contributed to a Rust project. You can
 make a useful change without understanding the whole distributed system.
 

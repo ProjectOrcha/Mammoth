@@ -1,114 +1,28 @@
 ---
 title: Mammoth
-description: Explore Mammoth, an open-source distributed storage project in Rust. Try the demo dashboard, learn the essentials, and build with us.
+description: Durable context memory for coding agents. Save project decisions, conventions, and handoffs locally, then recall them across sessions through MCP.
 template: splash
 hero:
-    tagline: Big data. A clearer view.
+  tagline: New session. Same memory.
 ---
-
-import { Tabs, TabItem } from '@astrojs/starlight/components';
 import Homepage from '../../components/Homepage.astro';
 
 <Homepage>
-  <Tabs>
-    <TabItem label="Working local service">
-      Requires **Rust 1.85+** and **Node.js 22.12+ (22.x)**.
 
-      ```bash
-      git clone --branch AI_coded https://github.com/ProjectOrcha/Mammoth.git
-      cd Mammoth
-      npm --prefix ui ci
-      npm --prefix ui run build
-      cargo build --release --locked -p mammoth-cli
-      ./target/release/mammoth --local-root .mammoth quickstart
-      ```
+```bash
+cargo build --release --locked -p mammoth-cli -p mammoth-mcp
 
-      Open [localhost:8080](http://localhost:8080) to upload, download and inspect
-      real files. Your files persist under `.mammoth`. Six worker directories
-      model placement on one host; multi-machine storage is still in development.
-      Use the **Workspace** selector to explore the full **Example cluster**,
-      including historical charts, repair, distributed job stages and Raft.
-      Select **My storage** to return to your files.
-    </TabItem>
-    <TabItem label="Use mammoth anywhere">
-      On **macOS or Linux**, build the release binary using **Working local service**,
-      then run these once from your `Mammoth` project folder:
+./target/release/mammoth memory --project my-app remember pagination \
+  --title "API pagination" --kind decision \
+  --content "Use cursor pagination for the event log."
 
-      ```bash
-      mkdir -p "$HOME/.local/bin"
-      ln -sfn "$PWD/target/release/mammoth" "$HOME/.local/bin/mammoth"
-      export PATH="$HOME/.local/bin:$PATH"
-      mammoth --help
-      ```
+./target/release/mammoth memory --project my-app recall "pagination"
+```
 
-      You can now type `mammoth` from any folder. Add the `export PATH` line to
-      `~/.zshrc` (zsh) or `~/.bashrc` (Bash) to keep it available in new terminals.
-      The shortcut follows future release rebuilds in this checkout.
+Requires **Rust 1.88+**. Run from a clone of either branch. Entries persist in
+`~/.mammoth/local/agent-memory.sqlite3`. Use `--local-root /absolute/store/path`
+before the command to choose another store.
 
-      From the project folder, show the logo or manage your running service:
+[Connect the same memory to your coding agent →](/memory/mcp/)
 
-      ```bash
-      mammoth logo
-      mammoth --local-root .mammoth status
-      mammoth --local-root .mammoth stop
-      ```
-
-      `shutdown` is an alias for `stop`. Your files stay on disk. From another
-      folder, use the full path to your store with `--local-root`.
-      See the [installation guide](/intro/install/#use-mammoth-from-any-folder).
-    </TabItem>
-    <TabItem label="Terminal charts">
-      After the shortcut setup, run these from your `Mammoth` project folder
-      to use the same store as the dashboard:
-
-      ```bash
-      export MAMMOTH_LOCAL_ROOT="$PWD/.mammoth"
-      mammoth commands
-      mammoth ls
-      mammoth viz treemap / --depth 2
-      mammoth viz skew /
-      mammoth viz topology
-      mammoth viz cluster
-      mammoth viz health --live
-      ```
-
-      Charts show real sizes and replica health, with readable units, bars and
-      colors. Live views refresh in place; use the arrow keys to scroll and
-      **q** to exit. `mammoth --help` includes all nested commands.
-
-      Color follows your terminal. Use `--color always` to force it or
-      `--color never` to disable it. For a human view in a pipe, add
-      `--output table`; `--json` gives structured data.
-      See the [terminal visualization guide](/cli/viz/).
-    </TabItem>
-    <TabItem label="Dashboard demo">
-      Requires **Node.js 22.12+ (22.x)** and Git.
-
-      ```bash
-      git clone https://github.com/ProjectOrcha/Mammoth.git
-      cd Mammoth/ui
-      npm ci
-      npm run dev
-      ```
-
-      Open the local URL printed in your terminal (usually
-      [localhost:5173](http://localhost:5173)). Look for **Demo workspace**;
-      all values are simulated. No Rust build is needed for this step.
-    </TabItem>
-    <TabItem label="First Rust example">
-      Requires **stable Rust (1.85+)** and Git.
-
-      ```bash
-      git clone https://github.com/ProjectOrcha/Mammoth.git
-      cd Mammoth
-      cargo run -p mammoth-parts --example 01-ownership
-      cargo run -p mammoth-cli -- --help
-      ```
-
-      Already cloned the project? Start from your existing `Mammoth` folder
-      and run the two `cargo` commands. The example introduces ownership;
-      `--help` shows the implemented command tree.
-    </TabItem>
-
-  </Tabs>
 </Homepage>

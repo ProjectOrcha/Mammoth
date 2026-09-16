@@ -34,6 +34,10 @@ fn default_compute_memory() -> String {
     Config::default().compute.memory_budget
 }
 impl Dashboard {
+    pub fn memory_root(&self) -> Option<PathBuf> {
+        self.directory.as_ref()?.parent().map(PathBuf::from)
+    }
+
     pub fn compute_options(&self) -> Result<mammoth_compute::Options> {
         mammoth_compute::Options::from_config(
             &self.config.as_ref().map(|c| c.compute.clone()).unwrap_or_default(),

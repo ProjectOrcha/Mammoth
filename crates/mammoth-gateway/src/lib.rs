@@ -3,6 +3,7 @@
 mod browser;
 mod dashboard;
 mod jobs;
+mod memory;
 pub use dashboard::Dashboard;
 pub mod s3;
 use axum::{
@@ -199,6 +200,9 @@ async fn api(
     method: Method,
     body: Body,
 ) -> std::result::Result<Response, ApiError> {
+    if op == "memory" || op.starts_with("memory/") {
+        return memory::handle(&state.dashboard, &op, q, method, body).await;
+    }
     let be = state.backend.as_ref();
     let path = PathBuf::from(param(&q, "path", "/"));
     if number(&q, "minutes_ago", 0)? != 0 {
