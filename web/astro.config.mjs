@@ -85,7 +85,7 @@ export default defineConfig({
           { label: 'Memory model & durability', link: '/memory/' },
           { label: 'Connect with MCP', link: '/memory/mcp/' },
           { label: 'Agent workflow', link: '/memory/workflow/' },
-          { label: 'CLI reference', link: '/memory/cli/' },
+          { label: 'CLI guide', link: '/memory/cli/' },
         ] },
         { label: 'Project', items: [{ label: 'Contributing', link: '/contributing/' }] },
       ],
