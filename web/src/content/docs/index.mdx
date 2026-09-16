@@ -12,6 +12,9 @@ import Homepage from '../../components/Homepage.astro';
 ```bash
 cargo build --release --locked -p mammoth-cli -p mammoth-mcp
 
+# Choose one folder for your CLI, dashboard, and MCP server.
+export MAMMOTH_LOCAL_ROOT="$HOME/.mammoth/local"
+
 ./target/release/mammoth memory --project my-app remember pagination \
   --title "API pagination" --kind decision \
   --content "Use cursor pagination for the event log."
@@ -19,9 +22,18 @@ cargo build --release --locked -p mammoth-cli -p mammoth-mcp
 ./target/release/mammoth memory --project my-app recall "pagination"
 ```
 
-Requires **Rust 1.88+**. Run from a clone of either branch. Entries persist in
-`~/.mammoth/local/agent-memory.sqlite3`. Use `--local-root /absolute/store/path`
-before the command to choose another store.
+Requires **Rust 1.88+**. Run from a clone of either branch. The example uses a
+macOS/Linux shell. Entries persist in `agent-memory.sqlite3` inside the selected
+folder. Already have a store? Replace the export's path with that folder.
+
+**Keep every tool on the same store.** The export sets this terminal's folder;
+an explicit `--local-root` overrides it. Set the same absolute path in your MCP
+configuration and dashboard. To keep it across terminals, update the export in
+your shell settings. [Storage setup →](/memory/cli/#choose-one-storage-folder)
+
+**Missing files with `mammoth ls`?** On `AI_coded`, it lists files uploaded to
+Mammoth's selected store. Use `ls` for your computer's folder and `memory … recall`
+for saved context. [Check the export and store →](/memory/cli/#why-does-mammoth-ls-not-show-my-files)
 
 [Connect the same memory to your coding agent →](/memory/mcp/)
 

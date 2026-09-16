@@ -145,24 +145,80 @@ mammoth memory --project demo remember pagination \
   --kind decision --tag api --source src/events.rs
 ```
 
-## Optional: choose where memories are stored
+## Choose one storage folder
 
 Your **project name** groups related memories. Your **storage folder** is where
 Mammoth keeps its local database. Project names do not automatically follow your
 current directory or Git branch.
 
-By default, the database is `~/.mammoth/local/agent-memory.sqlite3`. If you have set
-the `MAMMOTH_LOCAL_ROOT` environment variable, Mammoth uses that folder instead.
-You can always choose a folder explicitly:
+Mammoth chooses its storage folder in this order:
+
+1. `--local-root PATH` on the command, if supplied.
+2. The `MAMMOTH_LOCAL_ROOT` environment variable, if set.
+3. `~/.mammoth/local` otherwise.
+
+The database is `agent-memory.sqlite3` inside that folder. In a macOS/Linux
+terminal, choose a folder once for the session:
 
 ```bash
-mammoth --local-root ./mammoth-demo memory --project demo recall
+export MAMMOTH_LOCAL_ROOT="$HOME/.mammoth/local"
+mammoth memory --project demo recall
+```
+
+**Already saved data or started a dashboard?** Use that existing store's absolute
+path in the export. Choosing a different folder opens a different store; it does
+not move or delete the previous data. Changing directories with `cd` does not
+change an absolute storage path.
+
+To keep the setting in new terminals, add that export to `~/.zshrc` for zsh or
+your Bash startup file (often `~/.bashrc` on Linux or `~/.bash_profile` on macOS).
+**If a Mammoth export already exists, update it instead of adding another.**
+Run the export in terminals that are already open; editing a startup file does
+not change their current environment.
+
+For one command, you can override the export:
+
+```bash
+mammoth --local-root /absolute/path/to/existing-store memory --project demo recall
 ```
 
 Use the same folder and project in the CLI, dashboard, and
 [MCP configuration](/memory/mcp/) to see the same memories. An absolute folder
 path is best when switching between terminals or tools. Keep the database out of
 Git; its contents stay on your machine unless you copy or sync them yourself.
+
+### Why does mammoth ls not show my files?
+
+These commands list different things:
+
+| Command | What it shows |
+| --- | --- |
+| `ls` | Files and directories in your computer's current folder. |
+| `mammoth ls /` | Files and directories uploaded to Mammoth's selected store (`AI_coded` only). |
+| `mammoth memory --project demo recall` | Recent saved context in the selected store and project. |
+
+`mammoth ls` does not browse your computer's current directory. Its `/` is the
+root of Mammoth's stored files. Memory and MCP work on both branches; the legacy
+file-storage commands are implemented on `AI_coded`.
+
+If a file is visible in the dashboard but missing in `mammoth ls`, check the
+terminal's export:
+
+```bash
+printenv MAMMOTH_LOCAL_ROOT
+```
+
+No output means the variable is unset. Check the `--local-root` used to start the
+dashboard, then list that exact store (replace the placeholder with its path):
+
+```bash
+mammoth --local-root /absolute/path/used-by-dashboard ls /
+```
+
+If your files appear, update the export to that same path, including any existing
+export in your shell startup file. MCP clients may not read your shell settings;
+give their server an explicit `--local-root` path in the
+[MCP configuration](/memory/mcp/).
 
 ## Delete a memory
 
@@ -183,6 +239,7 @@ A successful result includes `"forgotten": "testing"`.
 | `command not found: mammoth` | Complete [installation](/intro/install/), including adding Mammoth to your PATH, or use the full path to the binary. |
 | A revision conflict when saving | That key already exists or has changed. Run `get`, review its current revision, and use `--expected-revision` to update it. |
 | An empty `memories` list | Try `recall` without search text. Check that the project name and storage folder match the ones you used to save. |
+| Files visible in the dashboard are missing from `mammoth ls` | Check the [export and selected store](#why-does-mammoth-ls-not-show-my-files). |
 | `memory not found` | No memory with that exact key exists in this project and storage folder. Use `recall` to find the right key. |
 | `"truncated": true` in recall output | Some text or matching entries were left out to fit the result limit. Use `get KEY` to read a complete entry. |
 
