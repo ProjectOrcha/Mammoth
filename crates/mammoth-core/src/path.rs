@@ -15,3 +15,16 @@ pub fn normalize(path: &Path) -> Result<String> {
     let parts: Vec<_> = raw.split('/').filter(|s| !s.is_empty() && *s != ".").collect();
     Ok(format!("/{}", parts.join("/")))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn native_joined_paths_use_the_same_namespace_on_every_platform() {
+        let path = Path::new("/team").join("notes").join("memory.txt");
+        assert_eq!(normalize(&path).unwrap(), "/team/notes/memory.txt");
+        assert!(normalize(&Path::new("/team").join("..").join("secret")).is_err());
+        assert!(normalize(Path::new("a\0b")).is_err());
+    }
+}

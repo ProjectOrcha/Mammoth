@@ -109,9 +109,11 @@ async fn namespace_conflicts_rename_and_recursive_cleanup() {
     let be = open(&dir);
     be.mkdir(Path::new("/empty"), false).await.unwrap();
     assert!(be.list(Path::new("/empty")).await.unwrap().is_empty());
-    for path in ["/../escape", "a/../../escape", "a\\b"] {
+    for path in ["/../escape", "a/../../escape", "a\0b"] {
         assert!(be.write(Path::new(path), body(vec![1])).await.is_err());
     }
+    #[cfg(not(windows))]
+    assert!(be.write(Path::new("a\\b"), body(vec![1])).await.is_err());
     be.write(Path::new("/data/sub/a"), body(vec![9; 350])).await.unwrap();
     assert!(be.write(Path::new("/data/sub/a/b"), body(vec![1])).await.is_err());
     assert!(be.write(Path::new("/data/sub"), body(vec![1])).await.is_err());

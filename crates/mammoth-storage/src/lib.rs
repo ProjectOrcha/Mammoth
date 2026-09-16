@@ -109,6 +109,7 @@ impl BlockStore {
         let mut file = File::create(temp.path().join("data"))?;
         file.write_all(data)?;
         file.sync_all()?;
+        drop(file);
         let header = Header {
             version: 1,
             len: data.len() as u64,
@@ -119,6 +120,9 @@ impl BlockStore {
         let mut meta = File::create(temp.path().join("meta.json"))?;
         meta.write_all(&serde_json::to_vec(&header).map_err(invalid_data)?)?;
         meta.sync_all()?;
+        // Windows cannot rename the containing directory while these handles
+        // remain open. Both files are durable before the generation is published.
+        drop(meta);
         sync_dir(temp.path())?;
         let parent = dst.parent().expect("block parent");
         fs::create_dir_all(parent)?;

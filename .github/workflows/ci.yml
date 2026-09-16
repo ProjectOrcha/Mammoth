@@ -59,6 +59,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with: { cache-on-failure: true }
       - uses: taiki-e/install-action@nextest
       - name: Workspace tests with failure details
         shell: bash
@@ -71,7 +72,14 @@ jobs:
           from pathlib import Path
           import re
           report = re.sub(r"\x1b\[[0-9;]*m", "", Path("nextest.log").read_text(errors="replace"))
-          report = "\n".join(line for line in report.splitlines() if "Compiling " not in line)[-20000:]
+          lines = report.splitlines()
+          failures = {}
+          for i, line in enumerate(lines):
+              if "panicked at" in line:
+                  key = re.sub(r"\(\d+\)", "(process)", line)
+                  failures.setdefault(key, "\n".join(part[:500] for part in lines[i:i + 8]))
+          report = "\n\n".join(failures.values()) if failures else "\n".join(lines[-120:])
+          report = report[-20000:]
           # GitHub truncates individual annotations; keep each detail below 4 KiB.
           for offset in range(0, len(report), 2500):
               part = report[offset:offset + 2500]
