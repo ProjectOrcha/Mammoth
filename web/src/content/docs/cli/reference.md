@@ -59,17 +59,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -115,7 +115,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --project <PROJECT>
           Stable project namespace shared across sessions
@@ -123,12 +123,12 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -167,7 +167,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --title <TITLE>
 
@@ -178,7 +178,7 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --kind <KIND>
           [default: note]
@@ -187,7 +187,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -235,7 +235,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --limit <LIMIT>
           [default: 10]
@@ -243,7 +243,7 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --max-bytes <MAX_BYTES>
           [default: 16000]
@@ -251,7 +251,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -290,17 +290,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -339,7 +339,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --limit <LIMIT>
           [default: 10]
@@ -347,12 +347,12 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -391,7 +391,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --expected-revision <EXPECTED_REVISION>
 
@@ -399,12 +399,12 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -439,7 +439,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --project <PROJECT>
           Fixed project namespace. Tool calls cannot choose another project
@@ -447,7 +447,7 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --read-only
           Expose only recall, get, and history tools
@@ -455,7 +455,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -490,17 +490,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -535,17 +535,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -580,7 +580,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --role <ROLE>
           master | worker | gateway | all
@@ -588,12 +588,12 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -628,17 +628,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -673,7 +673,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --fix
           Apply the fixes that are safe to apply automatically
@@ -681,12 +681,12 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -721,17 +721,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -766,17 +766,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -811,17 +811,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -856,17 +856,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -901,17 +901,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -946,17 +946,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -991,17 +991,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1036,17 +1036,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1081,17 +1081,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1126,17 +1126,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1171,17 +1171,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1216,17 +1216,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1261,17 +1261,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1306,17 +1306,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1351,17 +1351,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1396,17 +1396,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1441,17 +1441,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1486,17 +1486,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1541,17 +1541,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1590,17 +1590,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1635,17 +1635,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1680,17 +1680,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1732,17 +1732,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1781,7 +1781,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --depth <DEPTH>
           How many levels to descend
@@ -1791,12 +1791,12 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1831,7 +1831,7 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --live
           Refresh every 2s until interrupted
@@ -1839,12 +1839,12 @@ Options:
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1879,17 +1879,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1924,17 +1924,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -1969,17 +1969,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2014,17 +2014,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2059,17 +2059,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2104,17 +2104,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2149,17 +2149,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2194,17 +2194,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2239,17 +2239,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2284,17 +2284,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2329,17 +2329,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
@@ -2378,17 +2378,17 @@ Options:
   -c, --config <CONFIG>
           Path to mammoth.toml
 
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           Master addresses, comma separated
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local memory store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           Output format
