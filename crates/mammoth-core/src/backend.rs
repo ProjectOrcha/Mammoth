@@ -28,13 +28,39 @@ pub struct ReadSnapshot {
     pub data: ByteStream,
 }
 
+/// Per-process verified-read cache counters. Resident bytes include a fixed
+/// entry bookkeeping charge, not a measurement of process RSS.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct CacheStats {
+    /// Configured budget including bookkeeping charges.
+    pub capacity_bytes: u64,
+    /// Bytes currently charged to the cache.
+    pub resident_bytes: u64,
+    /// Number of resident byte ranges.
+    pub entries: u64,
+    /// Lookups served from verified memory.
+    pub hits: u64,
+    /// Enabled-cache lookups needing storage.
+    pub misses: u64,
+    /// Entries removed to meet the budget.
+    pub evictions: u64,
+}
+
 /// Everything the CLI, the gateway and the SDK need from a Mammoth filesystem.
 ///
 /// Implementors:
 /// - `mammoth_local::LocalBackend`   — single machine, simulated workers
-/// - `mammoth_client::ClusterBackend` — real masters and workers over gRPC
+/// - `mammoth_client::ClusterBackend` — the implemented HTTP gateway client; direct-worker gRPC is planned
 #[async_trait::async_trait]
 pub trait Backend: Send + Sync {
+    /// Optional local memory-cache diagnostics. Health checks bypass this cache.
+    fn cache_stats(&self) -> Option<CacheStats> {
+        None
+    }
+    /// Drop resident cached reads. Counters remain cumulative. Intended for
+    /// controlled experiments; not an operating-system cache flush.
+    fn clear_read_cache(&self) {}
+
     /// List the direct children of a directory.
     async fn list(&self, path: &Path) -> Result<Vec<FileStatus>>;
 
@@ -46,6 +72,12 @@ pub trait Backend: Send + Sync {
 
     /// Write (or overwrite) a file from a stream of chunks.
     async fn write(&self, path: &Path, data: ByteStream) -> Result<()>;
+
+    /// Publish a new file only if the destination is still absent at commit time.
+    /// Implementations must fail closed rather than emulate this with stat + write.
+    async fn create(&self, _path: &Path, _data: ByteStream) -> Result<()> {
+        Err(crate::Error::NotImplemented("atomic create-if-absent"))
+    }
 
     /// Remove a path. Fails on a non-empty directory unless `recursive`.
     async fn remove(&self, path: &Path, recursive: bool) -> Result<()>;
@@ -93,6 +125,12 @@ pub trait Backend: Send + Sync {
     /// Opaque entity tag for conditional HTTP operations.
     async fn etag(&self, _path: &Path) -> Result<String> {
         Err(crate::Error::NotImplemented("entity tags"))
+    }
+    /// Read the final `length` bytes from the same generation as the returned
+    /// metadata, without reading the prefix. Backends may decline this optional
+    /// optimization; callers can fall back to slicing a full read snapshot.
+    async fn open_read_suffix(&self, _path: &Path, _length: u64) -> Result<ReadSnapshot> {
+        Err(crate::Error::NotImplemented("atomic suffix reads"))
     }
     /// Open metadata and a byte stream from the same committed generation.
     async fn open_read(&self, _path: &Path, _range: Range<u64>) -> Result<ReadSnapshot> {

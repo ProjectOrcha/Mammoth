@@ -167,6 +167,12 @@ async fn remote_backend_roundtrip_over_tcp_and_live_events() {
     }
     assert_eq!(got, payload[1024..2048]);
     assert_eq!(remote.stat(Path::new("/remote #.bin")).await.unwrap().len, payload.len() as u64);
+    assert_eq!(
+        remote.create(Path::new("/remote #.bin"), body("replacement")).await.unwrap_err().code(),
+        "E0103"
+    );
+    remote.create(Path::new("/created"), body("atomic")).await.unwrap();
+    remote.remove(Path::new("/created"), false).await.unwrap();
     remote.rename(Path::new("/remote #.bin"), Path::new("/renamed")).await.unwrap();
     remote.remove(Path::new("/renamed"), false).await.unwrap();
     assert!(be.list(Path::new("/")).await.unwrap().is_empty());
@@ -238,6 +244,10 @@ async fn dashboard_jobs_complete_report_failures_and_protect_existing_outputs() 
     let finished = finished.expect("job must finish");
     assert_eq!(finished["id"], accepted["id"]);
     assert_eq!(finished["state"], "succeeded");
+    assert_eq!(finished["metrics"]["mode"], "memory");
+    assert_eq!(finished["metrics"]["input_records"], 3);
+    assert_eq!(finished["metrics"]["output_records"], 2);
+    assert_eq!(finished["metrics"]["spill_runs"], 0);
     assert_eq!(finished["stages"][0]["done"], 1);
     assert_eq!(finished["tasks"][0]["state"], "done");
     assert!(finished["tasks"][0]["dur_s"].as_f64().unwrap() >= 0.0);
@@ -334,4 +344,189 @@ async fn file_filters_apply_before_pagination_and_management_changes_real_data()
         StatusCode::OK
     );
     assert!(be.stat(Path::new("/files")).await.is_err());
+}
+
+#[tokio::test]
+async fn benchmark_api_persists_history_and_configuration_is_a_validated_draft() {
+    let dir = tempfile::tempdir().unwrap();
+    let be = Arc::new(LocalBackend::open(dir.path().join("store")).unwrap());
+    be.write(Path::new("/keep"), body(b"untouched".to_vec())).await.unwrap();
+    let mut config = mammoth_core::config::Config::default();
+    config.storage.replication = 2;
+    let directory = dir.path().join("benchmarks");
+    let dashboard = mammoth_gateway::Dashboard::new(config.clone(), directory.clone());
+    let app = mammoth_gateway::router_with_dashboard(be.clone(), dashboard.clone());
+    let (_, _, original) = request(app.clone(), "GET", "/api/v1/configuration", b"").await;
+    let original: serde_json::Value = serde_json::from_slice(&original).unwrap();
+    assert_eq!(original["settings"]["replication"], 2);
+    let mut settings = original["settings"].clone();
+    settings["replication"] = serde_json::json!(0);
+    assert_eq!(
+        request(
+            app.clone(),
+            "POST",
+            "/api/v1/configuration/validate",
+            settings.to_string().as_bytes()
+        )
+        .await
+        .0,
+        400
+    );
+    settings["replication"] = serde_json::json!(3);
+    settings["read_cache_size"] = serde_json::json!("8MiB");
+    settings["compute_memory_budget"] = serde_json::json!("64KiB");
+    settings["spill_directory"] = serde_json::json!(dir.path().to_string_lossy());
+    let (status, _, draft) = request(
+        app.clone(),
+        "POST",
+        "/api/v1/configuration/validate",
+        settings.to_string().as_bytes(),
+    )
+    .await;
+    assert_eq!(status, 200);
+    let draft: serde_json::Value = serde_json::from_slice(&draft).unwrap();
+    let parsed: mammoth_core::config::Config =
+        toml::from_str(draft["toml"].as_str().unwrap()).unwrap();
+    parsed.validate().unwrap();
+    assert_eq!(parsed.storage.replication, 3);
+    assert_eq!(parsed.read.cache_size, "8MiB");
+    assert_eq!(parsed.compute.memory_budget, "64KiB");
+    assert_eq!(parsed.compute.spill_directory, dir.path().to_string_lossy());
+    let (_, _, current) = request(app.clone(), "GET", "/api/v1/configuration", b"").await;
+    assert_eq!(serde_json::from_slice::<serde_json::Value>(&current).unwrap(), original);
+
+    let invalid = br#"{"concurrency":0}"#;
+    assert_eq!(request(app.clone(), "POST", "/api/v1/benchmarks", invalid).await.0, 400);
+    let options = br#"{"file_size":65539,"files":2,"operations":3,"iterations":1,"warmups":0,"replications":[1,3]}"#;
+    assert_eq!(request(app.clone(), "POST", "/api/v1/benchmarks", options).await.0, 202);
+    assert_eq!(request(app.clone(), "POST", "/api/v1/benchmarks", options).await.0, 400);
+    tokio::time::timeout(std::time::Duration::from_secs(30), dashboard.wait_idle()).await.unwrap();
+    let restarted = mammoth_gateway::router_with_dashboard(
+        be.clone(),
+        mammoth_gateway::Dashboard::new(config, directory),
+    );
+    let (_, _, data) = request(restarted, "GET", "/api/v1/benchmarks", b"").await;
+    let state: serde_json::Value = serde_json::from_slice(&data).unwrap();
+    assert_eq!(state["reports"].as_array().unwrap().len(), 1);
+    assert_eq!(state["reports"][0]["verified"], true);
+    assert_eq!(be.list(Path::new("/")).await.unwrap().len(), 1);
+    assert_eq!(be.stat(Path::new("/keep")).await.unwrap().len, 9);
+}
+
+#[tokio::test]
+async fn s3_ranges_do_not_scan_a_corrupt_prefix() {
+    use std::io::{Seek, SeekFrom, Write};
+    let dir = tempfile::tempdir().unwrap();
+    let be = Arc::new(
+        LocalBackend::open(dir.path())
+            .unwrap()
+            .with_block_size(256 * 1024)
+            .with_inline_threshold(0),
+    );
+    let data = vec![42; 200_000];
+    be.write(Path::new("/bucket/object"), body(data)).await.unwrap();
+    let block = be.block_layout(Path::new("/bucket/object")).await.unwrap().remove(0);
+    for replica in &block.replicas {
+        let path = dir
+            .path()
+            .join("workers")
+            .join(&replica.node.0)
+            .join("blocks")
+            .join(format!("{:02x}", (block.id.0 >> 8) & 255))
+            .join(format!("{:02x}", block.id.0 & 255))
+            .join(format!("blk_{:016x}", block.id.0))
+            .join("data");
+        let mut file = std::fs::OpenOptions::new().write(true).open(path).unwrap();
+        file.seek(SeekFrom::Start(0)).unwrap();
+        file.write_all(&[0]).unwrap();
+    }
+    let app = mammoth_gateway::s3::router(be);
+    for range in ["bytes=-100", "bytes=199900-199999", "bytes=199900-"] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/bucket/object")
+                    .header("range", range)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::PARTIAL_CONTENT);
+        assert_eq!(response.headers()["content-range"], "bytes 199900-199999/200000");
+        assert_eq!(&response.into_body().collect().await.unwrap().to_bytes()[..], &[42; 100]);
+    }
+}
+
+#[tokio::test]
+async fn browser_guards_block_foreign_mutations_and_rebinding_without_blocking_clients() {
+    let dir = tempfile::tempdir().unwrap();
+    let be = Arc::new(LocalBackend::open(dir.path()).unwrap());
+    be.write(Path::new("/keep"), body("original")).await.unwrap();
+    for (origin, host, site) in [
+        (Some("https://foreign.example"), "127.0.0.1:8080", "cross-site"),
+        (Some("null"), "127.0.0.1:8080", "same-origin"),
+        (Some("http://127.0.0.1:8081"), "127.0.0.1:8080", "same-site"),
+        (Some("http://rebind.example:8080"), "rebind.example:8080", "same-origin"),
+        (None, "127.0.0.1:8080", "cross-site"),
+    ] {
+        let mut request = Request::builder()
+            .method("POST")
+            .uri("/api/v1/fs/rename?path=/keep&to=/lost")
+            .header("host", host)
+            .header("sec-fetch-site", site);
+        if let Some(origin) = origin {
+            request = request.header("origin", origin);
+        }
+        let response = mammoth_gateway::router(be.clone())
+            .oneshot(request.body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), 403);
+        assert_eq!(response.headers()["x-content-type-options"], "nosniff");
+        assert!(be.stat(Path::new("/keep")).await.is_ok());
+    }
+    for host in ["localhost:8080", "127.0.0.1:8080", "[::1]:8080"] {
+        let response = mammoth_gateway::router(be.clone())
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/v1/fs/attributes?path=/keep&mode=420")
+                    .header("host", host)
+                    .header("origin", format!("http://{host}"))
+                    .header("sec-fetch-site", "same-origin")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), 200, "{host}");
+    }
+    let response = mammoth_gateway::s3::router(be.clone())
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri("/bucket")
+                .header("host", "localhost:9000")
+                .header("origin", "https://foreign.example")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 403);
+    assert!(be.stat(Path::new("/bucket")).await.is_err());
+    assert_eq!(request(mammoth_gateway::router(be.clone()), "GET", "/readyz", b"").await.0, 200);
+    assert_eq!(
+        request(
+            mammoth_gateway::router(be),
+            "PUT",
+            "/api/v1/fs/data?path=/keep&create=true",
+            b"overwrite"
+        )
+        .await
+        .0,
+        409
+    );
 }

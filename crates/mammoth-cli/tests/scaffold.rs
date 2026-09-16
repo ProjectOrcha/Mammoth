@@ -77,6 +77,64 @@ fn tree_transfer_roundtrip_and_invalid_upload_options() {
     assert!(!run(&store, &["stat", "/invalid"]).status.success());
 }
 
+#[test]
+fn put_checks_for_empty_sources_without_losing_streamed_bytes() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = dir.path().join("store");
+    let source = dir.path().join("binary.pt");
+    let payload: Vec<u8> = (0..3 * 1024 * 1024 + 17).map(|i| (i % 251) as u8).collect();
+    std::fs::write(&source, &payload).unwrap();
+    let out = run(&store, &["put", source.to_str().unwrap(), "/binary.pt", "--json"]);
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let stat: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(stat["len"], payload.len());
+    let downloaded = dir.path().join("download.pt");
+    assert!(run(&store, &["get", "/binary.pt", downloaded.to_str().unwrap()]).status.success());
+    assert_eq!(std::fs::read(downloaded).unwrap(), payload);
+
+    std::fs::write(&source, []).unwrap();
+    for target in ["/binary.pt", "/new.pt"] {
+        let out = run(&store, &["put", source.to_str().unwrap(), target, "--json"]);
+        assert!(!out.status.success());
+        assert!(out.stdout.is_empty());
+        let error: serde_json::Value = serde_json::from_slice(&out.stderr).unwrap();
+        assert!(error["message"].as_str().unwrap().contains("empty (0 bytes)"));
+        assert!(error["message"].as_str().unwrap().contains("--allow-empty"));
+    }
+    assert_eq!(run(&store, &["cat", "/binary.pt"]).stdout, payload);
+    assert!(!run(&store, &["stat", "/new.pt"]).status.success());
+
+    let out =
+        run(&store, &["put", source.to_str().unwrap(), "/binary.pt", "--allow-empty", "--json"]);
+    assert!(out.status.success());
+    let stat: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(stat["len"], 0);
+    assert!(run(&store, &["cat", "/binary.pt"]).stdout.is_empty());
+}
+
+#[test]
+fn put_checks_empty_stdin_and_preserves_nonempty_stdin() {
+    use std::{io::Write, process::Stdio};
+    let dir = tempfile::tempdir().unwrap();
+    let mut child = Command::new(env!("CARGO_BIN_EXE_mammoth"))
+        .arg("--local-root")
+        .arg(dir.path())
+        .args(["put", "-", "/stdin"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child.stdin.take().unwrap().write_all(b"streamed bytes\0\xff").unwrap();
+    assert!(child.wait_with_output().unwrap().status.success());
+    assert_eq!(run(dir.path(), &["cat", "/stdin"]).stdout, b"streamed bytes\0\xff");
+    // Command::output closes stdin, so this is an immediate EOF.
+    assert!(!run(dir.path(), &["put", "-", "/stdin"]).status.success());
+    assert_eq!(run(dir.path(), &["cat", "/stdin"]).stdout, b"streamed bytes\0\xff");
+    assert!(run(dir.path(), &["put", "-", "/stdin", "--allow-empty"]).status.success());
+    assert!(run(dir.path(), &["cat", "/stdin"]).stdout.is_empty());
+}
+
 #[cfg(unix)]
 #[test]
 fn migration_rejects_source_symlinks() {
@@ -89,4 +147,32 @@ fn migration_rejects_source_symlinks() {
     let out = run(&store, &["migrate", "import", link.to_str().unwrap(), "/linked"]);
     assert!(!out.status.success());
     assert!(!run(&store, &["stat", "/linked"]).status.success());
+}
+
+#[test]
+fn local_service_rejects_unimplemented_security_before_creating_a_store() {
+    let dir = tempfile::tempdir().unwrap();
+    for setting in ["auth = \"token\"", "tls = \"required\""] {
+        let config = dir.path().join("bad.toml");
+        std::fs::write(&config, format!("[security]\n{setting}\n")).unwrap();
+        let root = dir.path().join("untouched");
+        let out = run(&root, &["--config", config.to_str().unwrap(), "serve", "--json"]);
+        assert!(!out.status.success());
+        assert!(String::from_utf8_lossy(&out.stderr).contains("not implemented"));
+        assert!(!root.exists());
+    }
+}
+
+#[test]
+fn cli_jobs_preserve_existing_outputs_without_overwrite() {
+    let dir = tempfile::tempdir().unwrap();
+    let source = dir.path().join("input");
+    let root = dir.path().join("store");
+    std::fs::write(&source, b"b\na\n").unwrap();
+    assert!(run(&root, &["put", source.to_str().unwrap(), "/in"]).status.success());
+    assert!(run(&root, &["job", "sort", "/in", "/out"]).status.success());
+    assert!(!run(&root, &["job", "wordcount", "/in", "/out"]).status.success());
+    assert_eq!(run(&root, &["cat", "/out"]).stdout, b"a\nb\n");
+    assert!(run(&root, &["job", "wordcount", "/in", "/out", "--overwrite"]).status.success());
+    assert_eq!(run(&root, &["cat", "/out"]).stdout, b"a\t1\nb\t1\n");
 }

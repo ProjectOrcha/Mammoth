@@ -186,7 +186,7 @@ cargo fmt --all --check
 ./target/debug/mammoth --version
 ```
 
-That prints `mammoth 0.1.0`. Finally, build the sixteen teaching examples — they
+That prints `mammoth 0.1.0`. Finally, build the seventeen teaching examples — they
 are the fastest way to check that colour, Unicode and your terminal all behave:
 
 ```bash

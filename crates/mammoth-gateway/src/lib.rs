@@ -1,6 +1,9 @@
 //! HTTP filesystem API, dashboard adapters, SSE and an embedded dashboard.
 #![forbid(unsafe_code)]
+mod browser;
+mod dashboard;
 mod jobs;
+pub use dashboard::Dashboard;
 pub mod s3;
 use axum::{
     body::Body,
@@ -29,6 +32,7 @@ use std::{
 pub struct Gateway {
     pub backend: Arc<dyn Backend>,
     pub jobs: jobs::JobStore,
+    pub dashboard: Dashboard,
 }
 include!(concat!(env!("OUT_DIR"), "/assets.rs"));
 
@@ -61,15 +65,21 @@ impl IntoResponse for ApiError {
 
 pub fn router(backend: Arc<dyn Backend>) -> Router {
     let (stop, _) = tokio::sync::watch::channel(false);
-    service_router(backend, jobs::JobStore::default(), stop)
+    service_router(backend, jobs::JobStore::default(), Dashboard::default(), stop)
+}
+pub fn router_with_dashboard(backend: Arc<dyn Backend>, dashboard: Dashboard) -> Router {
+    let (stop, _) = tokio::sync::watch::channel(false);
+    service_router(backend, jobs::JobStore::default(), dashboard, stop)
 }
 fn service_router(
     backend: Arc<dyn Backend>,
     jobs: jobs::JobStore,
+    dashboard: Dashboard,
     stop: tokio::sync::watch::Sender<bool>,
 ) -> Router {
     Router::new()
         .route("/healthz", get(|| async { Json(json!({"status":"ok"})) }))
+        .route("/readyz", get(readiness))
         .route("/api/v1/events", get(events))
         .route("/api/v1/*op", any(api))
         .route("/api", any(api_not_found))
@@ -77,8 +87,19 @@ fn service_router(
         .fallback(static_file)
         .layer(DefaultBodyLimit::disable())
         .layer(Extension(stop))
-        .with_state(Gateway { backend, jobs })
+        .layer(axum::middleware::from_fn(browser::guard))
+        .with_state(Gateway { backend, jobs, dashboard })
 }
+/// A cheap namespace probe, distinct from a full replica health scan.
+async fn readiness(State(state): State<Gateway>) -> Response {
+    match state.backend.stat(Path::new("/")).await {
+        Ok(root) if root.is_dir => Json(json!({"status":"ready"})).into_response(),
+        _ => {
+            (StatusCode::SERVICE_UNAVAILABLE, Json(json!({"status":"unavailable"}))).into_response()
+        }
+    }
+}
+
 async fn api_not_found() -> Response {
     (StatusCode::NOT_FOUND, Json(json!({"code":"E0101","message":"unknown API endpoint"})))
         .into_response()
@@ -91,7 +112,7 @@ async fn report(be: &dyn Backend) -> Result<Value> {
     let core = be.cluster_report().await?;
     let nodes: Vec<_> = core.nodes.iter().map(|n|json!({"id":n.id,"rack":n.rack,"address":n.address,"state":n.state,"used":n.used,"capacity":n.capacity,"fragments":n.blocks,"volumes":n.volumes,"disk_p99_ms":null,"read_bps":null,"write_bps":null,"read_series":[]})).collect();
     Ok(
-        json!({"name":core.name,"leader":core.leader,"safe_mode":core.safe_mode,"used":core.used,"capacity":core.capacity,"topology_epoch":1,"placement":"rendezvous","nodes":nodes,"health":core.health,"capabilities":{"local":true,"distributed_metrics":false,"history":false,"jobs":true},"read_path":null,"write_path":null,"repair":null,"start":null,"throughput":null,"alerts":[],"raft":[],"raft_index":null,"snapshot_age_s":null}),
+        json!({"name":core.name,"leader":core.leader,"safe_mode":core.safe_mode,"used":core.used,"capacity":core.capacity,"topology_epoch":1,"placement":"rendezvous","nodes":nodes,"health":core.health,"capabilities":{"local":true,"distributed_metrics":false,"history":false,"jobs":true},"memory_cache":be.cache_stats(),"read_path":null,"write_path":null,"repair":null,"start":null,"throughput":null,"alerts":[],"raft":[],"raft_index":null,"snapshot_age_s":null}),
     )
 }
 async fn blocks(be: &dyn Backend, path: &Path) -> Result<Value> {
@@ -184,7 +205,31 @@ async fn api(
         return Err(Error::NotImplemented("historical replay").into());
     }
     let value = match (method.as_str(), op.as_str()) {
-        ("GET", "cluster/report") => report(be).await?,
+        ("GET", "cluster/report") => {
+            let mut value = report(be).await?;
+            value["capabilities"]["benchmarks"] = json!(state.dashboard.available());
+            value["capabilities"]["configuration"] = json!(state.dashboard.available());
+            value
+        }
+        ("GET", "benchmarks") => state.dashboard.list().await?,
+        ("POST", "benchmarks") => {
+            let bytes = axum::body::to_bytes(body, 64 * 1024)
+                .await
+                .map_err(|e| Error::InvalidInput(e.to_string()))?;
+            let options =
+                serde_json::from_slice(&bytes).map_err(|e| Error::InvalidInput(e.to_string()))?;
+            let value = state.dashboard.submit(options).await?;
+            return Ok((StatusCode::ACCEPTED, Json(value)).into_response());
+        }
+        ("GET", "configuration") => state.dashboard.configuration(None)?,
+        ("POST", "configuration/validate") => {
+            let bytes = axum::body::to_bytes(body, 64 * 1024)
+                .await
+                .map_err(|e| Error::InvalidInput(e.to_string()))?;
+            let settings =
+                serde_json::from_slice(&bytes).map_err(|e| Error::InvalidInput(e.to_string()))?;
+            state.dashboard.configuration(Some(settings))?
+        }
         ("GET", "core/report") => serde_json::to_value(be.cluster_report().await?)
             .map_err(|e| Error::InvalidInput(e.to_string()))?,
         ("GET", "core/etag") => json!(be.etag(&path).await?),
@@ -246,14 +291,14 @@ async fn api(
                 .into_response());
         }
         ("PUT", "fs/data") => {
-            be.write(
-                &path,
-                Box::pin(
-                    body.into_data_stream()
-                        .map(|r| r.map_err(|e| Error::Io(std::io::Error::other(e)))),
-                ),
-            )
-            .await?;
+            let data = Box::pin(
+                body.into_data_stream().map(|r| r.map_err(|e| Error::Io(std::io::Error::other(e)))),
+            );
+            match param(&q, "create", "false") {
+                "true" => be.create(&path, data).await?,
+                "false" => be.write(&path, data).await?,
+                _ => return Err(Error::InvalidInput("create must be true or false".into()).into()),
+            }
             json!({"ok":true})
         }
         ("PUT", "fs/directory") => {
@@ -401,11 +446,21 @@ pub async fn serve_with_shutdown(
     s3_listener: tokio::net::TcpListener,
     shutdown: impl std::future::Future<Output = ()> + Send + 'static,
 ) -> Result<()> {
+    serve_configured_with_shutdown(backend, ui, s3_listener, Dashboard::default(), shutdown).await
+}
+
+pub async fn serve_configured_with_shutdown(
+    backend: Arc<dyn Backend>,
+    ui: tokio::net::TcpListener,
+    s3_listener: tokio::net::TcpListener,
+    dashboard: Dashboard,
+    shutdown: impl std::future::Future<Output = ()> + Send + 'static,
+) -> Result<()> {
     let (stop, _) = tokio::sync::watch::channel(false);
     let a = stop.subscribe();
     let b = stop.subscribe();
     let jobs = jobs::JobStore::default();
-    let app = service_router(backend.clone(), jobs.clone(), stop.clone());
+    let app = service_router(backend.clone(), jobs.clone(), dashboard.clone(), stop.clone());
     let signal = tokio::spawn(async move {
         shutdown.await;
         let _ = stop.send(true);
@@ -417,5 +472,6 @@ pub async fn serve_with_shutdown(
     signal.abort();
     result?;
     jobs.wait_idle().await;
+    dashboard.wait_idle().await;
     Ok(())
 }

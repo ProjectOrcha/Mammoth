@@ -1,5 +1,6 @@
 ---
 import { withBase } from '../lib/links';
+import BenchmarkEvidence from './BenchmarkEvidence.astro';
 const repository = 'https://github.com/ProjectOrcha/Mammoth';
 const paths = [
     {
@@ -31,16 +32,25 @@ const paths = [
 
 <div class="mm-homepage">
     <aside class="mm-development not-content" aria-label="Project availability">
-        <span class="mm-development-badge">In development</span>
+        <span class="mm-development-badge">Local preview</span>
         <p>
             <strong>Explore what works today.</strong> The local storage service, live dashboard, S3 subset,
-            Rust examples and guides are ready on AI_coded. Distributed services
-            and high availability remain in development.
+            benchmarks and configuration are available on AI_coded. Authentication,
+            distributed services and high availability remain unfinished.
         </p>
-        <a href={`${repository}/blob/main/docs/ROADMAP.md`}
-            >Roadmap <span aria-hidden="true">↗</span></a
+        <a href={withBase('/ops/local-service/')}
+            >Operating guide <span aria-hidden="true">↗</span></a
         >
     </aside>
+
+    <section class="mm-home-section not-content" aria-labelledby="measured-performance">
+        <div class="mm-section-heading">
+            <div><p class="mm-label">Evidence, in the open</p><h2 id="measured-performance">Measured on Mac. Compared in the open.</h2></div>
+            <a href={withBase('/ops/benchmarks/')}>Benchmark method →</a>
+        </div>
+        <p>Our local benchmark suite compares storage I/O, cached reads, metadata and parallel text jobs, with repeatable settings, exact validation and downloadable results.</p>
+        <BenchmarkEvidence compact />
+    </section>
 
     <section
         class="mm-home-section not-content"
@@ -93,7 +103,8 @@ const paths = [
                 Make it real.<br /><span>Run it locally.</span>
             </h2><p>
                 The dashboard is the quickest way to explore Mammoth. Browse
-                files, upload data, and inspect its replicated blocks.
+                files, upload data, inspect replicated blocks, run benchmarks,
+                and prepare your storage configuration.
             </p><ul>
                 <li>No cluster setup for the demo</li><li>
                     Example data included

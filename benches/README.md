@@ -1,11 +1,10 @@
 # Micro-benchmarks
 
-`criterion` benchmarks for the hot paths. Regressions here are cheap to catch
-and expensive to find later.
+Criterion hot-path benchmarks are planned; there are no Criterion targets here
+yet. The implemented end-to-end suite is in [bench-suite](../bench-suite/README.md).
 
 ```bash
-cargo bench
-cargo flamegraph --bin mammoth -- bench dfsio --write --size 10GB
+cargo run --release -p mammoth-cli -- bench dfsio --size 16MiB --files 8
 tokio-console     # find async tasks that stall the runtime
 ```
 

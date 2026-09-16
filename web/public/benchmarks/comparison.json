@@ -1,0 +1,373 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-16",
+  "verified": true,
+  "scope": "same-Mac local workload comparison",
+  "machine": "Apple M5 Pro · 18 logical cores · 48 GiB · macOS 26.6.2",
+  "versions": {
+    "mammoth": "local-memory-parallel-v3",
+    "hdfs": "3.5.0",
+    "spark": "4.2.0"
+  },
+  "rows": [
+    {
+      "phase": "write",
+      "label": "Write",
+      "replication": 1,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 229.36591523943875,
+        "min": 224.1169049805605,
+        "max": 235.2373986238458,
+        "median_p99_ms": 166.222125
+      },
+      "hdfs": {
+        "median": 160.06709492401157,
+        "min": 158.8143354484483,
+        "max": 172.45411540297428,
+        "median_p99_ms": 216.86645900000002
+      },
+      "spark": null
+    },
+    {
+      "phase": "read",
+      "label": "Read · empty Mammoth cache",
+      "replication": 1,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 9985.11282085366,
+        "min": 9769.065399618885,
+        "max": 10344.82702883475,
+        "median_p99_ms": 3.325208
+      },
+      "hdfs": {
+        "median": 3084.938280507461,
+        "min": 2869.0438817123695,
+        "max": 3145.8906802988595,
+        "median_p99_ms": 11.964292
+      },
+      "spark": null
+    },
+    {
+      "phase": "read_cached",
+      "label": "Repeated read*",
+      "replication": 1,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 17892.713611742092,
+        "min": 17428.600605916192,
+        "max": 18094.005710355115,
+        "median_p99_ms": 1.8103749999999998
+      },
+      "hdfs": {
+        "median": 3665.9673642983466,
+        "min": 3408.440267377227,
+        "max": 3715.943307014197,
+        "median_p99_ms": 8.925042
+      },
+      "spark": null
+    },
+    {
+      "phase": "sort",
+      "label": "Line sort",
+      "replication": 1,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 157.15351863501743,
+        "min": 145.84251920432482,
+        "max": 157.80324245200975,
+        "median_p99_ms": 229.006708
+      },
+      "hdfs": null,
+      "spark": {
+        "median": 47.517181124560594,
+        "min": 37.45238343455728,
+        "max": 47.67825858335187,
+        "median_p99_ms": 984.904334
+      }
+    },
+    {
+      "phase": "wordcount",
+      "label": "Word count",
+      "replication": 1,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 178.8195635060131,
+        "min": 175.84707599649062,
+        "max": 184.20826769183583,
+        "median_p99_ms": 180.719
+      },
+      "hdfs": null,
+      "spark": {
+        "median": 41.3114742036697,
+        "min": 40.87994526668573,
+        "max": 53.70091558247351,
+        "median_p99_ms": 947.0967919999999
+      }
+    },
+    {
+      "phase": "create",
+      "label": "Create empty file",
+      "replication": 1,
+      "unit": "ops/s",
+      "mammoth": {
+        "median": 4949.489470060142,
+        "min": 4805.175135179187,
+        "max": 8721.817626793423,
+        "median_p99_ms": 21.185958000000003
+      },
+      "hdfs": {
+        "median": 290.5997342828679,
+        "min": 289.75509309879675,
+        "max": 294.57365877892033,
+        "median_p99_ms": 17.943375
+      },
+      "spark": null
+    },
+    {
+      "phase": "stat",
+      "label": "Stat",
+      "replication": 1,
+      "unit": "ops/s",
+      "mammoth": {
+        "median": 219659.52773201538,
+        "min": 201333.83666792503,
+        "max": 223724.1570633072,
+        "median_p99_ms": 0.049708
+      },
+      "hdfs": {
+        "median": 22787.802828536027,
+        "min": 22218.72400756459,
+        "max": 26508.794425094497,
+        "median_p99_ms": 0.393708
+      },
+      "spark": null
+    },
+    {
+      "phase": "rename",
+      "label": "Rename",
+      "replication": 1,
+      "unit": "ops/s",
+      "mammoth": {
+        "median": 8829.420972753202,
+        "min": 4825.294192155278,
+        "max": 9303.85833796433,
+        "median_p99_ms": 10.144084
+      },
+      "hdfs": {
+        "median": 584.5299757931523,
+        "min": 577.9421862758236,
+        "max": 614.5271137044156,
+        "median_p99_ms": 11.100083
+      },
+      "spark": null
+    },
+    {
+      "phase": "delete",
+      "label": "Delete",
+      "replication": 1,
+      "unit": "ops/s",
+      "mammoth": {
+        "median": 8818.957690036303,
+        "min": 4807.581479071192,
+        "max": 9004.496620499862,
+        "median_p99_ms": 10.008750000000001
+      },
+      "hdfs": {
+        "median": 549.6500618528086,
+        "min": 515.7192291151704,
+        "max": 641.2183147981165,
+        "median_p99_ms": 8.974
+      },
+      "spark": null
+    },
+    {
+      "phase": "write",
+      "label": "Write",
+      "replication": 3,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 124.17791768886516,
+        "min": 112.2351268105591,
+        "max": 124.20268908525205,
+        "median_p99_ms": 297.284458
+      },
+      "hdfs": {
+        "median": 80.50584934683044,
+        "min": 78.42065698130709,
+        "max": 87.28207534169105,
+        "median_p99_ms": 415.9325
+      },
+      "spark": null
+    },
+    {
+      "phase": "read",
+      "label": "Read · empty Mammoth cache",
+      "replication": 3,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 10220.851847315165,
+        "min": 9898.501691638472,
+        "max": 10299.116931185003,
+        "median_p99_ms": 3.211417
+      },
+      "hdfs": {
+        "median": 3037.9207027697908,
+        "min": 3000.216765661319,
+        "max": 3271.2310562498405,
+        "median_p99_ms": 10.975333000000001
+      },
+      "spark": null
+    },
+    {
+      "phase": "read_cached",
+      "label": "Repeated read*",
+      "replication": 3,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 18810.85421558591,
+        "min": 18167.624725001777,
+        "max": 19058.49259830683,
+        "median_p99_ms": 1.731083
+      },
+      "hdfs": {
+        "median": 3642.8143153950914,
+        "min": 3361.1533545649686,
+        "max": 3669.7687489488835,
+        "median_p99_ms": 9.31525
+      },
+      "spark": null
+    },
+    {
+      "phase": "sort",
+      "label": "Line sort",
+      "replication": 3,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 95.43218248907033,
+        "min": 93.72586121436103,
+        "max": 96.27363856639316,
+        "median_p99_ms": 355.34062500000005
+      },
+      "hdfs": null,
+      "spark": {
+        "median": 30.585840780400265,
+        "min": 29.232394919689085,
+        "max": 33.18944746757434,
+        "median_p99_ms": 1094.922458
+      }
+    },
+    {
+      "phase": "wordcount",
+      "label": "Word count",
+      "replication": 3,
+      "unit": "MiB/s",
+      "mammoth": {
+        "median": 131.0575488372215,
+        "min": 126.59220426629734,
+        "max": 141.54086863086658,
+        "median_p99_ms": 255.43191599999997
+      },
+      "hdfs": null,
+      "spark": {
+        "median": 41.5019341241608,
+        "min": 39.54182043600073,
+        "max": 43.005579237275576,
+        "median_p99_ms": 782.1208330000001
+      }
+    },
+    {
+      "phase": "create",
+      "label": "Create empty file",
+      "replication": 3,
+      "unit": "ops/s",
+      "mammoth": {
+        "median": 3086.0744746922605,
+        "min": 2125.4370908241353,
+        "max": 4956.455555363906,
+        "median_p99_ms": 22.809292
+      },
+      "hdfs": {
+        "median": 302.4560567530844,
+        "min": 298.4773547857525,
+        "max": 308.07568418314406,
+        "median_p99_ms": 18.821209
+      },
+      "spark": null
+    },
+    {
+      "phase": "stat",
+      "label": "Stat",
+      "replication": 3,
+      "unit": "ops/s",
+      "mammoth": {
+        "median": 164795.55052013593,
+        "min": 130247.17005461264,
+        "max": 200677.28583970905,
+        "median_p99_ms": 0.067916
+      },
+      "hdfs": {
+        "median": 20989.019384618743,
+        "min": 17272.64876068745,
+        "max": 23687.32540960715,
+        "median_p99_ms": 0.3945
+      },
+      "spark": null
+    },
+    {
+      "phase": "rename",
+      "label": "Rename",
+      "replication": 3,
+      "unit": "ops/s",
+      "mammoth": {
+        "median": 4822.739137871236,
+        "min": 4816.037365900149,
+        "max": 4945.838004368214,
+        "median_p99_ms": 20.826833
+      },
+      "hdfs": {
+        "median": 633.3169036151141,
+        "min": 632.7094159419837,
+        "max": 642.4217594057403,
+        "median_p99_ms": 8.179
+      },
+      "spark": null
+    },
+    {
+      "phase": "delete",
+      "label": "Delete",
+      "replication": 3,
+      "unit": "ops/s",
+      "mammoth": {
+        "median": 4822.385513553917,
+        "min": 4800.168044282894,
+        "max": 4822.811939054222,
+        "median_p99_ms": 10.138875
+      },
+      "hdfs": {
+        "median": 569.7812248351671,
+        "min": 563.2249981783191,
+        "max": 651.7790383807192,
+        "median_p99_ms": 9.086625
+      },
+      "spark": null
+    }
+  ],
+  "caveats": [
+    "The source manifest identifies the measured build. Later code changes require new measurements; this snapshot does not certify the current branch head.",
+    "Single physical Mac. These are small same-host workloads, not a physical distributed cluster or an overall winner.",
+    "Mammoth uses direct local backend calls and six worker directories. HDFS uses a Java RPC client, one NameNode and six DataNode JVMs over loopback. Spark runs local[18] on HDFS, with four partitions per job and four concurrent per-file jobs; it is the compute comparison, not a storage alternative.",
+    "Eight 8 MiB files, four clients, 4 MiB blocks, seed 42, one and three replicas; 200 empty files per metadata phase. Median of three measured iterations after one excluded warmup. Engine groups run sequentially; service startup, setup, compute validation, layout checks and cleanup are excluded. Read byte-count and checksum verification are timed. All measured runs are retained.",
+    "OS caches stay warm. The first read clears only Mammoth’s application cache. Repeated read* reuses Mammoth’s verified memory cache; HDFS performs a second normal read. Neither measures cold storage bandwidth. Logical MiB/s can exceed SSD bandwidth.",
+    "Memory policies differ: Mammoth has a 256 MiB read cache and a 32 MiB accounting target per job; Spark has a 1 GiB driver heap, and each HDFS daemon a 512 MiB heap. These are not equivalent RSS limits. CPU, peak RSS and network saturation were not measured.",
+    "Compute uses 335,544 fixed 25-byte records per file, 4,096 numeric keys and three repeated words. Outputs have identical logical records, but Mammoth writes one file per job and Spark writes four part files plus commit markers. This is not TeraSort, HiBench or Hadoop MapReduce.",
+    "Writes wait for requested replicas. Mammoth syncs replica files and SQLite WAL metadata. HDFS uses hsync and DataNode sync-on-close; Spark uses an explicit replicated, synced text output writer. Replica placement and all output records/checksums are verified. These checks do not constitute a crash-durability test.",
+    "No native Hadoop library is available in this Mac distribution, so Hadoop uses Java fallbacks. Do not extrapolate these results to tuned Linux clusters. Empty metadata files do not exercise replication."
+  ],
+  "artifacts": {
+    "mammoth": "2026-09-16-mac-mammoth.json",
+    "hdfs": "2026-09-16-mac-hdfs.json",
+    "spark": "2026-09-16-mac-spark.json",
+    "environment": "2026-09-16-mac-environment.json"
+  }
+}

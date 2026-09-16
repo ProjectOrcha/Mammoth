@@ -1,0 +1,27 @@
+name: Linux storage benchmark
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    # A shared runner provides repeatability artifacts, not a dedicated-hardware
+    # comparison or evidence of distributed scaling.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Collect verified Linux results
+        run: python3 bench-suite/run_linux.py --output "$RUNNER_TEMP/mammoth-linux-results"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mammoth-linux-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/mammoth-linux-results/report.json
+            ${{ runner.temp }}/mammoth-linux-results/environment.json
+            ${{ runner.temp }}/mammoth-linux-results/run.log
+            ${{ runner.temp }}/mammoth-linux-results/build.log
+          if-no-files-found: warn

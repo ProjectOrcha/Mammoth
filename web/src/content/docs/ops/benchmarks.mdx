@@ -1,0 +1,178 @@
+---
+title: Benchmarks & results
+description: Reproduce Mammoth's verified local DFSIO and metadata benchmarks, inspect every measured run, and plan fair Hadoop and Spark comparisons.
+---
+
+import BenchmarkEvidence from '../../../components/BenchmarkEvidence.astro';
+
+Mammoth's recommended suite is **DFSIO-inspired concurrent storage I/O plus
+metadata throughput, parallel line sort and word count**. These exercise the durable local backend that exists
+today. Six worker directories share one physical host; neither this suite nor
+the dashboard claims distributed performance.
+
+<BenchmarkEvidence />
+
+## Reproduce the Mac comparison
+
+On macOS ARM64, from the repository root:
+
+```bash
+cargo build --release --locked -p mammoth-cli
+python3 bench-suite/compare/setup.py
+python3 bench-suite/compare/run.py --output target/mac-comparison-new
+python3 bench-suite/compare/publish.py --from-run target/mac-comparison-new
+```
+
+The setup downloads pinned, checksum-verified Temurin Java 17, Hadoop 3.5.0 and
+Spark 4.2.0 under the ignored `target/` directory. The runner uses disposable
+storage and loopback listeners, runs the engine groups sequentially, and stops
+test services afterward. It needs a new output directory. Leave the machine idle
+while measuring. Nothing is installed globally. Raw reports, source hashes and
+runtime checksums are downloadable above.
+
+The HDFS harness uses the Java client directly, not MapReduce TestDFSIO. Spark
+runs four concurrent per-file sort/word-count jobs with four partitions each,
+using HDFS inputs and an explicit replicated, synced text output writer. Service
+startup is excluded. Compute correctness and replica layout are checked outside
+timing; read checksums and byte-count validation are inside read timing. No
+Hadoop MapReduce compute measurement is included.
+
+## Measure the updated engine on Linux
+
+```bash
+python3 bench-suite/run_linux.py --output /path/on/test-disk/mammoth-results
+```
+
+The output directory must be new. The collector builds release mode and runs
+8 × 32 MiB files, four concurrent clients, 10,000 metadata operations per phase,
+five measured iterations and one excluded warmup, with one and three replicas.
+It records machine/filesystem details, source hashes, compiler, host load, logs
+and raw JSON. Size, file count, operations, concurrency, iterations, read-cache size and compute memory can be
+changed using its options. It refuses to run on macOS.
+
+Run on an otherwise idle Linux host. The manual **Linux storage benchmark**
+workflow runs the same collector on Ubuntu and retains artifacts; shared CI
+hardware is not a competitive baseline. No Linux result is published yet.
+The current Mac snapshot above measures the memory engine. Earlier JSON-engine
+measurements remain a separate historical archive. Reports use MiB (1,048,576 bytes).
+
+## Why these workloads?
+
+| Technique | Use in Mammoth today |
+| --- | --- |
+| TestDFSIO-style I/O | Selected: bounded concurrent writes, verified reads and replica-count comparisons |
+| NameNode-style metadata load | Selected: concurrent create, stat, rename and delete calls against the real local namespace |
+| TeraSort | Deferred: no distributed scheduler, partition shuffle or TeraValidate; the local engine now has parallel sorting and spill/merge |
+| Local sort / word count | Selected: parallel batches, configurable memory target, exact validation, spill and merge statistics |
+| Criterion microbenchmarks | Useful later for individual hot paths; not a replacement for this end-to-end storage baseline |
+
+The workloads are inspired by Apache Hadoop's [TestDFSIO source](https://github.com/apache/hadoop/blob/trunk/hadoop-mapreduce-project/hadoop-mapreduce-client/hadoop-mapreduce-client-jobclient/src/test/java/org/apache/hadoop/fs/TestDFSIO.java)
+and [NameNode benchmark](https://hadoop.apache.org/docs/r3.1.4/hadoop-project-dist/hadoop-common/Benchmarking.html).
+They are **not** Hadoop's official workloads. In particular, `stat` is a local
+metadata lookup, not a NameNode `open` RPC. Apache's [TeraSort description](https://hadoop.apache.org/docs/current/api/org/apache/hadoop/examples/terasort/package-summary.html)
+requires generated records, a global distributed ordering and validation;
+Mammoth's bounded local text sort does not establish those properties.
+
+## What is measured?
+
+- **Write:** per-file seeded pseudorandom streams in 64 KiB chunks, CRC32C,
+  bounded streaming, concurrent durable replica writes and namespace publication. No full-file
+  allocation. Inline storage is disabled so even small test files use replicas.
+- **Read:** complete readback after writes, exact length and CRC32C verification.
+  The `read` phase starts with an empty Mammoth cache; `read_cached` immediately
+  reuses it. Reports record cache hits, misses, resident bytes and evictions.
+  A dataset larger than the cache can still miss on the second pass.
+  OS caches are not flushed; neither phase measures cold-disk bandwidth.
+- **Compute:** `sort` and `wordcount` read deterministic 25-byte UTF-8 lines,
+  process them and publish durable output. Each line has a four-digit key from
+  4,096 values and three repeated words. This finite-key dataset is not TeraGen.
+  Requested bytes round down to full records. Exact sort order, record counts
+  and word frequencies are verified outside timing. MiB/s uses input bytes,
+  so it is not output-write throughput. Reports retain threads, memory target,
+  spill runs, intermediate spill bytes and merge passes per job. Input generation
+  is outside timing and the Mammoth cache is cleared before each compute phase.
+- **Metadata:** create N empty files, stat each, rename each, then delete each.
+  Every phase reports N operations. A 1,000-file run means 4,000 metadata calls
+  per iteration and replica setting. Empty files do not exercise replication.
+- **Concurrency:** up to the requested number of in-flight backend calls.
+  Uploads have eight slots per backend; SQLite serializes metadata writers while allowing readers. This is not a count of
+  physical nodes, CPU threads, Hadoop mappers or network connections.
+- **Repeated runs:** fresh temporary store per iteration. Warmups are excluded;
+  replica order rotates each round. The report retains every measured phase.
+
+Aggregate I/O throughput is total logical bytes divided by **phase wall time**.
+The JSON also includes `task_time_mib_s` (bytes divided by the sum of operation
+durations) and `mean_task_mib_s` (mean per-file throughput). Hadoop TestDFSIO's
+reported throughput uses task durations, so compare matching metrics and timing
+boundaries rather than comparing its number to Mammoth's aggregate rate.
+
+Metadata throughput is completed calls divided by phase wall time. p50/p95/p99
+use the nearest-rank method over individual operation durations. Latency starts
+after acquiring a client slot, includes backend contention, and excludes the
+waiting queue. Summary p99 is the median of each iteration's p99; it is not a
+pooled percentile. Rates show median, minimum and maximum across repetitions.
+
+Setup, placement inspection and cleanup are outside timed phases. A report is
+published only after all phases and cleanup succeed. Simultaneous CLI/dashboard
+runs for one local root are rejected to avoid interference. A forced process
+termination may leave a `scratch-*` directory under `<local-root>/benchmarks`;
+ordinary errors and successful runs remove temporary data.
+
+## CLI and dashboard
+
+```bash
+mammoth bench                         # recommended suite, modest defaults
+mammoth bench dfsio --replication 1,3 --size 32MiB --files 8
+mammoth bench metadata --ops 1000 --concurrency 4
+mammoth bench compute --size 32MiB --compute-memory 32MiB --read-cache 256MiB
+mammoth bench suite --report bench.json --json
+```
+
+The original `mammoth bench --size 8MiB` syntax still works; it now selects the
+suite. `--size` is **per file**, not total bytes. Use `--files 1 --replication 3`
+for a small one-file test. `--masters` is not supported for this local suite.
+
+Open **Benchmarks** in the live dashboard to configure and launch a run, inspect
+its status, switch between the latest 20 saved reports, or download the full JSON.
+Completed reports survive service restarts in
+`<local-root>/benchmarks/reports/`. CLI runs using the same root appear there too.
+The Overview page shows the latest report for the current engine; older reports
+remain available in history and are labelled historical. The example workspace has no measured
+benchmark results.
+
+Limits: 1–32 concurrent clients, 1–1,024 files, 1 B–1 GiB per file, 1–100,000
+metadata files per phase, 1–10 measured iterations, 0–3 warmups, distinct replica
+counts 1–6, and at most 8 GiB of replicated I/O data per iteration. These bounds
+do not reserve disk space or guarantee a completion time. Start with the defaults;
+increase workload size only after confirming disk space and runtime on the target host.
+
+Read-cache limits are 0–1 GiB; compute targets are 64 KiB–256 MiB per job,
+with at most 1 GiB across requested concurrent jobs. Compute needs at least
+25 bytes per input. Targets are not RSS caps. Allow extra disk space for
+outputs and intermediate spill runs beyond the replicated input size.
+
+Use **Configure** to inspect active storage, memory, spill-directory and listener settings and validate a
+configuration draft. Download the resulting TOML and restart using it. Existing
+files retain their layout; benchmark settings remain independent.
+
+## Fair distributed comparisons remain a next step
+
+Use the same 3–5 physical machines, dataset, disk type, network, client count,
+block size, replication, durability and cache policy for every engine. Record
+versions, CPU/RAM, physical NIC byte counters, failures and all iterations.
+Benchmark idle memory separately; using Rust by itself proves no speedup.
+
+When Mammoth supports that deployment, collect the Hadoop baseline, for example:
+
+```bash
+hadoop jar "$HADOOP_HOME"/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-*-tests.jar TestDFSIO -write -nrFiles 10 -size 1000MB
+hadoop jar "$HADOOP_HOME"/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-*-tests.jar TestDFSIO -read -nrFiles 10 -size 1000MB
+hadoop org.apache.hadoop.hdfs.server.namenode.NNThroughputBenchmark -fs hdfs://namenode:9000 -op create -threads 4 -files 1000
+```
+
+Check your Hadoop version's options and effective replication before running.
+Use a disposable benchmark namespace. For a compute baseline, use
+[HiBench](https://github.com/Intel-bigdata/HiBench) on the identical hardware
+after a distributed shuffle exists, and validate every sort output. The published
+Mac comparison above includes HDFS and Spark local mode. Physical network
+saturation and distributed TeraSort have not been measured.

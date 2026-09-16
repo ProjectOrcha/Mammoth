@@ -9,7 +9,7 @@
   import Stat from '$lib/components/Stat.svelte';
   import { api } from '$lib/api';
   import type { Job, Task } from '$lib/types';
-  import { ago, duration, pct, fileHref } from '$lib/format';
+  import { ago, duration, pct, fileHref, bytes } from '$lib/format';
   import Panel from '$lib/components/Panel.svelte';
   import Meter from '$lib/components/Meter.svelte';
 
@@ -139,7 +139,7 @@
 </header>
 
 {#if live.source === 'gateway' && live.report?.capabilities?.jobs}
-  <Panel title="Run a text job" note="UTF-8 input · up to 64 MiB">
+  <Panel title="Run a text job" note="Parallel UTF-8 processing · automatic disk spilling">
     <datalist id="job-input-files">{#each availableFiles as path}<option value={path}></option>{/each}</datalist>
     <form class="job-form" onsubmit={submit}>
       <label>Operation<select bind:value={jobKind} disabled={submitting}><option value="wordcount">Word count</option><option value="sort">Sort lines</option></select></label>
@@ -148,7 +148,7 @@
       <button disabled={submitting}>{submitting ? 'Starting…' : 'Run job'}</button>
       <label class="overwrite"><input type="checkbox" bind:checked={overwrite} disabled={submitting} /> Replace the output file if it already exists</label>
     </form>
-    <p class="hint">Runs on this machine. Browse <a href="/files">Files</a> to find an input. Recent jobs are kept for this service session; CLI jobs are not included.</p>
+    <p class="hint">Uses multiple CPU threads on this machine, keeping batches in memory and spilling larger inputs. Adjust the memory target in <a href="/configure">Configure</a>. Browse <a href="/files">Files</a> to find an input. Recent jobs are kept for this service session; CLI jobs are not included.</p>
     {#if submitError}<p class="load-error" role="alert">{submitError}</p>{/if}
   </Panel>
 {:else if live.source === 'gateway' && live.report?.capabilities?.jobs === false}
@@ -198,6 +198,12 @@
         <div><dt>Input</dt><dd><a href={fileHref(job.input ?? '/')}>{job.input}</a></dd></div>
         <div><dt>Output</dt><dd>{#if job.state === 'succeeded'}<a href={fileHref(job.output ?? '/')}>{job.output}</a>{:else}{job.output}{/if}</dd></div>
       </dl>
+      {#if job.metrics}<dl>
+        <div><dt>Processing</dt><dd>{job.metrics.mode} · {job.metrics.worker_threads} CPU threads</dd></div>
+        <div><dt>Memory target</dt><dd>{bytes(job.metrics.memory_budget)}</dd></div>
+        <div><dt>Input / output</dt><dd>{bytes(job.metrics.input_bytes)} / {bytes(job.metrics.output_bytes)}</dd></div>
+        <div><dt>Temporary disk writes</dt><dd>{bytes(job.metrics.spilled_bytes)} · {job.metrics.spill_runs} runs · {job.metrics.merge_passes} merge passes</dd></div>
+      </dl>{/if}
       <Meter value={job.progress * 100} tone="accent" />
       {#if job.error}<p class="load-error" role="alert">{job.error}</p>{/if}
       {#if job.state === 'running'}<p class="hint" role="status">Processing the input and writing the result…</p>{/if}

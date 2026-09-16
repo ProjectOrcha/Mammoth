@@ -11,6 +11,14 @@ services:
       - "127.0.0.1:9000:9000"
     volumes:
       - local-data:/data
+    init: true
+    stop_grace_period: 60s
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 volumes:
   local-data:

@@ -15,6 +15,6 @@ export default defineConfig({
     // With no gateway running, vite logs an ECONNREFUSED for the first probe
     // and the client switches to the simulated cluster. That one log line is
     // the honest signal that nothing is listening — leave it.
-    proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: true } },
+    proxy: { '/api': { target: 'http://localhost:8080', changeOrigin: false } },
   },
 });

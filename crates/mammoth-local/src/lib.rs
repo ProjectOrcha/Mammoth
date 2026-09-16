@@ -1,9 +1,12 @@
 //! Durable local filesystem using six simulated workers on one host.
 #![forbid(unsafe_code)]
+mod cache;
 pub mod gfs;
+mod metadata;
+mod reader;
 
-use bytes::Bytes;
-use futures_util::{StreamExt, TryStreamExt};
+use bytes::{Bytes, BytesMut};
+use futures_util::StreamExt;
 use mammoth_core::{
     backend::ByteStream,
     place::{place, Candidate},
@@ -11,18 +14,17 @@ use mammoth_core::{
     Backend, BlockId, BlockPlacement, ClusterReport, Error, FileStatus, NodeId, NodeReport,
     NodeState, Replica, ReplicaState, Result,
 };
-use mammoth_storage::{atomic_write, BlockStore};
+use mammoth_storage::BlockStore;
 use md5::{Digest, Md5};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs::{self, File, OpenOptions},
-    io::{Read, Seek, SeekFrom, Write},
     ops::Range,
     path::{Path, PathBuf},
+    sync::Arc,
 };
-use tokio::io::AsyncWriteExt;
-use tokio_util::io::ReaderStream;
+use tokio::sync::Semaphore;
 
 pub const WORKERS: [(&str, &str); 6] = [
     ("w1", "rack-a"),
@@ -41,6 +43,10 @@ pub struct LocalBackend {
     block_size: u64,
     inline_threshold: u64,
     replication: u8,
+    metadata: Arc<metadata::Metadata>,
+    stores: Arc<BTreeMap<String, BlockStore>>,
+    uploads: Arc<Semaphore>,
+    cache: Arc<cache::ReadCache>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 struct Entry {
@@ -87,44 +93,38 @@ fn directory(path: &str) -> Entry {
         blocks: vec![],
     }
 }
-fn entry<'a>(ns: &'a Namespace, path: &str) -> Result<&'a Entry> {
-    ns.entries.get(path).ok_or_else(|| Error::NotFound(path.into()))
-}
-fn file<'a>(ns: &'a Namespace, path: &str) -> Result<&'a Entry> {
-    let e = entry(ns, path)?;
-    if e.status.is_dir {
-        return Err(Error::WrongKind { path: path.into(), actual: "directory", expected: "file" });
-    }
-    Ok(e)
-}
-
 impl LocalBackend {
     pub fn open(root: impl AsRef<Path>) -> Result<Self> {
         fs::create_dir_all(root.as_ref())?;
-        let be = Self {
-            root: fs::canonicalize(root.as_ref())?,
+        let root = fs::canonicalize(root.as_ref())?;
+        let guard = lock_file(&root.join("store.lock"))?;
+        fs2::FileExt::lock_exclusive(&guard)?;
+        fs::create_dir_all(root.join("ns"))?;
+        fs::create_dir_all(root.join("staging"))?;
+        let mut stores = BTreeMap::new();
+        for (id, _) in WORKERS {
+            stores.insert(id.to_owned(), BlockStore::open(root.join("workers").join(id))?);
+        }
+        let metadata = Arc::new(metadata::Metadata::open(&root)?);
+        Ok(Self {
+            root,
             block_size: 128 * 1024 * 1024,
             inline_threshold: 1024 * 1024,
             replication: 3,
-        };
-        let _guard = be.lock()?;
-        fs::create_dir_all(be.root.join("ns"))?;
-        fs::create_dir_all(be.root.join("staging"))?;
-        for (id, _) in WORKERS {
-            BlockStore::open(be.root.join("workers").join(id))?;
-        }
-        if !be.manifest().exists() {
-            be.save(&Namespace {
-                version: 1,
-                next_block: 1001,
-                entries: BTreeMap::from([("/".into(), directory("/"))]),
-            })?;
-        }
-        be.load()?;
-        Ok(be)
+            metadata,
+            stores: Arc::new(stores),
+            uploads: Arc::new(Semaphore::new(8)),
+            cache: Arc::new(cache::ReadCache::new(256 * 1024 * 1024)),
+        })
     }
     pub fn root(&self) -> &Path {
         &self.root
+    }
+    /// A process-local cache of verified immutable bytes. Zero disables it.
+    /// Existing clones retain their previous cache when this builder is used.
+    pub fn with_cache_size(mut self, bytes: u64) -> Self {
+        self.cache = Arc::new(cache::ReadCache::new(bytes));
+        self
     }
     pub fn with_block_size(mut self, n: u64) -> Self {
         self.block_size = n;
@@ -156,34 +156,21 @@ impl LocalBackend {
         }
         Ok(())
     }
-    fn lock(&self) -> Result<File> {
-        let f = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .truncate(false)
-            .open(self.root.join("store.lock"))?;
-        fs2::FileExt::lock_exclusive(&f)?;
-        Ok(f)
+    fn activity(&self) -> Result<Arc<File>> {
+        let file = lock_file(&self.root.join("activity.lock"))?;
+        fs2::FileExt::lock_shared(&file)?;
+        Ok(Arc::new(file))
     }
-    fn manifest(&self) -> PathBuf {
-        self.root.join("ns/namespace.json")
-    }
-    fn load(&self) -> Result<Namespace> {
-        let ns: Namespace = serde_json::from_slice(&fs::read(self.manifest())?).map_err(invalid)?;
-        if ns.version != 1 || !ns.entries.get("/").is_some_and(|e| e.status.is_dir) {
-            return Err(invalid("invalid namespace version or root"));
+    fn exclusive_activity(&self) -> Result<Option<File>> {
+        let file = lock_file(&self.root.join("activity.lock"))?;
+        match fs2::FileExt::try_lock_exclusive(&file) {
+            Ok(()) => Ok(Some(file)),
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
+            Err(e) => Err(e.into()),
         }
-        Ok(ns)
     }
-    fn save(&self, ns: &Namespace) -> Result<()> {
-        atomic_write(&self.manifest(), &serde_json::to_vec(ns).map_err(invalid)?)
-    }
-    fn store(&self, id: &str) -> Result<BlockStore> {
-        if !WORKERS.iter().any(|(worker, _)| *worker == id) {
-            return Err(invalid("unknown worker in namespace"));
-        }
-        BlockStore::open(self.root.join("workers").join(id))
+    fn store(&self, id: &str) -> Result<&BlockStore> {
+        self.stores.get(id).ok_or_else(|| invalid("unknown worker in namespace"))
     }
     fn placements(&self, id: BlockId, n: u8) -> Vec<Replica> {
         let candidates: Vec<_> = WORKERS
@@ -206,41 +193,71 @@ impl LocalBackend {
             })
             .collect()
     }
-    fn parents(ns: &mut Namespace, path: &str, create: bool) -> Result<()> {
-        let mut parent = String::new();
-        let parts: Vec<_> = path.trim_start_matches('/').split('/').collect();
-        for part in parts.iter().take(parts.len().saturating_sub(1)) {
-            parent.push('/');
-            parent.push_str(part);
-            match ns.entries.get(&parent) {
-                Some(e) if !e.status.is_dir => {
-                    return Err(Error::WrongKind {
-                        path: parent.into(),
-                        actual: "file",
-                        expected: "directory",
-                    })
-                }
-                Some(_) => {}
-                None if create => {
-                    ns.entries.insert(parent.clone(), directory(&parent));
-                }
-                None => return Err(Error::NotFound(parent.into())),
-            }
-        }
-        Ok(())
-    }
     async fn transaction<T: Send + 'static>(
         &self,
-        f: impl FnOnce(&Self, &mut Namespace) -> Result<T> + Send + 'static,
+        write: bool,
+        f: impl FnOnce(&Self, &rusqlite::Transaction<'_>) -> Result<T> + Send + 'static,
     ) -> Result<T> {
         let be = self.clone();
-        tokio::task::spawn_blocking(move || {
-            let _guard = be.lock()?;
-            let mut ns = be.load()?;
-            f(&be, &mut ns)
+        tokio::task::spawn_blocking(move || be.metadata.transaction(write, |tx| f(&be, tx)))
+            .await
+            .map_err(invalid)?
+    }
+    async fn shared_activity(&self) -> Result<Arc<File>> {
+        let be = self.clone();
+        tokio::task::spawn_blocking(move || be.activity()).await.map_err(invalid)?
+    }
+    async fn put_block(
+        &self,
+        bytes: Bytes,
+        index: usize,
+        ids: &mut Range<u64>,
+        guard: &Arc<File>,
+    ) -> Result<BlockPlacement> {
+        if index >= u32::MAX as usize {
+            return Err(invalid("file has too many blocks"));
+        }
+        if ids.is_empty() {
+            let first = self.transaction(true, |_, tx| metadata::reserve(tx, 64)).await?;
+            *ids = first..first + 64;
+        }
+        let id = BlockId(ids.next().expect("reserved IDs"));
+        let replicas = self.placements(id, self.replication);
+        let mut tasks = Vec::new();
+        for replica in &replicas {
+            let store = self.store(&replica.node.0)?.clone();
+            let bytes = bytes.clone();
+            // Detached blocking tasks retain the lifetime lock even if the
+            // upload is cancelled. GC cannot collect a block being published.
+            let guard = guard.clone();
+            tasks.push(tokio::task::spawn_blocking(move || {
+                let _guard = guard;
+                store.put(id.0, &bytes)
+            }));
+        }
+        // Wait for every replica, including when one fails.
+        for result in futures_util::future::join_all(tasks).await {
+            result.map_err(invalid)??;
+        }
+        Ok(BlockPlacement { id, index: index as u32, len: bytes.len() as u64, replicas })
+    }
+    async fn clean_retired(&self, entries: Vec<Entry>) {
+        if entries.iter().all(|e| e.blocks.is_empty()) {
+            return;
+        }
+        let be = self.clone();
+        let _ = tokio::task::spawn_blocking(move || -> Result<()> {
+            // Active snapshots keep their immutable blocks. GC reclaims these
+            // later, without making overwrite wait for slow readers.
+            let Some(_guard) = be.exclusive_activity()? else {
+                return Ok(());
+            };
+            for entry in entries {
+                be.clean(&entry)?;
+            }
+            Ok(())
         })
-        .await
-        .map_err(invalid)?
+        .await;
     }
     fn read_block(&self, block: &BlockPlacement) -> Result<Vec<u8>> {
         let mut last = Error::NotFound(format!("block {}", block.id.0).into());
@@ -263,143 +280,146 @@ impl LocalBackend {
     }
 }
 
+impl LocalBackend {
+    async fn write_file(&self, path: &Path, mut data: ByteStream, overwrite: bool) -> Result<()> {
+        self.validate()?;
+        let path = normalize(path)?;
+        let _permit = self.uploads.clone().acquire_owned().await.map_err(invalid)?;
+        let guard = self.shared_activity().await?;
+        let mut buffer = BytesMut::new();
+        let mut blocks = Vec::new();
+        let mut ids = 0..0;
+        let mut len = 0u64;
+        let mut crc = 0;
+        let mut digest = Md5::new();
+        let mut external = false;
+        while let Some(chunk) = data.next().await {
+            let chunk = chunk?;
+            len =
+                len.checked_add(chunk.len() as u64).ok_or_else(|| invalid("file size overflow"))?;
+            crc = crc32c::crc32c_append(crc, &chunk);
+            digest.update(&chunk);
+            let mut remaining = &chunk[..];
+            while !remaining.is_empty() {
+                let target = if external {
+                    self.block_size as usize
+                } else {
+                    self.inline_threshold as usize + 1
+                };
+                let take = (target.saturating_sub(buffer.len())).min(remaining.len());
+                buffer.extend_from_slice(&remaining[..take]);
+                remaining = &remaining[take..];
+                if !external && buffer.len() as u64 > self.inline_threshold {
+                    external = true;
+                }
+                while external && buffer.len() as u64 >= self.block_size {
+                    let bytes = buffer.split_to(self.block_size as usize).freeze();
+                    blocks.push(self.put_block(bytes, blocks.len(), &mut ids, &guard).await?);
+                }
+            }
+        }
+        let inline = if external {
+            if !buffer.is_empty() {
+                blocks.push(self.put_block(buffer.freeze(), blocks.len(), &mut ids, &guard).await?);
+            }
+            None
+        } else {
+            Some(buffer.to_vec())
+        };
+        let etag = format!("{:x}", digest.finalize());
+        let commit_guard = guard.clone();
+        let be = self.clone();
+        let old = tokio::task::spawn_blocking(move || {
+            let _guard = commit_guard;
+            be.metadata.transaction(true, |tx| {
+                let old = match metadata::get(tx, &path) {
+                    Ok(e) if e.status.is_dir => {
+                        return Err(Error::WrongKind {
+                            path: path.into(),
+                            actual: "directory",
+                            expected: "file",
+                        })
+                    }
+                    Ok(_) if !overwrite => return Err(Error::AlreadyExists(path.into())),
+                    Ok(e) => Some(e),
+                    Err(Error::NotFound(_)) => None,
+                    Err(e) => return Err(e),
+                };
+                metadata::parents(tx, &path, true)?;
+                let status = FileStatus {
+                    path: path.clone().into(),
+                    is_dir: false,
+                    len,
+                    block_size: be.block_size,
+                    replication: Some(be.replication),
+                    blocks: blocks.len() as u32,
+                    inlined: inline.is_some(),
+                    mode: old.as_ref().map_or(0o644, |e| e.status.mode),
+                    owner: old.as_ref().map_or("local".into(), |e| e.status.owner.clone()),
+                    group: old.as_ref().map_or("local".into(), |e| e.status.group.clone()),
+                    modified: now(),
+                    checksum: Some(format!("crc32c:{crc:08x}")),
+                };
+                metadata::put(tx, &path, &Entry { status, inline, blocks, etag })?;
+                Ok(old)
+            })
+        })
+        .await
+        .map_err(invalid)??;
+        drop(guard);
+        if let Some(old) = old {
+            self.clean_retired(vec![old]).await;
+        }
+        Ok(())
+    }
+}
+
 #[async_trait::async_trait]
 impl Backend for LocalBackend {
+    fn cache_stats(&self) -> Option<mammoth_core::backend::CacheStats> {
+        Some(self.cache.stats())
+    }
+    fn clear_read_cache(&self) {
+        self.cache.clear();
+    }
+
     async fn stat(&self, path: &Path) -> Result<FileStatus> {
         let path = normalize(path)?;
-        self.transaction(move |_, ns| Ok(entry(ns, &path)?.status.clone())).await
+        self.transaction(false, move |_, tx| metadata::stat(tx, &path)).await
     }
     async fn list(&self, path: &Path) -> Result<Vec<FileStatus>> {
         let path = normalize(path)?;
-        self.transaction(move |_, ns| {
-            if !entry(ns, &path)?.status.is_dir {
+        self.transaction(false, move |_, tx| {
+            if !metadata::stat(tx, &path)?.is_dir {
                 return Err(Error::WrongKind {
                     path: path.into(),
                     actual: "file",
                     expected: "directory",
                 });
             }
-            Ok(ns
-                .entries
-                .values()
-                .filter(|e| {
-                    e.status.path != Path::new("/")
-                        && e.status.path.parent() == Some(Path::new(&path))
-                })
-                .map(|e| e.status.clone())
-                .collect())
+            metadata::list(tx, &path)
         })
         .await
     }
     async fn mkdir(&self, path: &Path, parents: bool) -> Result<()> {
         let path = normalize(path)?;
-        self.transaction(move |be, ns| {
-            if let Some(e) = ns.entries.get(&path) {
-                if parents && e.status.is_dir {
-                    return Ok(());
-                }
-                return Err(Error::AlreadyExists(path.into()));
+        self.transaction(true, move |_, tx| {
+            match metadata::stat(tx, &path) {
+                Ok(e) if parents && e.is_dir => return Ok(()),
+                Ok(_) => return Err(Error::AlreadyExists(path.into())),
+                Err(Error::NotFound(_)) => {}
+                Err(e) => return Err(e),
             }
-            Self::parents(ns, &path, parents)?;
-            ns.entries.insert(path.clone(), directory(&path));
-            be.save(ns)
+            metadata::parents(tx, &path, parents)?;
+            metadata::put(tx, &path, &directory(&path))
         })
         .await
     }
-    async fn write(&self, path: &Path, mut data: ByteStream) -> Result<()> {
-        self.validate()?;
-        let path = normalize(path)?;
-        // Stage the request before acquiring the transaction lock. A failed or
-        // cancelled upload cannot replace the currently committed entry.
-        let staging_dir = self.root.join("staging");
-        let staging = tokio::task::spawn_blocking(move || tempfile::tempfile_in(staging_dir))
-            .await
-            .map_err(invalid)??;
-        let mut staging = tokio::fs::File::from_std(staging);
-        while let Some(chunk) = data.next().await {
-            staging.write_all(&chunk?).await?;
-        }
-        staging.flush().await?;
-        let mut staging = staging.into_std().await;
-        self.transaction(move |be, ns| {
-            if ns.entries.get(&path).is_some_and(|e| e.status.is_dir) {
-                return Err(Error::WrongKind {
-                    path: path.into(),
-                    actual: "directory",
-                    expected: "file",
-                });
-            }
-            Self::parents(ns, &path, true)?;
-            let len = staging.metadata()?.len();
-            staging.seek(SeekFrom::Start(0))?;
-            let mut blocks = Vec::new();
-            let mut crc = 0;
-            let mut md5 = Md5::new();
-            let inline = if len <= be.inline_threshold {
-                let mut bytes = Vec::new();
-                staging.read_to_end(&mut bytes)?;
-                crc = crc32c::crc32c(&bytes);
-                md5.update(&bytes);
-                Some(bytes)
-            } else {
-                let count = len.div_ceil(be.block_size);
-                if count > u32::MAX as u64 {
-                    return Err(Error::InvalidInput("file has too many blocks".into()));
-                }
-                let first = ns.next_block;
-                ns.next_block =
-                    first.checked_add(count).ok_or_else(|| invalid("block IDs exhausted"))?;
-                // Reserve IDs durably; an interrupted transaction never reuses
-                // the identity of a partially published block.
-                be.save(ns)?;
-                let mut remaining = len;
-                for index in 0..count {
-                    let id = BlockId(first + index);
-                    let mut bytes = vec![0; remaining.min(be.block_size) as usize];
-                    staging.read_exact(&mut bytes)?;
-                    remaining -= bytes.len() as u64;
-                    crc = crc32c::crc32c_append(crc, &bytes);
-                    md5.update(&bytes);
-                    let replicas = be.placements(id, be.replication);
-                    for r in &replicas {
-                        be.store(&r.node.0)?.put(id.0, &bytes)?;
-                    }
-                    blocks.push(BlockPlacement {
-                        id,
-                        index: index as u32,
-                        len: bytes.len() as u64,
-                        replicas,
-                    });
-                }
-                None
-            };
-            let old = ns.entries.get(&path).cloned();
-            let status = FileStatus {
-                path: path.clone().into(),
-                is_dir: false,
-                len,
-                block_size: be.block_size,
-                replication: Some(be.replication),
-                blocks: blocks.len() as u32,
-                inlined: inline.is_some(),
-                mode: old.as_ref().map_or(0o644, |e| e.status.mode),
-                owner: old.as_ref().map_or("local".into(), |e| e.status.owner.clone()),
-                group: old.as_ref().map_or("local".into(), |e| e.status.group.clone()),
-                modified: now(),
-                checksum: Some(format!("crc32c:{crc:08x}")),
-            };
-            ns.entries.insert(
-                path,
-                Entry { status, inline, blocks, etag: format!("{:x}", md5.finalize()) },
-            );
-            be.save(ns)?;
-            // Cleanup is best effort after a successful commit. `gc` retries.
-            if let Some(old) = old {
-                let _ = be.clean(&old);
-            }
-            Ok(())
-        })
-        .await
+    async fn write(&self, path: &Path, data: ByteStream) -> Result<()> {
+        self.write_file(path, data, true).await
+    }
+    async fn create(&self, path: &Path, data: ByteStream) -> Result<()> {
+        self.write_file(path, data, false).await
     }
     async fn read(&self, path: &Path, range: Range<u64>) -> Result<ByteStream> {
         Ok(self.open_read(path, range).await?.data)
@@ -413,87 +433,63 @@ impl Backend for LocalBackend {
             return Err(Error::InvalidInput("range start exceeds end".into()));
         }
         let path = normalize(path)?;
-        let staged = self
-            .transaction(move |be, ns| {
-                let e = file(ns, &path)?;
-                let mut output = tempfile::tempfile_in(be.root.join("staging"))?;
-                let start = range.start.min(e.status.len);
-                let end = range.end.min(e.status.len);
-                if let Some(bytes) = &e.inline {
-                    let actual = format!("crc32c:{:08x}", crc32c::crc32c(bytes));
-                    if e.status.checksum.as_ref() != Some(&actual)
-                        || bytes.len() as u64 != e.status.len
-                    {
-                        return Err(Error::ChecksumMismatch {
-                            path: path.into(),
-                            expected: e.status.checksum.clone().unwrap_or_default(),
-                            actual,
-                        });
-                    }
-                    output.write_all(&bytes[start as usize..end as usize])?;
-                } else {
-                    let mut offset = 0;
-                    for block in &e.blocks {
-                        let block_end = offset + block.len;
-                        if offset < end && block_end > start {
-                            let bytes = be.read_block(block)?;
-                            let from = start.saturating_sub(offset) as usize;
-                            let to = (end.min(block_end) - offset) as usize;
-                            output.write_all(&bytes[from..to])?;
-                        }
-                        offset = block_end;
-                    }
-                    if offset != e.status.len {
-                        return Err(invalid("file length does not match its blocks"));
-                    }
-                }
-                output.seek(SeekFrom::Start(0))?;
-                Ok((e.status.clone(), e.etag.clone(), start..end, output))
-            })
-            .await?;
-        let (status, etag, range, file) = staged;
-        Ok(mammoth_core::backend::ReadSnapshot {
-            status,
-            etag,
-            range,
-            data: Box::pin(ReaderStream::new(tokio::fs::File::from_std(file)).map_err(Error::from)),
+        let be = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let guard = be.activity()?;
+            let entry = be.metadata.transaction(false, |tx| metadata::file(tx, &path))?;
+            reader::open(be, entry, range, guard)
         })
+        .await
+        .map_err(invalid)?
+    }
+    async fn open_read_suffix(
+        &self,
+        path: &Path,
+        length: u64,
+    ) -> Result<mammoth_core::backend::ReadSnapshot> {
+        let path = normalize(path)?;
+        let be = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let guard = be.activity()?;
+            let entry = be.metadata.transaction(false, |tx| metadata::file(tx, &path))?;
+            let range = entry.status.len.saturating_sub(length)..entry.status.len;
+            reader::open(be, entry, range, guard)
+        })
+        .await
+        .map_err(invalid)?
     }
     async fn remove(&self, path: &Path, recursive: bool) -> Result<()> {
         let path = normalize(path)?;
         if path == "/" {
             return Err(Error::InvalidInput("cannot remove the namespace root".into()));
         }
-        self.transaction(move |be, ns| {
-            entry(ns, &path)?;
-            let prefix = format!("{path}/");
-            let keys: Vec<_> = ns
-                .entries
-                .keys()
-                .filter(|p| **p == path || p.starts_with(&prefix))
-                .cloned()
-                .collect();
-            if keys.len() > 1 && !recursive {
-                return Err(Error::WrongKind {
-                    path: path.into(),
-                    actual: "non-empty directory",
-                    expected: "empty directory (pass --recursive)",
-                });
-            }
-            let old: Vec<_> = keys.iter().filter_map(|p| ns.entries.remove(p)).collect();
-            be.save(ns)?;
-            for e in old {
-                let _ = be.clean(&e);
-            }
-            Ok(())
-        })
-        .await
+        let old = self
+            .transaction(true, move |_, tx| {
+                metadata::stat(tx, &path)?;
+                let keys = metadata::subtree(tx, &path)?;
+                if keys.len() > 1 && !recursive {
+                    return Err(Error::WrongKind {
+                        path: path.into(),
+                        actual: "non-empty directory",
+                        expected: "empty directory (pass --recursive)",
+                    });
+                }
+                let mut old = Vec::new();
+                for key in keys {
+                    old.push(metadata::get(tx, &key)?);
+                    metadata::delete(tx, &key)?;
+                }
+                Ok(old)
+            })
+            .await?;
+        self.clean_retired(old).await;
+        Ok(())
     }
     async fn rename(&self, from: &Path, to: &Path) -> Result<()> {
         let from = normalize(from)?;
         let to = normalize(to)?;
-        self.transaction(move |be, ns| {
-            entry(ns, &from)?;
+        self.transaction(true, move |_, tx| {
+            metadata::stat(tx, &from)?;
             if from == to {
                 return Ok(());
             }
@@ -502,24 +498,21 @@ impl Backend for LocalBackend {
                     "cannot move root or move a directory into itself".into(),
                 ));
             }
-            if ns.entries.contains_key(&to) {
-                return Err(Error::AlreadyExists(to.into()));
+            match metadata::stat(tx, &to) {
+                Ok(_) => return Err(Error::AlreadyExists(to.into())),
+                Err(Error::NotFound(_)) => {}
+                Err(e) => return Err(e),
             }
-            Self::parents(ns, &to, false)?;
-            let keys: Vec<_> = ns
-                .entries
-                .keys()
-                .filter(|p| **p == from || p.starts_with(&format!("{from}/")))
-                .cloned()
-                .collect();
-            for key in keys {
-                let mut e = ns.entries.remove(&key).expect("existing key");
+            metadata::parents(tx, &to, false)?;
+            for key in metadata::subtree(tx, &from)? {
+                let mut e = metadata::get(tx, &key)?;
                 let new = format!("{to}{}", &key[from.len()..]);
                 e.status.path = new.clone().into();
                 e.status.modified = now();
-                ns.entries.insert(new, e);
+                metadata::delete(tx, &key)?;
+                metadata::put(tx, &new, &e)?;
             }
-            be.save(ns)
+            Ok(())
         })
         .await
     }
@@ -534,8 +527,8 @@ impl Backend for LocalBackend {
         if mode.is_some_and(|m| m > 0o7777) {
             return Err(Error::InvalidInput("mode must be octal 0000–7777".into()));
         }
-        self.transaction(move |be, ns| {
-            let e = ns.entries.get_mut(&path).ok_or_else(|| Error::NotFound(path.into()))?;
+        self.transaction(true, move |_, tx| {
+            let mut e = metadata::get(tx, &path)?;
             if let Some(m) = mode {
                 e.status.mode = m;
             }
@@ -546,47 +539,48 @@ impl Backend for LocalBackend {
                 e.status.group = g;
             }
             e.status.modified = now();
-            be.save(ns)
+            metadata::put(tx, &path, &e)
         })
         .await
     }
     async fn set_replication(&self, path: &Path, replication: u8) -> Result<()> {
         self.check_replication(replication)?;
         let path = normalize(path)?;
-        self.transaction(move |be, ns| {
-            let old = file(ns, &path)?.clone();
-            let mut new = old.clone();
-            for b in &mut new.blocks {
-                let bytes = be.read_block(b)?;
-                let replicas = be.placements(b.id, replication);
-                for r in &replicas {
-                    let store = be.store(&r.node.0)?;
-                    if !store.read(b.id.0).is_ok_and(|data| data.len() as u64 == b.len) {
-                        store.remove(b.id.0)?;
-                        store.put(b.id.0, &bytes)?;
+        let be = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let _guard = be.exclusive_activity()?.ok_or_else(maintenance_busy)?;
+            // Maintenance is infrequent; serialize namespace mutations here so
+            // it cannot resurrect a concurrently removed or renamed generation.
+            be.metadata.transaction(true, |tx| {
+                let old = metadata::file(tx, &path)?;
+                let mut new = old.clone();
+                for b in &mut new.blocks {
+                    let bytes = be.read_block(b)?;
+                    let replicas = be.placements(b.id, replication);
+                    for r in &replicas {
+                        let store = be.store(&r.node.0)?;
+                        if !store.read(b.id.0).is_ok_and(|data| data.len() as u64 == b.len) {
+                            store.remove(b.id.0)?;
+                            store.put(b.id.0, &bytes)?;
+                        }
                     }
+                    b.replicas = replicas;
                 }
-                b.replicas = replicas;
-            }
-            new.status.replication = Some(replication);
-            new.status.modified = now();
-            ns.entries.insert(path, new.clone());
-            be.save(ns)?;
-            for (old_b, new_b) in old.blocks.iter().zip(&new.blocks) {
-                for r in &old_b.replicas {
-                    if !new_b.replicas.iter().any(|n| n.node == r.node) {
-                        let _ = be.store(&r.node.0)?.remove(old_b.id.0);
-                    }
-                }
-            }
+                new.status.replication = Some(replication);
+                new.status.modified = now();
+                metadata::put(tx, &path, &new)?;
+                Ok(())
+            })?;
+            be.gc_locked()?;
             Ok(())
         })
         .await
+        .map_err(invalid)?
     }
     async fn block_layout(&self, path: &Path) -> Result<Vec<BlockPlacement>> {
         let path = normalize(path)?;
-        self.transaction(move |be, ns| {
-            let mut blocks = file(ns, &path)?.blocks.clone();
+        self.data_task(move |be| {
+            let mut blocks = be.metadata.transaction(false, |tx| metadata::file(tx, &path))?.blocks;
             for b in &mut blocks {
                 for r in &mut b.replicas {
                     if be.store(&r.node.0)?.read(b.id.0).is_err() {
@@ -599,7 +593,8 @@ impl Backend for LocalBackend {
         .await
     }
     async fn cluster_report(&self) -> Result<ClusterReport> {
-        self.transaction(|be, ns| {
+        self.data_task(|be| {
+            let entries = be.metadata.transaction(false, |tx| metadata::all(tx))?;
             let mut nodes = Vec::new();
             let mut used = 0;
             for (id, rack) in WORKERS {
@@ -619,7 +614,7 @@ impl Backend for LocalBackend {
                 });
             }
             let mut health = ReplicationHealth::default();
-            for e in ns.entries.values() {
+            for e in &entries {
                 for b in &e.blocks {
                     let mut good = 0;
                     let mut corrupt = false;
@@ -657,9 +652,12 @@ impl Backend for LocalBackend {
         .await
     }
     async fn repair(&self) -> Result<u64> {
-        self.transaction(|be, ns| {
+        let be = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let _guard = be.exclusive_activity()?.ok_or_else(maintenance_busy)?;
+            let entries = be.metadata.transaction(false, |tx| metadata::all(tx))?;
             let mut repaired = 0;
-            for e in ns.entries.values() {
+            for e in entries {
                 for b in &e.blocks {
                     let bytes = be.read_block(b)?;
                     for r in &b.replicas {
@@ -675,16 +673,17 @@ impl Backend for LocalBackend {
             Ok(repaired)
         })
         .await
+        .map_err(invalid)?
     }
     async fn etag(&self, path: &Path) -> Result<String> {
         let path = normalize(path)?;
-        self.transaction(move |be, ns| {
-            let e = file(ns, &path)?;
+        self.data_task(move |be| {
+            let e = be.metadata.transaction(false, |tx| metadata::file(tx, &path))?;
             if !e.etag.is_empty() {
-                return Ok(e.etag.clone());
+                return Ok(e.etag);
             }
             let mut digest = Md5::new();
-            if let Some(bytes) = &e.inline {
+            if let Some(bytes) = e.inline {
                 digest.update(bytes);
             } else {
                 for b in &e.blocks {
@@ -695,28 +694,16 @@ impl Backend for LocalBackend {
         })
         .await
     }
-
     async fn gc(&self) -> Result<u64> {
-        self.transaction(|be, ns| {
-            let refs: BTreeSet<_> = ns
-                .entries
-                .values()
-                .flat_map(|e| &e.blocks)
-                .flat_map(|b| b.replicas.iter().map(move |r| (r.node.0.clone(), b.id.0)))
-                .collect();
-            let mut removed = 0;
-            for (id, _) in WORKERS {
-                let store = be.store(id)?;
-                for (block, _) in store.blocks()? {
-                    if !refs.contains(&(id.to_string(), block)) {
-                        store.remove(block)?;
-                        removed += 1;
-                    }
-                }
-            }
-            Ok(removed)
+        let be = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let Some(_guard) = be.exclusive_activity()? else {
+                return Ok(0);
+            };
+            be.gc_locked()
         })
         .await
+        .map_err(invalid)?
     }
 }
 
@@ -724,4 +711,47 @@ impl Backend for LocalBackend {
 pub fn body(data: impl Into<Bytes>) -> ByteStream {
     let data = data.into();
     Box::pin(futures_util::stream::once(async move { Ok(data) }))
+}
+
+fn lock_file(path: &Path) -> Result<File> {
+    Ok(OpenOptions::new().read(true).write(true).create(true).truncate(false).open(path)?)
+}
+fn maintenance_busy() -> Error {
+    Error::Io(std::io::Error::new(
+        std::io::ErrorKind::WouldBlock,
+        "active reads or writes; retry maintenance after they finish",
+    ))
+}
+impl LocalBackend {
+    async fn data_task<T: Send + 'static>(
+        &self,
+        f: impl FnOnce(&Self) -> Result<T> + Send + 'static,
+    ) -> Result<T> {
+        let be = self.clone();
+        tokio::task::spawn_blocking(move || {
+            let _guard = be.activity()?;
+            f(&be)
+        })
+        .await
+        .map_err(invalid)?
+    }
+    fn gc_locked(&self) -> Result<u64> {
+        let entries = self.metadata.transaction(false, |tx| metadata::all(tx))?;
+        let refs: BTreeSet<_> = entries
+            .iter()
+            .flat_map(|e| &e.blocks)
+            .flat_map(|b| b.replicas.iter().map(move |r| (r.node.0.clone(), b.id.0)))
+            .collect();
+        let mut removed = 0;
+        for (id, _) in WORKERS {
+            let store = self.store(id)?;
+            for (block, _) in store.blocks()? {
+                if !refs.contains(&(id.to_owned(), block)) {
+                    store.remove(block)?;
+                    removed += 1;
+                }
+            }
+        }
+        Ok(removed)
+    }
 }

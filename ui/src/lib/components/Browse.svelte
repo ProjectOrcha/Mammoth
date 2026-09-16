@@ -62,6 +62,11 @@
     const file = input.files?.[0];
     const selected = path;
     if (!file) return;
+    if (file.size === 0 && !window.confirm(`${file.name} is already empty (0 bytes) on your computer. If it should contain data, cancel and select a complete copy. Upload an empty file anyway?`)) {
+      actionError = `${file.name} was not uploaded because the selected file is empty (0 bytes). Select a complete copy and try again.`;
+      input.value = '';
+      return;
+    }
     const name = joinPath(selected, file.name);
     await change(async () => {
       let exists = false;

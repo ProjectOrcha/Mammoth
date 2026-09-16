@@ -66,7 +66,12 @@ impl Service {
         Ok(Self { root, _lock: lock, record, ui: Some(ui), s3: Some(s3) })
     }
 
-    pub async fn run(mut self, backend: Arc<dyn Backend>, fmt: OutputFormat) -> Result<()> {
+    pub async fn run(
+        mut self,
+        backend: Arc<dyn Backend>,
+        mut config: mammoth_core::config::Config,
+        fmt: OutputFormat,
+    ) -> Result<()> {
         let mut file = tempfile::NamedTempFile::new_in(&self.root)?;
         serde_json::to_writer(&mut file, &self.record)
             .map_err(|error| Error::InvalidInput(error.to_string()))?;
@@ -94,10 +99,13 @@ impl Service {
                 } => {}
             }
         };
-        mammoth_gateway::serve_with_shutdown(
+        config.gateway.ui_listen = self.record.ui.clone();
+        config.gateway.s3_listen = self.record.s3.clone();
+        mammoth_gateway::serve_configured_with_shutdown(
             backend,
             self.ui.take().unwrap(),
             self.s3.take().unwrap(),
+            mammoth_gateway::Dashboard::new(config, self.root.join("benchmarks")),
             shutdown,
         )
         .await

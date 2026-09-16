@@ -13,20 +13,23 @@ stale worker return and master takeover. Each operation is atomic; it does not
 model network partitions, clock skew or partial disk writes. See the
 [coverage audit](../../docs/guide/GFS-COVERAGE.md).
 
-## Planned: distributed fault harness
+## Available now: seeded teaching-model checks
 
-Every source of nondeterminism — time, the network, thread scheduling, disk
-latency — is driven by a seeded PRNG. The same seed produces the same execution,
-byte for byte, on any machine.
-
-The commands below are future harness commands. There is no `sim` test target
-yet; nightly seeded runs remain gated on its creation. The GFS model is the
-`gfs` target and runs in ordinary workspace CI.
+The `mammoth-testkit` `sim` target checks deterministic generated inputs against
+the GFS teaching model. Nightly CI runs 10,000 seeds. Reproduce a reported seed:
 
 ```bash
-cargo nextest run --test sim                       # random seed, printed on failure
-MAMMOTH_SIM_SEED=8412337 cargo nextest run --test sim   # reproduce exactly
+MAMMOTH_SIM_SEED=8412337 cargo test --locked -p mammoth-testkit --test sim
+MAMMOTH_SIM_SEED=1 MAMMOTH_SIM_COUNT=10000 cargo test --locked -p mammoth-testkit --test sim
 ```
+
+This is an in-memory model, not the production storage path. It does not inject
+real network faults or establish power-loss durability.
+
+## Planned: distributed fault harness
+
+A future service harness must control time, network delivery, scheduling and disk
+failure to replay an execution. Record the initial seed and every injected fault.
 
 Scenarios to cover, in the order they are worth writing:
 

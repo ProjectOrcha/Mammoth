@@ -25,3 +25,6 @@ crc32c = { workspace = true }
 tokio-util = { workspace = true }
 
 md-5 = { workspace = true }
+rusqlite = { version = "0.40.2", default-features = false, features = ["bundled", "cache"] }
+
+hashlink.workspace = true

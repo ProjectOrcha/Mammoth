@@ -45,7 +45,7 @@ fn charts_render_live_storage_with_bounded_lines_and_empty_states() {
     let name = format!("/data/{}.bin", "long-name-".repeat(12));
     text(&root, &["put", source.to_str().unwrap(), &name, "--block-size", "4KiB"]);
     std::fs::write(&source, b"").unwrap();
-    text(&root, &["put", source.to_str().unwrap(), "/data/empty"]);
+    text(&root, &["put", source.to_str().unwrap(), "/data/empty", "--allow-empty"]);
     text(&root, &["mkdir", "/empty"]);
     for (command, expected) in [
         (vec!["viz", "cluster"], "WORKER CAPACITY"),

@@ -7,7 +7,7 @@
 //!   4. environment overrides, `MAMMOTH_` prefixed, `__` for nesting:
 //!      `MAMMOTH_STORAGE__REPLICATION=2`
 //!
-//! `mammoth config show` prints the resolved value *and* which layer set it.
+//! `mammoth config show` prints the resolved values; source-layer provenance is not implemented.
 
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +25,8 @@ pub struct Config {
     pub write: Write,
     /// Read path settings.
     pub read: Read,
+    /// Local parallel text-job memory settings.
+    pub compute: Compute,
     /// Re-replication and repair settings.
     pub repair: Repair,
     /// Master-only settings.
@@ -215,7 +217,7 @@ pub struct Read {
     pub short_circuit: bool,
     /// Fire a duplicate request at another replica after this delay.
     pub hedged_after: String,
-    /// Size of the hybrid memory + SSD read cache.
+    /// Budget for the process-local verified read cache; zero disables it.
     pub cache_size: String,
     /// How long a location lease stays usable. While one is valid the client
     /// reads any range of that file with no metadata round trip at all.
@@ -230,10 +232,25 @@ impl Default for Read {
         Self {
             short_circuit: true,
             hedged_after: "50ms".into(),
-            cache_size: "4GiB".into(),
+            cache_size: "256MiB".into(),
             lease_ttl: "60s".into(),
             inline_resolve: true,
         }
+    }
+}
+
+/// `[compute]` settings for the implemented local parallel text engine.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct Compute {
+    /// Working-set target per job; an accounting target rather than process RSS.
+    pub memory_budget: String,
+    /// Optional existing directory for recomputable spill files; empty uses OS temp.
+    pub spill_directory: String,
+}
+impl Default for Compute {
+    fn default() -> Self {
+        Self { memory_budget: "128MiB".into(), spill_directory: String::new() }
     }
 }
 
@@ -353,7 +370,7 @@ pub struct Gateway {
 
 impl Default for Gateway {
     fn default() -> Self {
-        Self { s3_listen: "0.0.0.0:9000".into(), ui_listen: "0.0.0.0:8080".into() }
+        Self { s3_listen: "127.0.0.1:9000".into(), ui_listen: "127.0.0.1:8080".into() }
     }
 }
 
@@ -369,7 +386,7 @@ pub struct Security {
 
 impl Default for Security {
     fn default() -> Self {
-        Self { tls: "auto".into(), auth: "token".into() }
+        Self { tls: "off".into(), auth: "none".into() }
     }
 }
 
@@ -419,8 +436,29 @@ impl Config {
         config.validate()?;
         Ok(config)
     }
+    /// Fail closed when a local service is asked to enable unimplemented security.
+    pub fn validate_local_service(&self) -> crate::Result<()> {
+        self.validate()?;
+        if self.security.tls != "off" || self.security.auth != "none" {
+            return Err(crate::Error::Config("TLS and authentication are not implemented by the local service. Use security.tls=off and security.auth=none only on a trusted local machine; do not expose it to untrusted networks.".into()));
+        }
+        if self.storage.replication > 6 {
+            return Err(crate::Error::Config("local storage supports at most six replicas".into()));
+        }
+        Ok(())
+    }
+
     /// Check bounds before any I/O or memory allocation.
     pub fn validate(&self) -> crate::Result<()> {
+        if parse_size(&self.read.cache_size)? > 4 * 1024 * 1024 * 1024 {
+            return Err(crate::Error::Config(
+                "read cache must be at most 4 GiB; zero disables it".into(),
+            ));
+        }
+        if !(64 * 1024..=4 * 1024 * 1024 * 1024).contains(&parse_size(&self.compute.memory_budget)?)
+        {
+            return Err(crate::Error::Config("compute memory budget must be 64 KiB–4 GiB".into()));
+        }
         let block = parse_size(&self.storage.block_size)?;
         let inline = parse_size(&self.storage.inline_threshold)?;
         if block == 0 || block > 256 * 1024 * 1024 || inline > 16 * 1024 * 1024 {

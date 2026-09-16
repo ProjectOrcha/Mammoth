@@ -11,7 +11,8 @@ Each person completes [the first-hour guide](START-HERE.md), runs examples
 [the Backend chapter](04-the-backend-trait.md) together. Each person explains
 one of `list`, `read`, `write`, and `cluster_report` in their own words.
 
-The dashboard works with demo data. Storage and the gateway remain exercises.
+This plan applies to the manual `main` track, where storage and the gateway
+remain exercises. The local reference works on `AI_coded`; see [branch roles](BRANCHES.md).
 A screenshot of the dashboard is not proof that the Rust backend works.
 Keep “demo works” and “real data works” as separate issue acceptance criteria.
 

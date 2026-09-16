@@ -18,7 +18,9 @@
     { href: '/files', label: 'Files', glyph: '▤' },
     { href: '/distribution', label: 'Distribution', glyph: '◉' },
     { href: '/jobs', label: 'Jobs', glyph: '▶' },
+    { href: '/benchmarks', label: 'Benchmarks', glyph: '↗' },
     { href: '/cluster', label: 'Cluster', glyph: '◇' },
+    { href: '/configure', label: 'Configure', glyph: '⚙' },
   ];
 
   let theme = $state<'dark' | 'light'>('dark');

@@ -140,6 +140,9 @@ pub enum Command {
         replication: Option<u8>,
         #[arg(long)]
         block_size: Option<String>,
+        /// Allow a source containing 0 bytes; otherwise leave the destination unchanged.
+        #[arg(long)]
+        allow_empty: bool,
     },
     /// Download a file; existing destinations require --force.
     Get {
@@ -242,10 +245,41 @@ pub enum Command {
         #[command(subcommand)]
         command: MigrateCommand,
     },
-    /// Measure a local write/read round trip, then remove the benchmark file.
+    /// Run verified local I/O, metadata and parallel compute benchmarks.
     Bench {
+        /// Workload to measure. All workers are simulated on this host.
+        #[arg(value_enum, default_value = "suite")]
+        workload: BenchWorkload,
+        /// Bytes per I/O file. Inline storage is disabled for this benchmark.
         #[arg(long, default_value = "8MiB")]
         size: String,
+        #[arg(long, default_value_t = 8)]
+        files: usize,
+        #[arg(long, default_value_t = 4)]
+        concurrency: usize,
+        /// Files per metadata phase: create, stat, rename and delete.
+        #[arg(long, default_value_t = 200)]
+        ops: usize,
+        #[arg(long, default_value_t = 3)]
+        iterations: usize,
+        #[arg(long, default_value_t = 1)]
+        warmups: usize,
+        /// Compare replica counts in separate isolated stores.
+        #[arg(long, value_delimiter = ',', default_value = "1,3")]
+        replication: Vec<u8>,
+        #[arg(long, default_value = "4MiB")]
+        block_size: String,
+        /// Verified read-cache capacity; 0 disables caching. Maximum 1 GiB.
+        #[arg(long, default_value = "256MiB")]
+        read_cache: String,
+        /// Working-set target per compute job, with automatic disk spilling.
+        #[arg(long, default_value = "32MiB")]
+        compute_memory: String,
+        #[arg(long, default_value_t = 42)]
+        seed: u64,
+        /// Also save the complete JSON report here. Reports are always kept under the local root.
+        #[arg(long)]
+        report: Option<PathBuf>,
     },
     /// Show, validate or generate a configuration.
     Config {
@@ -259,6 +293,13 @@ pub enum Command {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+}
+#[derive(Clone, Copy, clap::ValueEnum)]
+pub enum BenchWorkload {
+    Suite,
+    Dfsio,
+    Metadata,
+    Compute,
 }
 #[derive(Subcommand)]
 pub enum VizCommand {
@@ -326,9 +367,21 @@ pub enum ConfigCommand {
 #[derive(Subcommand)]
 pub enum JobCommand {
     /// Count UTF-8 words and save the counts to a stored file.
-    Wordcount { input: PathBuf, output_path: PathBuf },
+    Wordcount {
+        input: PathBuf,
+        output_path: PathBuf,
+        /// Replace an existing result. Otherwise publication fails if the path exists.
+        #[arg(long)]
+        overwrite: bool,
+    },
     /// Sort UTF-8 lines and save them to a stored file.
-    Sort { input: PathBuf, output_path: PathBuf },
+    Sort {
+        input: PathBuf,
+        output_path: PathBuf,
+        /// Replace an existing result. Otherwise publication fails if the path exists.
+        #[arg(long)]
+        overwrite: bool,
+    },
 }
 #[derive(Subcommand)]
 pub enum MigrateCommand {

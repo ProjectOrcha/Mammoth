@@ -3,6 +3,7 @@
 
 import * as demo from './demo';
 import { chosenWorkspace } from './workspace';
+import { benchmarkDefaults, type BenchmarkOptions, type BenchmarkState, type Configuration, type StorageSettings } from './benchmarks';
 import type {
   BlockLayout,
   ClusterReport,
@@ -129,6 +130,10 @@ async function mutate<T = void>(path: string, method: string, body?: BodyInit): 
 }
 
 export const api = {
+  benchmarks: () => get<BenchmarkState>('/benchmarks', () => ({ active: null, reports: [], defaults: benchmarkDefaults })),
+  runBenchmark: (options: BenchmarkOptions) => mutate<BenchmarkState['active']>('/benchmarks', 'POST', JSON.stringify(options)),
+  configuration: () => get<Configuration | null>('/configuration', () => null),
+  validateConfiguration: (settings: StorageSettings) => mutate<Configuration>('/configuration/validate', 'POST', JSON.stringify(settings)),
   upload: (path: string, file: File) => mutate(`/fs/data?path=${q(path)}`, 'PUT', file),
   mkdir: (path: string) => mutate(`/fs/directory?path=${q(path)}`, 'PUT'),
   remove: (path: string, recursive = false) => mutate(`/fs?path=${q(path)}&recursive=${recursive}`, 'DELETE'),

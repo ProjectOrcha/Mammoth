@@ -1,0 +1,26 @@
+{
+  "cpu": "Apple M5 Pro",
+  "logical_cpus": 18,
+  "physical_cores": 18,
+  "memory_bytes": 51539607552,
+  "os": "macOS 26.6.2 (25G83)",
+  "architecture": "aarch64",
+  "rustc": "rustc 1.96.1 (31fca3adb 2026-06-26)",
+  "base_revision": "3306df95708a2b079be015594c8544bf7e986981",
+  "working_tree": "modified; benchmark implemented in this working tree",
+  "measurement_date": "2026-09-16",
+  "storage": "local filesystem; physical disk model and sustained disk bandwidth not measured",
+  "source_sha256": {
+    "crates/mammoth-bench/src/lib.rs": "95fe89163a95e79ef6fb5a95aa13c04b33d0c363723dec39078d44616404dbad",
+    "crates/mammoth-core/src/backend.rs": "1a6b24112a8ab60d6bfbed036be5f0f516ec670ec6e72453abd6d3300a1ea2ef",
+    "crates/mammoth-core/src/config.rs": "577dec245482d91a59a58626b58b81eff908997842cbd2606c5fb5f301d46dfa",
+    "crates/mammoth-core/src/error.rs": "0e13b5eec7088287924b934fa9848308bc633db7f9d23538f84ffe767505b905",
+    "crates/mammoth-core/src/lib.rs": "7d15fc5add4d2296cab5aa7dc8769d7f42c428a4a78f5910732886da0d482f45",
+    "crates/mammoth-core/src/path.rs": "f6e3a3429eaf6f2bf512b6f683a47860bee862bd5406e919387c7f83d4b2bd1a",
+    "crates/mammoth-core/src/place.rs": "c6e6f1673137ac2dda75764d04a219cf9a1bad3d6423d3a492286bf763462566",
+    "crates/mammoth-core/src/types.rs": "6e4a6a77d8a4210b4b4cb4fc8042cb128b755f09da84d5c5abbb79e45a958837",
+    "crates/mammoth-local/src/gfs.rs": "5f53e5464f1910118dc7e428199f8ad7a5902d21027ac1add1a1aa5630563191",
+    "crates/mammoth-local/src/lib.rs": "48874b69433804f9df3a98dce4e0afa6aa31e0e0647a6c54ac5253432e68433a",
+    "crates/mammoth-storage/src/lib.rs": "334539513afc4d9fa72fa078a55ef0b66e3e1255a9a1a02eb894afcdc756bd6a"
+  }
+}

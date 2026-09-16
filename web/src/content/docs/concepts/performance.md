@@ -1,123 +1,66 @@
 ---
 title: Performance
-description: Lock-free metadata reads, short-circuit reads, zero-copy, io_uring, hardware CRC32C, quorum acks, hedged reads.
+description: Implemented memory reuse, parallel compute and durable streaming, with measurable limits.
 ---
 
-:::note[Design reference]
-This page describes the full project design, including future distributed
-features and command options. For the working local application on `AI_coded`,
-follow the [quickstart](/intro/quickstart/) and [generated CLI reference](/cli/reference/).
-See the [implementation status](https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/docs/IMPLEMENTATION-STATUS.md)
-for supported behavior and remaining milestones.
-:::
+## Implemented in the local engine
 
+Mammoth's current `local-memory-parallel-v3` engine targets avoidable work in
+storage and local compute. [Measured Mac results](/ops/benchmarks/) compare
+the current engine with Hadoop HDFS for storage and Spark on HDFS for compute.
+These small same-host workloads have different execution paths and memory policies;
+they do not establish distributed performance. Current Linux scores remain pending.
 
-Explained so you know _why_, not just _what_. Ordered by impact.
+| Path | Implemented behavior |
+| --- | --- |
+| Metadata | Indexed SQLite WAL transactions, prepared statements and concurrent readers; one metadata writer |
+| Upload | Bounded streaming buffers and concurrent replica writes; all requested replicas are durable before publication |
+| Read | Verified 64 KiB chunks, direct range/suffix reads, and a bounded memory cache for repeated reads |
+| Sort | Parallel sorting of packed batches; small jobs stay in memory, larger jobs spill sorted runs |
+| Word count | Parallel partition-local aggregation with borrowed keys and sorted merge of counts |
+| Larger jobs | Checksummed temporary runs, bounded merge fan-in and streamed durable output; no total input-size cap |
 
-### 0 · The four fast paths — read this first
+The cache defaults to 256 MiB. Fresh metadata lookups select the current file
+generation; cache hits reuse verified bytes from immutable block IDs. Overwrites
+cannot select a stale generation. Health and repair inspect storage even when
+reads can use a cached copy. Cache counters are visible in Overview.
 
-Four mechanisms change the *shape* of the system rather than tuning it, and they
-are worth more than everything below combined. They have their own page:
-**[The four fast paths](/concepts/fast-paths/)**.
+Compute defaults to a 128 MiB working-set target per job. Packed batches reserve
+room for sorting and aggregation; larger jobs spill to disk. A shared worker pool
+uses up to 32 CPU threads. Individual lines are limited to the smaller of 16 MiB
+and one eighth of the target. Cache capacity and job targets are separate from
+storage buffers, allocator overhead and total process memory. See
+[configuration](/ops/configuration/) to adjust memory and the spill directory.
 
-| | Hadoop | Mammoth |
-| --- | --- | --- |
-| [Open + read](/concepts/fast-paths/#1--the-one-shot-read) | 2 round trips, every time | 0–1 round trip |
-| [Write a block](/concepts/fast-paths/#2--the-fan-out-dispersal-write) | 3 serial hops, serial acks | 1 parallel hop, quorum ack |
-| [Rebuild a dead node](/concepts/fast-paths/#3--declustered-parallel-repair) | one source, one sink, chained | every node, in parallel |
-| [Master restart](/concepts/fast-paths/#4--warm-start) | 30+ min rebuilding the block map | seconds, no rebuild at all |
+Jobs report memory/spill mode, input/output records and bytes, worker count,
+spill bytes and merge passes. Temporary files are cleaned on normal completion,
+errors and cancellation. Final output uses the same durable storage writer.
+The namespace format remains version 2, so this memory update needs no new
+storage-format migration after the WAL update.
 
-All four rest on one change: **placement is computed from the block ID, not
-remembered by the master**. Everything from §1 down is what you do once those
-four are in place.
+## Measure the actual workload
 
-### 1 · Lock-free metadata reads — the big one
-
-**Hadoop's problem:** the NameNode guards nearly the whole namespace with one lock (`FSNamesystem`). One slow `listStatus` on a directory with 500k entries blocks every other client.
-
-**Mammoth's fix:** the Raft state machine is single-writer by construction. So keep the namespace in an **immutable tree** behind `arc_swap::ArcSwap`. Writers build a new version (structural sharing — only the changed path is copied) and atomically swap the pointer. Readers do `Arc::clone` and never block, ever.
-
-```rust
-pub struct Namespace {
-    current: ArcSwap<NamespaceSnapshot>,   // readers: lock-free
-}
-impl Namespace {
-    pub fn read(&self) -> Arc<NamespaceSnapshot> { self.current.load_full() }
-    fn apply(&self, op: Op) {                       // single writer, from Raft
-        let next = self.current.load().with(op);    // COW
-        self.current.store(Arc::new(next));
-    }
-}
-```
-
-**Expected effect:** metadata read throughput scales with cores instead of flatlining. This is the mechanism behind a "5–10× faster metadata" claim — and you can benchmark it.
-
-### 2 · Short-circuit local reads
-
-If a replica lives on the same machine as the reader, don't use the network at all. The worker passes the **open file descriptor** over a Unix domain socket (`SCM_RIGHTS`), and the client `pread`s the file directly.
-
-Network hop: gone. Copy: gone. For co-located compute this is often a 3–5× read win. Crates: `passfd` / `sendfd`, `nix`.
-
-### 3 · Zero-copy data path
-
-- `bytes::Bytes` everywhere — reference-counted buffers, slicing is free
-- `sendfile()` / `splice()` for serving whole blocks straight from page cache to socket — the bytes never enter userspace
-- `writev()` for scatter-gather so header + payload go out in one syscall
-
-```rust
-#[cfg(target_os = "linux")]
-nix::sys::sendfile::sendfile(socket.as_raw_fd(), file.as_raw_fd(), Some(&mut off), len)?;
-```
-
-### 4 · `io_uring` for disk I/O
-
-`tokio-uring` or `monoio`. Batches syscalls and supports registered buffers. **2–3× on small random reads.** Gate behind a feature flag with an epoll fallback — `io_uring` needs kernel 5.10+ and some hosts disable it.
-
-### 5 · Hardware CRC32C
-
-Data integrity requires checksumming every byte. Software CRC32 runs at ~400 MB/s and becomes your bottleneck. The `crc32c` crate uses the SSE4.2 / ARMv8 CRC instruction and hits **~20 GB/s**. Same algorithm HDFS uses, so checksums stay comparable during migration.
-
-### 6 · Quorum acks on writes
-
-Default HDFS waits for all 3 replicas. If one disk hiccups, the client waits. With `ack_policy = "quorum"`, ack after 2 of 3 are durable and repair the third asynchronously. **Cuts p99 write latency substantially** at a small durability cost — make it configurable, default to quorum, document the tradeoff honestly.
-
-This is the ack rule of the [fan-out dispersal write](/concepts/fast-paths/#2--the-fan-out-dispersal-write), where it matters more: with `k + m` fragments in flight on independent sockets, acking at `k + 1` means the slowest of nine nodes is never on the critical path.
-
-### 7 · Hedged reads
-
-Same idea on the read side: if replica 1 hasn't responded within `p99 × 1.5`, fire the same request at replica 2 and take whichever returns first. Kills tail latency caused by one slow disk.
-
-Hedging is free here in a way it is not in HDFS: the client derived the whole replica set itself with `place()`, so firing at the second replica costs no extra metadata lookup. See [the one-shot read](/concepts/fast-paths/#1--the-one-shot-read).
-
-### 8 · Digest-based block reports
-
-Instead of a 10-million-entry full report, each worker keeps a rolling `xxhash3` digest over its sorted block-ID set and sends it every heartbeat, plus any incremental changes. The master compares digests; only on mismatch does it request a full report — streamed in 10k chunks with yields between them. **Removes the multi-second metadata pauses.**
-
-Make that digest a **shallow Merkle tree** (1024 leaves by block-ID prefix) rather than a single hash, and the same structure also solves startup: a mismatch narrows to a bucket in two round trips instead of streaming ten million IDs. That is [warm start](/concepts/fast-paths/#4--warm-start), and it is the difference between a 30-minute boot and a 10-second one.
-
-### 9 · Thread-per-core sharding
-
-Pin storage-path threads with `core_affinity` and shard the block map by `block_id % num_cores`. Each core owns its shard, so there's no cross-core cache-line contention on the hottest data structure.
-
-### 10 · Everything else worth doing
-
-|Technique|Why|
-|---|---|
-|`mimalloc` allocator|measurable on shuffle-heavy paths|
-|`rkyv` for hot-path messages|zero-copy deserialization, no protobuf decode cost|
-|`foyer` hybrid cache|memory + SSD read cache; don't just trust the page cache|
-|`O_DIRECT` for big sequential reads|avoid polluting page cache with data you read once|
-|LZ4 for shuffle, Zstd for cold storage|LZ4 is fast enough to be free; Zstd compresses harder|
-|Connection pooling + HTTP/2 multiplexing|avoid TCP handshake per request|
-|Batch small RPCs|100 `stat`s in one call beats 100 round trips|
-
-### Measuring — don't guess
+The [benchmark suite](/ops/benchmarks/) measures writes, separate fresh-cache and
+repeated reads, metadata, sort and word count. Every result is verified and all
+measured iterations are retained. The CLI and dashboard use the same harness.
+OS caches remain enabled; even fresh Mammoth-cache reads are not cold-disk tests.
+Compute uses a documented finite-key text dataset, not TeraGen's records.
 
 ```bash
-cargo flamegraph --bin mammoth -- bench dfsio --write --size 10GB
-tokio-console                    # find async tasks that stall the runtime
-cargo bench                      # criterion micro-benchmarks
-mammoth bench terasort --size 100GB --report bench.json
+python3 bench-suite/run_linux.py --output /path/on/test-disk/results \
+  --read-cache 256MiB --compute-memory 32MiB
 ```
 
-Publish a reproducible benchmark page on the website — harness, hardware spec, raw numbers. Never cherry-pick. A public, repeatable benchmark is your best marketing asset, and a contested one is your worst.
+The collector builds release mode and records source hashes, hardware, filesystem,
+cache policy and raw reports. It refuses macOS. Measure memory-fitting and spilling
+inputs separately; repeat with the cache disabled to isolate its effect. Never
+compare a warm cached read against a competitor's cold storage read.
+
+## Distributed design remains future work
+
+The [four fast paths](/concepts/fast-paths/) describe proposed distributed mechanisms.
+Physical worker networking, Raft, distributed shuffle, lineage recovery, hedged
+reads, io_uring and sendfile are not implemented by this local engine. There is
+no claim that a language change alone beats Hadoop or Spark. A valid comparison
+requires equivalent workloads, semantics, durability and cache settings on the
+same hardware, including real network traffic for distributed tests.

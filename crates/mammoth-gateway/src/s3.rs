@@ -19,7 +19,10 @@ use std::{
 };
 
 pub fn router(backend: Arc<dyn Backend>) -> Router {
-    Router::new().fallback(any(handle)).with_state(Gateway { backend, jobs: Default::default() })
+    Router::new()
+        .fallback(any(handle))
+        .layer(axum::middleware::from_fn(super::browser::guard))
+        .with_state(Gateway { backend, jobs: Default::default(), dashboard: Default::default() })
 }
 fn xml(value: &str) -> String {
     value
@@ -329,9 +332,29 @@ async fn operation(
             Ok(StatusCode::NO_CONTENT.into_response())
         }
         "GET" | "HEAD" => {
-            let snapshot = be
-                .open_read(Path::new(path), if method == Method::HEAD { 0..0 } else { 0..u64::MAX })
-                .await?;
+            let raw_range = headers.get(header::RANGE).and_then(|v| v.to_str().ok());
+            let snapshot = if method == Method::HEAD {
+                be.open_read(Path::new(path), 0..0).await?
+            } else if let Some(suffix) = raw_range
+                .and_then(|v| v.strip_prefix("bytes=-"))
+                .and_then(|v| v.parse::<u64>().ok())
+            {
+                match be.open_read_suffix(Path::new(path), suffix).await {
+                    Ok(snapshot) => snapshot,
+                    Err(Error::NotImplemented(_)) => {
+                        be.open_read(Path::new(path), 0..u64::MAX).await?
+                    }
+                    Err(e) => return Err(e),
+                }
+            } else {
+                // Parse bounds before opening the stream; validate them again
+                // against the captured generation below for correct HTTP 416.
+                let range = match raw_range {
+                    Some(raw) => parse_range(raw, u64::MAX).unwrap_or(0..0),
+                    None => 0..u64::MAX,
+                };
+                be.open_read(Path::new(path), range).await?
+            };
             let s = snapshot.status;
             if s.is_dir {
                 return Err(Error::NotFound(path.into()));
@@ -373,7 +396,7 @@ async fn operation(
                 Body::empty()
             } else {
                 Body::from_stream(futures_util::stream::unfold(
-                    (snapshot.data, 0u64, range),
+                    (snapshot.data, snapshot.range.start, range),
                     |(mut stream, mut offset, range)| async move {
                         while let Some(chunk) = stream.next().await {
                             let bytes = match chunk {

@@ -1,64 +1,23 @@
-# The whole configuration. No XML, no six files.
-# Every key is overridable by environment: MAMMOTH_STORAGE__REPLICATION=2
-
-[cluster]
-name    = "prod-01"
-masters = ["m1:7000", "m2:7000", "m3:7000"]
-
-[node]
-role = "worker"                  # master | worker | gateway | all
-rack = "/dc1/rack-a"
+# Supported local-service settings on AI_coded.
+# Use --local-root /path/to/store; the simulated workers share that filesystem.
+# Environment values override this file: MAMMOTH_STORAGE__REPLICATION=2
 
 [storage]
-volumes          = ["/data/d1", "/data/d2", "/data/d3"]
-block_size       = "128MiB"
-replication      = 3
-inline_threshold = "1MiB"        # small files skip the block layer entirely
-reserved_space   = "10GiB"
-placement        = "rendezvous"  # rendezvous | explicit — computed, not stored
-
-[storage.scrub]
-enabled       = true
-bytes_per_sec = "50MiB"
-
-[write]
-mode        = "disperse"         # disperse | mirror | pipeline
-ec_policy   = "lrc-6-2-2"        # 6 data · 2 local parities · 2 global
-ack_policy  = "quorum"           # all | quorum — quorum acks at k+1 fragments
-packet_size = "64KiB"
-window      = "8MiB"             # per-fragment sliding window
+block_size = "128MiB"
+replication = 3
+inline_threshold = "1MiB"
 
 [read]
-short_circuit  = true
-hedged_after   = "50ms"
-cache_size     = "4GiB"
-lease_ttl      = "60s"           # how long a location lease stays usable
-inline_resolve = true            # workers resolve paths from their own learner
+cache_size = "256MiB" # 0 disables the verified memory cache; not an OS cache flush
 
-[repair]
-delay         = "10m"            # grace period for an absent-but-not-dead node
-parallelism   = "auto"           # auto = every healthy node participates
-bytes_per_sec = "auto"           # token bucket; yields to client traffic
-priority      = "redundancy"     # least-redundant blocks first
-
-[master]
-listen             = "0.0.0.0:7000"
-data_dir           = "/var/lib/mammoth/meta"
-heartbeat_ms       = 3000
-dead_after         = "10m"
-block_map          = "mmap"      # mmap | rebuild — rebuild is HDFS behaviour
-merkle_fanout      = 1024        # leaves in the worker's block-ID Merkle tree
-safemode           = "per-range" # per-range | global
-safemode_threshold = 0.999       # only consulted when safemode = "global"
+[compute]
+memory_budget = "128MiB" # Per-job accounting target, not a process RSS limit
+spill_directory = "" # System temp, or an existing directory with enough free space
 
 [gateway]
-s3_listen = "0.0.0.0:9000"
-ui_listen = "0.0.0.0:8080"
+ui_listen = "127.0.0.1:8080"
+s3_listen = "127.0.0.1:9000"
 
 [security]
-tls  = "auto"                    # auto | required | off (dev only)
-auth = "token"                   # token | mtls | kerberos | none
-
-[telemetry]
-metrics_listen = "0.0.0.0:9100"
-log_format     = "json"
+tls = "off" # TLS/authentication are not implemented; other values fail at startup
+auth = "none"

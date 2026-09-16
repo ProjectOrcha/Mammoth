@@ -26,25 +26,27 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm, cache-dependency-path: ui/package-lock.json }
       - uses: dtolnay/rust-toolchain@stable
-        with: { targets: "${{ matrix.target }}" }
+        with: { targets: "${{ matrix.target }}", components: "rustfmt, clippy" }
       - uses: Swatinem/rust-cache@v2
       - name: Build dashboard and binary
         shell: bash
         run: |
+          cargo fmt --all --check
           cargo xtask build-ui
-          cargo build --release --locked -p mammoth-cli --target '${{ matrix.target }}'
+          npm --prefix ui run check
+          npm --prefix ui test
+          cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
           cargo test --workspace --locked
+          cargo test -p mammoth-parts --examples --locked
+          cargo build --release --locked -p mammoth-cli --target '${{ matrix.target }}'
       - name: Package
         shell: bash
         run: |
-          mkdir package
-          cp 'target/${{ matrix.target }}/release/${{ matrix.binary }}' package/
-          cp LICENSE-APACHE LICENSE-MIT README.md docs/IMPLEMENTATION-STATUS.md package/
-          tar -czf 'mammoth-${{ matrix.target }}.tar.gz' -C package .
+          cargo xtask package '${{ matrix.target }}'
       - uses: actions/upload-artifact@v4
         with:
           name: mammoth-${{ matrix.target }}
-          path: mammoth-${{ matrix.target }}.tar.gz
+          path: target/dist/mammoth-${{ matrix.target }}.tar.gz*
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
@@ -60,5 +62,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release view "$RELEASE_TAG" || gh release create "$RELEASE_TAG" --draft --generate-notes
-          gh release upload "$RELEASE_TAG" packages/*.tar.gz --clobber
+          if gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft > existing-release-draft.txt; then
+            if [ "$(cat existing-release-draft.txt)" != "true" ]; then
+              echo "Refusing to replace assets on a published release."
+              exit 1
+            fi
+          else
+            gh release create "$RELEASE_TAG" --draft --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" packages/*.tar.gz packages/*.sha256 --clobber

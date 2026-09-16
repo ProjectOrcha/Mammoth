@@ -1,15 +1,14 @@
 # The parts
 
-Sixteen small programs. Each one takes a **single idea** out of Mammoth, puts it
+Seventeen small programs. Each one takes a **single idea** out of Mammoth, puts it
 in one file with nothing else around it, and lets you run it.
 
 They exist because reading chapter 6 is much easier once you have watched a
 `ByteStream` hand out chunks on your own screen, and because "add colour to the
 CLI" is a much smaller job when there is a working palette to copy.
 
-Nothing here is a toy: the types come from `mammoth-core`, the patterns are the
-ones the real crates use, and every file compiles under
-`cargo clippy -- -D warnings`.
+These are teaching programs, not the production filesystem. Several use core
+types; others isolate one Rust concept. All are checked with strict Clippy.
 
 ---
 
@@ -33,7 +32,7 @@ output you are meant to look at:
 cargo run -q -p mammoth-parts --example 13-block-matrix
 ```
 
-Build all sixteen at once, to check your toolchain:
+Build all seventeen at once, to check your toolchain:
 
 ```bash
 cargo build -p mammoth-parts --examples
@@ -124,3 +123,9 @@ are **product demos**: what Mammoth looks like to someone using it. This
 directory is the opposite — what Mammoth looks like to someone building it.
 
 Start here if you are on the team. Start there if you are evaluating the thing.
+
+### Correctness before performance
+
+[17 · Atomic publication](examples/17-atomic-publication.rs) demonstrates a
+create-if-absent race and stable read generations in memory. Run it alongside
+[chapter 14](../../docs/guide/14-readiness-and-benchmarks.md).

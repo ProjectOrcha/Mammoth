@@ -28,7 +28,7 @@ PowerShell; shell-specific commands such as `export` do not.
 From the folder where you want to keep projects:
 
 ```bash
-git clone https://github.com/ProjectOrcha/Mammoth.git
+git clone --branch AI_coded https://github.com/ProjectOrcha/Mammoth.git
 cd Mammoth
 cargo build --workspace --locked
 cargo run -p mammoth-cli -- --help
@@ -136,8 +136,8 @@ enters this function, what comes out, and who handles an error?
 
 For a first frontend change, edit the Files page's descriptive sentence in
 `ui/src/routes/files/+page.svelte`, check the browser, then revert or refine the
-wording before making a PR. For a first Rust change, follow
-[chapter 2](02-first-change.md) on a branch: implement the `version` subcommand.
+wording before making a PR. For manual Rust exercises, use `main` as described in the [branch guide](BRANCHES.md);
+chapter 2’s `version` command is already implemented in this reference branch.
 For a docs change, clarify one confusing paragraph and try every command in it.
 
 ## 6. Choose the right contribution workflow

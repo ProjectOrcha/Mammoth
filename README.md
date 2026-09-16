@@ -2,6 +2,10 @@
 
 # Mammoth
 
+**Local preview on `AI_coded`.** See [release readiness](docs/RELEASE-READINESS.md)
+and the [operator runbook](docs/OPERATIONS.md). Distributed production deployment
+remains gated on security, real worker services and failure qualification.
+
 A Rust storage engine with a persistent local filesystem, replica visualization,
 a command-line interface, a live web dashboard and a development S3 endpoint.
 
@@ -79,6 +83,10 @@ records; `cat`, `head`, `tail` and downloaded files preserve raw content.
 Errors have stable codes and nonzero exits. Existing local downloads require
 `get --force` before replacement.
 
+`put` checks that the source contains data before writing. If a source is already
+0 bytes, select a complete local copy; use `put --allow-empty` only when an empty
+file is intentional. The dashboard asks before uploading an empty file as well.
+
 Human output includes colored file listings, capacity and size bars, rack and
 namespace trees, block placement matrices and replica-health charts. Use
 `--color auto|always|never`; auto respects `NO_COLOR` and terminal detection.
@@ -86,6 +94,38 @@ Use `--output table` to keep charts when piping output. `top` and
 `viz health --live` refresh in place, support arrow-key scrolling and exit with q.
 `mammoth --help` includes nested commands; `mammoth commands` prints the full
 catalog, matching the generated website reference.
+
+## Benchmarks and configuration
+
+The CLI and dashboard now share a verified, repeatable benchmark suite:
+
+```bash
+cargo build --release --locked -p mammoth-cli
+./target/release/mammoth --local-root .mammoth bench suite \
+  --size 16MiB --files 8 --concurrency 4 --ops 1000 \
+  --iterations 3 --warmups 1 --replication 1,3 --report bench.json
+```
+
+The storage engine now uses indexed SQLite WAL metadata, bounded streaming
+uploads, concurrent durable replica writes, and verified range reads without
+request staging files. Existing version-1 stores migrate automatically on open;
+stop older services and back up the complete store first. See
+[storage format and upgrade notes](docs/STORAGE-ENGINE.md).
+
+**Measured Mac results now include Hadoop HDFS and Spark baselines.**
+[Results and limits](docs/BENCHMARKS.md) cover the measured memory-engine snapshot on an
+Apple M5 Pro. Storage is compared with HDFS; sort and word count with Spark on
+HDFS. These small local workloads do not establish a distributed winner.
+Linux performance measurements remain pending.
+Run `python3 bench-suite/run_linux.py --output /path/to/results` on an idle Linux
+host to collect a reproducible release report and machine/source record.
+[Benchmark methodology](bench-suite/README.md) explains the remaining limits.
+
+Use **Benchmarks** in the live dashboard to run and compare measurements; the
+Overview page shows the latest saved report. Reports survive restarts and CLI
+runs appear in the dashboard when they use the same local root. **Configure**
+shows active storage/listener settings, validates a draft and downloads TOML to
+apply on restart. Existing files retain their layout.
 
 ## Remote CLI access
 
@@ -141,7 +181,7 @@ uv run --no-project --with boto3 --with duckdb python tests/compat/s3_clients.py
 ./target/debug/mammoth bench --size 8MiB
 ```
 
-Text jobs run locally with a 64 MiB input limit. Tree transfers commit one file at
+Text jobs use parallel in-memory batches and automatic sorted-run spilling, with no total input-size cap. The default per-job working-set target is 128 MiB; records are limited to 16 MiB (or one eighth of the target). Tree transfers commit one file at
 a time and refuse symlinks. These do not implement distributed shuffle or native
 HDFS migration.
 
@@ -200,3 +240,22 @@ Apache-2.0 OR MIT. See [LICENSE-APACHE](LICENSE-APACHE) and [LICENSE-MIT](LICENS
 Run `cargo xtask dist` to build the dashboard, compile the release binary and
 create a native archive under `target/dist/`. The archive includes licenses and
 implementation status. This command does not publish a release.
+
+### Memory and parallel compute
+
+The `local-memory-parallel-v3` engine adds a configurable verified-read cache
+(default 256 MiB), parallel line sorting and word-count aggregation, and bounded
+merge fan-in for larger jobs. Writes remain durable. CLI and dashboard jobs expose
+memory/spill metrics; **Configure** controls memory targets and the spill directory.
+The benchmark suite separates `read` (empty Mammoth cache) from `read_cached`, and
+validates every sort record and word count. OS caches remain enabled.
+
+```bash
+# Run on the Linux host being evaluated; no current Linux scores are published.
+python3 bench-suite/run_linux.py --output /path/on/test-disk/results \
+  --read-cache 256MiB --compute-memory 32MiB
+```
+
+See [memory engine behavior and limits](docs/MEMORY-ENGINE.md). These are local
+improvements. [The Mac comparison](docs/BENCHMARKS.md) records verified runs of
+all three engines. Distributed execution and multi-machine comparisons remain open.

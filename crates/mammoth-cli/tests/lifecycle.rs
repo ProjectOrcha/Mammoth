@@ -69,6 +69,35 @@ fn finish(server: &mut Server) {
 }
 
 #[test]
+fn remote_put_rejects_empty_overwrites_and_roundtrips_binary_files() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path().join("store");
+    let (_server, address, _) = start(&root, "serve");
+    let endpoint = format!("http://{address}");
+    let source = dir.path().join("binary.pt");
+    let payload: Vec<u8> = (0..3 * 1024 * 1024 + 17).map(|i| (i % 251) as u8).collect();
+    std::fs::write(&source, &payload).unwrap();
+    let remote = |args: &[&str]| {
+        let mut options = vec!["--masters", endpoint.as_str()];
+        options.extend_from_slice(args);
+        run(&root, &options)
+    };
+    let out = remote(&["put", source.to_str().unwrap(), "/binary.pt", "--json"]);
+    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let stat: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(stat["len"], payload.len());
+    std::fs::write(&source, []).unwrap();
+    assert!(!remote(&["put", source.to_str().unwrap(), "/binary.pt"]).status.success());
+    let downloaded = dir.path().join("download.pt");
+    assert!(remote(&["get", "/binary.pt", downloaded.to_str().unwrap()]).status.success());
+    assert_eq!(std::fs::read(downloaded).unwrap(), payload);
+    let out = remote(&["put", source.to_str().unwrap(), "/binary.pt", "--allow-empty", "--json"]);
+    assert!(out.status.success());
+    let stat: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(stat["len"], 0);
+}
+
+#[test]
 fn stop_drains_live_events_releases_both_ports_and_preserves_files() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path().join("store");

@@ -20,8 +20,9 @@ need to be willing to type things and read error messages.
 **Start with [Your first hour](START-HERE.md)** for verified setup commands,
 small examples and an explicit working-versus-planned status table. Then read
 [the code map](CODE-MAP.md) to trace a request through the actual source files.
-The numbered chapters teach you to implement the Rust scaffold. The dashboard
-already runs with simulated data; the real filesystem and gateway do not.
+The numbered chapters teach the manual `main` scaffold. In this `AI_coded`
+checkout, the real local filesystem and gateway work. Follow the
+[branch guide](BRANCHES.md) to choose the appropriate track.
 
 The [GFS reliability chapter](13-gfs-reliability.md) includes an executable
 in-memory model of chunking, replication, repair, primary ordering and master
@@ -40,7 +41,7 @@ behavior from the remaining service work, item by item.
 | **New to distributed systems** | [Distributed storage, from zero](CONCEPTS.md) |
 | **Checking the GFS video against this project** | [Coverage audit](GFS-COVERAGE.md), then [run the model](13-gfs-reliability.md) |
 | **New to Rust** | [Chapter 1](01-rust-you-need.md), then [the Rust reference](RUST-REFERENCE.md) |
-| **Learning best by running things** | [`examples/parts/`](../../examples/parts/) — 16 runnable programs |
+| **Learning best by running things** | [`examples/parts/`](../../examples/parts/) — 17 runnable programs |
 | **Lost in a word you do not recognise** | [The glossary](GLOSSARY.md) |
 | **About to commit, or review a PR** | [The checklists](CHECKLISTS.md) |
 | **Wondering what you are even building** | the next section |
@@ -360,3 +361,6 @@ forget — is in [the checklists](CHECKLISTS.md#before-every-commit-the-30-secon
    boxes and it usually ends before the last one.
 7. **Ask.** Open a [discussion](https://github.com/ProjectOrcha/Mammoth/discussions)
    or an issue. Paste the *full* error, not a screenshot of part of it.
+
+[14 · Readiness and benchmarks](14-readiness-and-benchmarks.md) teaches atomic
+publication, resource bounds, listener safety, recovery and benchmark evidence.

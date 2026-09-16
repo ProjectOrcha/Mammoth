@@ -16,6 +16,8 @@
   import Sparkline from '$lib/components/Sparkline.svelte';
   import FastPaths from '$lib/components/FastPaths.svelte';
   import StoragePaths from '$lib/components/StoragePaths.svelte';
+  import Panel from '$lib/components/Panel.svelte';
+  import LatestBenchmark from '$lib/components/LatestBenchmark.svelte';
 
   const report = $derived(live.report);
   const summary = $derived(report ? summarizeCluster(report) : null);
@@ -86,6 +88,15 @@
     </div>
   </header>
 
+  <LatestBenchmark />
+  {#if live.source === 'gateway' && report?.memory_cache}
+    <Panel title="Read cache" note="Verified bytes held in memory">
+      {#snippet actions()}<a href="/configure">Configure memory →</a>{/snippet}
+      <p>{bytes(report.memory_cache.resident_bytes)} used of {bytes(report.memory_cache.capacity_bytes)} · {count(report.memory_cache.entries)} cached ranges</p>
+      <p>{count(report.memory_cache.hits)} hits · {count(report.memory_cache.misses)} misses · {count(report.memory_cache.evictions)} evictions since this service started.</p>
+      <p>Repeated reads can reuse verified bytes. File changes select the new version; health checks still inspect storage.</p>
+    </Panel>
+  {/if}
   {#if !report || !summary}
     <section
       class="empty-state"

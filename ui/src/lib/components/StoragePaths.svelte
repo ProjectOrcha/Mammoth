@@ -5,10 +5,10 @@
   const blocks = $derived(Object.values(report.health).reduce((a, b) => a + b, 0));
   const copies = $derived(report.nodes.reduce((a, n) => a + n.fragments, 0));
   const cards = $derived([
-    { title: 'Verified reads', value: 'Checksummed', note: 'Every block is checked before it is returned.', steps: ['Resolve the file in the namespace', 'Read a stored replica and verify its checksum', 'Try another copy if the first is damaged'], href: '/files', action: 'Inspect a file' },
-    { title: 'Replicated writes', value: `${count(copies)} copies`, note: `${count(blocks)} blocks across ${report.nodes.length} worker directories.`, steps: ['Split large files into blocks', 'Choose workers with rack-aware placement', 'Commit the file after writing its replicas'], href: '/distribution', action: 'Explore placement' },
+    { title: 'Verified reads', value: 'Checksummed', note: 'Every returned chunk is checked before delivery.', steps: ['Resolve the file in the namespace', 'Stream the requested bytes and verify each checksum chunk', 'Try another copy if the first is damaged'], href: '/files', action: 'Inspect a file' },
+    { title: 'Replicated writes', value: `${count(copies)} copies`, note: `${count(blocks)} blocks across ${report.nodes.length} worker directories.`, steps: ['Split large files into blocks', 'Choose workers with rack-aware placement', 'Write replicas concurrently, then commit the file once they are durable'], href: '/distribution', action: 'Explore placement' },
     { title: 'Replica repair', value: `${count(report.health.healthy)} healthy`, note: 'Restore damaged copies from a verified replica.', steps: ['Check expected copies against stored blocks', 'Find a healthy source for each damaged copy', 'Restore missing or corrupt replicas'], href: '/cluster', action: 'Open maintenance' },
-    { title: 'Persistent namespace', value: 'Atomic', note: 'File names and metadata survive a restart.', steps: ['Write the updated namespace to a temporary file', 'Sync the metadata before replacing the previous version', 'Load the committed namespace on startup'], href: '/cluster', action: 'Inspect storage' },
+    { title: 'Persistent namespace', value: 'Atomic', note: 'File names and metadata survive a restart.', steps: ['Find names through an indexed metadata database', 'Commit changed records to a durable transaction log', 'Recover committed transactions on startup'], href: '/cluster', action: 'Inspect storage' },
   ]);
 </script>
 

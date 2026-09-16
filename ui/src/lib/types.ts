@@ -149,9 +149,19 @@ export interface RaftMember {
   last_contact_ms: number;
 }
 
+export interface CacheStats {
+  capacity_bytes: number; resident_bytes: number; entries: number;
+  hits: number; misses: number; evictions: number;
+}
+export interface ComputeMetrics {
+  input_bytes: number; input_records: number; output_bytes: number; output_records: number;
+  spill_runs: number; spilled_bytes: number; merge_passes: number; worker_threads: number;
+  memory_budget: number; elapsed_seconds: number; mode: string;
+}
 export interface ClusterReport {
+  memory_cache?: CacheStats | null;
   /** Missing on the standalone demo; explicit on a live gateway. */
-  capabilities?: { local: boolean; distributed_metrics: boolean; history: boolean; jobs: boolean };
+  capabilities?: { local: boolean; distributed_metrics: boolean; history: boolean; jobs: boolean; benchmarks?: boolean; configuration?: boolean };
   name: string;
   leader: string | null;
   safe_mode: boolean;
@@ -329,6 +339,7 @@ export interface Stage {
 }
 
 export interface Job {
+  metrics?: ComputeMetrics;
   execution?: 'local';
   input?: string;
   output?: string;

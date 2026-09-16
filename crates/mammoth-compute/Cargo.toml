@@ -1,6 +1,6 @@
 [package]
 name        = "mammoth-compute"
-description = "DAG execution engine and shuffle service"
+description = "Parallel local text jobs with in-memory batches and disk spill"
 version.workspace      = true
 edition.workspace      = true
 rust-version.workspace = true
@@ -14,3 +14,11 @@ futures-util = { workspace = true }
 tokio = { workspace = true }
 bytes = { workspace = true }
 serde = { workspace = true }
+
+rayon.workspace = true
+tempfile.workspace = true
+crc32c.workspace = true
+
+[dev-dependencies]
+mammoth-local.workspace = true
+async-trait.workspace = true

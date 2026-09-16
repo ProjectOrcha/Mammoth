@@ -1,0 +1,37 @@
+---
+import { withBase } from '../lib/links';
+import comparison from '../../public/benchmarks/comparison.json';
+const format = (value: { median: number } | null) => value ? value.median.toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—';
+---
+<div class="benchmark-evidence">
+  <p class="evidence-label">Measured on Mac · {comparison.date} · verified outputs</p>
+  <p><strong>{comparison.machine}.</strong> The recorded Mammoth memory-engine build, Hadoop HDFS {comparison.versions.hdfs}, and Spark {comparison.versions.spark} on HDFS ran on this machine. These figures measure small local workloads; they do not establish a distributed winner.</p>
+  <p>8 × 8 MiB files · 4 clients · 3 measured runs after warmup. Median rates below; higher is faster. Mammoth makes direct local calls, HDFS uses loopback RPC, and Spark runs local compute on HDFS. Memory policies and output layouts differ.</p>
+  {[3, 1].map(replicas => (
+    <details open={replicas === 3}>
+      <summary>{replicas} {replicas === 1 ? 'replica' : 'replicas'} · measured comparison</summary>
+      <div class="table-scroll"><table>
+        <caption>Median rates with {replicas} {replicas === 1 ? 'replica' : 'replicas'}</caption>
+        <thead><tr><th scope="col">Operation</th><th scope="col">Unit</th><th scope="col">Mammoth</th><th scope="col">Hadoop HDFS</th><th scope="col">Spark on HDFS</th></tr></thead>
+        <tbody>{comparison.rows.filter(row => row.replication === replicas).map(row => <tr><th scope="row">{row.label}</th><td>{row.unit}</td><td>{format(row.mammoth)}</td><td>{format(row.hdfs)}</td><td>{format(row.spark)}</td></tr>)}</tbody>
+      </table></div>
+    </details>
+  ))}
+  <p class="footnote">* Repeated read reuses Mammoth’s verified memory cache; HDFS does a second normal read. OS caches remain enabled for both read phases. These are not cold-disk speeds. A dash means no measurement for that engine and operation. Spark is compared on compute, HDFS on storage.</p>
+  <details class="method"><summary>How to interpret these results</summary>{comparison.caveats.slice(1).map(note => <p>{note}</p>)}</details>
+  <div class="evidence-links"><a href={withBase('/ops/benchmarks/')}>Methodology & reproduction →</a><a href={withBase('/benchmarks/comparison.json')} download>Comparison JSON ↓</a><a href={withBase(`/benchmarks/${comparison.artifacts.mammoth}`)} download>Mammoth raw runs ↓</a><a href={withBase(`/benchmarks/${comparison.artifacts.hdfs}`)} download>HDFS raw runs ↓</a><a href={withBase(`/benchmarks/${comparison.artifacts.spark}`)} download>Spark raw runs ↓</a><a href={withBase(`/benchmarks/${comparison.artifacts.environment}`)} download>Machine & source record ↓</a></div>
+</div>
+<style>
+  .benchmark-evidence { min-width:0; line-height:1.65; }
+  .evidence-label { font-family:var(--font-mono,monospace); font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; color:var(--sl-color-text-accent,var(--mm-gold)); }
+  details { margin:1rem 0; border-top:1px solid var(--sl-color-gray-5,var(--mm-rule)); padding-top:.8rem; }
+  summary { cursor:pointer; font-weight:600; }
+  .table-scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; margin:.75rem 0; font-size:.87rem; font-variant-numeric:tabular-nums; }
+  caption { text-align:left; font-size:.8rem; margin-bottom:.4rem; }
+  td,th { padding:.5rem .65rem; text-align:right; border-bottom:1px solid var(--sl-color-gray-5,var(--mm-rule)); white-space:nowrap; }
+  td:nth-child(2),th:first-child { text-align:left; }
+  tbody th { font-weight:400; }
+  .footnote,.method { font-size:.85rem; }
+  .evidence-links { display:flex; flex-wrap:wrap; gap:.6rem 1.6rem; font-size:.85rem; margin-top:1.2rem; }
+</style>

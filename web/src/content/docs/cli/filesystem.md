@@ -37,6 +37,11 @@ Use a complete destination filename. Uploads create missing parent folders and
 replace existing file contents. Downloads refuse to replace a local file unless
 `--force` is supplied. `put - /data/input.txt` reads from standard input.
 
+If the source is empty (0 bytes), `put` stops before changing the destination.
+Choose a complete local copy if you expected data. Add `--allow-empty` when an
+empty file is intentional; this also applies to empty standard input. The web
+dashboard asks for confirmation when the selected local file is empty.
+
 Per-upload `--block-size` is available for local CLI access. With HTTP access,
 configure the gateway's block size. Erasure-coding policies and recursive `put`
 are not implemented; use [tree transfers](/cli/operations/#tree-transfers) for directories.

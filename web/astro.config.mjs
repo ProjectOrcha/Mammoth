@@ -43,7 +43,7 @@ export default defineConfig({
       // imported — Starlight's `logo.src` resolves through Astro's asset
       // pipeline and only accepts paths under src/.
       favicon: '/logo.svg',
-      description: 'A Hadoop-class distributed storage engine in Rust.',
+      description: 'A Rust storage engine with a working local preview and a distributed systems build guide.',
       social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/ProjectOrcha/Mammoth' }],
       components: {
         Head: './src/components/Head.astro',
@@ -83,7 +83,7 @@ export default defineConfig({
             { label: 'Hadoop in 10 minutes', link: '/intro/hadoop-primer/' },
             { label: 'Start contributing', link: '/contributing/' },
             { label: 'Install', link: '/intro/install/' },
-            { label: '5-minute cluster', link: '/intro/quickstart/' },
+            { label: '5-minute local service', link: '/intro/quickstart/' },
           ],
         },
         { label: 'Concepts', items: [{ autogenerate: { directory: 'concepts' } }] },

@@ -90,7 +90,7 @@ Commands:
   admin        Report health, repair replicas, collect unused blocks and inspect safemode
   job          Execute a local data-processing job
   migrate      Import or export a directory tree
-  bench        Measure a local write/read round trip, then remove the benchmark file
+  bench        Run verified local I/O, metadata and parallel compute benchmarks
   config       Show, validate or generate a configuration
   completions  Generate a shell completion script
   compat       Translate basic hdfs dfs commands into Mammoth commands
@@ -108,7 +108,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -186,7 +186,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -227,7 +227,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -268,7 +268,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -309,7 +309,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -356,7 +356,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --no-sample
 
@@ -410,7 +410,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --s3-listen <S3_LISTEN>
 
@@ -457,7 +457,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -503,7 +503,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -544,7 +544,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -591,7 +591,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -636,7 +636,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -687,10 +687,13 @@ Options:
 
           [env: MAMMOTH_MASTERS=]
 
+      --allow-empty
+          Allow a source containing 0 bytes; otherwise leave the destination unchanged
+
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -741,7 +744,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -786,7 +789,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -834,7 +837,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -882,7 +885,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -930,7 +933,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -978,7 +981,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1026,7 +1029,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1077,7 +1080,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1122,7 +1125,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1167,7 +1170,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1208,7 +1211,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1256,7 +1259,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1304,7 +1307,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1352,7 +1355,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1400,7 +1403,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1445,7 +1448,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1496,7 +1499,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1541,7 +1544,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1582,7 +1585,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1623,7 +1626,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1671,7 +1674,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1719,7 +1722,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1763,7 +1766,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1804,7 +1807,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1848,7 +1851,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1895,7 +1898,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1936,7 +1939,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -1981,7 +1984,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2022,7 +2025,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2067,7 +2070,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2108,7 +2111,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2156,7 +2159,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2197,7 +2200,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2238,7 +2241,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2279,7 +2282,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2320,7 +2323,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2366,7 +2369,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2406,6 +2409,9 @@ Options:
   -c, --config <CONFIG>
           [env: MAMMOTH_CONFIG=]
 
+      --overwrite
+          Replace an existing result. Otherwise publication fails if the path exists
+
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
@@ -2414,7 +2420,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2454,6 +2460,9 @@ Options:
   -c, --config <CONFIG>
           [env: MAMMOTH_CONFIG=]
 
+      --overwrite
+          Replace an existing result. Otherwise publication fails if the path exists
+
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
@@ -2462,7 +2471,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2508,7 +2517,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2556,7 +2565,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2604,7 +2613,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2629,30 +2638,53 @@ Options:
 ## `mammoth bench`
 
 ```text
-Measure a local write/read round trip, then remove the benchmark file
+Run verified local I/O, metadata and parallel compute benchmarks
 
-Usage: mammoth bench [OPTIONS]
+Usage: mammoth bench [OPTIONS] [WORKLOAD]
+
+Arguments:
+  [WORKLOAD]
+          Workload to measure. All workers are simulated on this host
+
+          [default: suite]
+          [possible values: suite, dfsio, metadata, compute]
 
 Options:
   -c, --config <CONFIG>
           [env: MAMMOTH_CONFIG=]
 
       --size <SIZE>
+          Bytes per I/O file. Inline storage is disabled for this benchmark
+
           [default: 8MiB]
+
+      --files <FILES>
+          [default: 8]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
           [env: MAMMOTH_MASTERS=]
 
+      --concurrency <CONCURRENCY>
+          [default: 4]
+
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+
+      --ops <OPS>
+          Files per metadata phase: create, stat, rename and delete
+
+          [default: 200]
 
       --output <OUTPUT>
           [default: auto]
           [possible values: auto, table, json, yaml, csv]
+
+      --iterations <ITERATIONS>
+          [default: 3]
 
       --json
 
@@ -2663,8 +2695,35 @@ Options:
           [default: auto]
           [possible values: auto, always, never]
 
+      --warmups <WARMUPS>
+          [default: 1]
+
+      --replication <REPLICATION>
+          Compare replica counts in separate isolated stores
+
+          [default: 1,3]
+
   -v, --verbose...
 
+
+      --block-size <BLOCK_SIZE>
+          [default: 4MiB]
+
+      --read-cache <READ_CACHE>
+          Verified read-cache capacity; 0 disables caching. Maximum 1 GiB
+
+          [default: 256MiB]
+
+      --compute-memory <COMPUTE_MEMORY>
+          Working-set target per compute job, with automatic disk spilling
+
+          [default: 32MiB]
+
+      --seed <SEED>
+          [default: 42]
+
+      --report <REPORT>
+          Also save the complete JSON report here. Reports are always kept under the local root
 
   -h, --help
           Print help
@@ -2695,7 +2754,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2736,7 +2795,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2777,7 +2836,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2818,7 +2877,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2863,7 +2922,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]
@@ -2908,7 +2967,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=]
+          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
 
       --output <OUTPUT>
           [default: auto]

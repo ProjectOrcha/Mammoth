@@ -3,8 +3,9 @@ import { flushSync, mount, unmount } from 'svelte';
 import Browse from './Browse.svelte';
 import type { FileStatus } from '../types';
 
-const api = vi.hoisted(() => ({ stat: vi.fn(), list: vi.fn(), blocks: vi.fn() }));
+const api = vi.hoisted(() => ({ stat: vi.fn(), list: vi.fn(), blocks: vi.fn(), upload: vi.fn() }));
 vi.mock('$lib/api', () => ({ api, currentSource: () => 'gateway' }));
+vi.mock('$lib/live.svelte', () => ({ live: { source: 'gateway', refresh: vi.fn() } }));
 
 let component: ReturnType<typeof mount> | undefined;
 afterEach(async () => {
@@ -50,6 +51,39 @@ describe('file navigation', () => {
     await settle();
     expect(document.querySelector('[role="alert"]')?.textContent).toContain('No block layout');
     expect(document.body.textContent).not.toContain('demo namespace');
+  });
+});
+
+describe('uploads', () => {
+  async function select(file: File) {
+    api.stat.mockImplementation(async (path) => path === '/data' ? directory(path) : null);
+    api.list.mockResolvedValue([]);
+    component = mount(Browse, { target: document.body, props: { path: '/data' } });
+    await settle();
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+    Object.defineProperty(input, 'files', { value: [file] });
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    await settle();
+  }
+
+  it.each([false, true])('requires explicit confirmation for an empty source (confirmed: %s)', async (confirmed) => {
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(confirmed);
+    const file = new File([], 'raptor.pt');
+    await select(file);
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('already empty (0 bytes) on your computer'));
+    if (confirmed) expect(api.upload).toHaveBeenCalledWith('/data/raptor.pt', file);
+    else {
+      expect(api.upload).not.toHaveBeenCalled();
+      expect(document.body.textContent).toContain('was not uploaded');
+    }
+  });
+
+  it('passes a nonempty binary file through without an empty-file prompt', async () => {
+    const confirm = vi.spyOn(window, 'confirm');
+    const file = new File([new Uint8Array([0, 255, 1, 128])], 'binary.pt');
+    await select(file);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(api.upload).toHaveBeenCalledWith('/data/binary.pt', file);
   });
 });
 

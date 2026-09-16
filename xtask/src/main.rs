@@ -1,5 +1,7 @@
 //! Small repository tasks. Paths are resolved from this crate, not the caller's cwd.
 
+use sha2::{Digest, Sha256};
+use std::io::Read;
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
@@ -48,43 +50,132 @@ fn run(root: &Path, task: Option<&str>) -> Result<(), Box<dyn std::error::Error>
         Some("dist") => {
             run(root, Some("build-ui"))?;
             command(root, "cargo", &["build", "--release", "--locked", "-p", "mammoth-cli"])?;
-            let output = Command::new("rustc").arg("-vV").output()?;
-            if !output.status.success() {
-                return Err("could not determine build target".into());
-            }
-            let version = String::from_utf8(output.stdout)?;
-            let target = version
-                .lines()
-                .find_map(|line| line.strip_prefix("host: "))
-                .ok_or("rustc did not report its host target")?;
-            let distribution = root.join("target/dist");
-            let package = distribution.join(format!("mammoth-{target}"));
-            std::fs::create_dir_all(&package)?;
-            let binary = if cfg!(windows) { "mammoth.exe" } else { "mammoth" };
-            std::fs::copy(root.join("target/release").join(binary), package.join(binary))?;
-            for name in ["README.md", "LICENSE-APACHE", "LICENSE-MIT"] {
-                std::fs::copy(root.join(name), package.join(name))?;
-            }
-            std::fs::copy(
-                root.join("docs/IMPLEMENTATION-STATUS.md"),
-                package.join("IMPLEMENTATION-STATUS.md"),
-            )?;
-            let archive = distribution.join(format!("mammoth-{target}.tar.gz"));
-            let status = Command::new("tar")
-                .arg("-czf")
-                .arg(&archive)
-                .arg("-C")
-                .arg(&package)
-                .arg(".")
-                .status()?;
-            if !status.success() {
-                return Err("archive creation failed".into());
-            }
-            println!("{}", archive.display());
+            package(root, None)?;
         }
-        _ => return Err("usage: cargo xtask <build-ui|docs|assets|dist>".into()),
+        Some("package") => package(root, std::env::args().nth(2).as_deref())?,
+        _ => return Err("usage: cargo xtask <build-ui|docs|assets|dist|package [target]>".into()),
     }
     Ok(())
+}
+
+// Package only an already-built binary. `dist` builds first; CI passes its target.
+fn package(root: &Path, target: Option<&str>) -> Result<(), Box<dyn std::error::Error>> {
+    let output = Command::new("rustc").arg("-vV").output()?;
+    if !output.status.success() {
+        return Err("could not determine build target".into());
+    }
+    let version = String::from_utf8(output.stdout)?;
+    let host = version
+        .lines()
+        .find_map(|line| line.strip_prefix("host: "))
+        .ok_or("rustc did not report its host target")?;
+    let explicit_target = target;
+    let target = target.unwrap_or(host);
+    if target.is_empty()
+        || !target.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+    {
+        return Err("invalid build target".into());
+    }
+    let binary = if target.contains("windows") { "mammoth.exe" } else { "mammoth" };
+    let build = if explicit_target.is_some() {
+        root.join("target").join(target)
+    } else {
+        root.join("target")
+    };
+    let source = build.join("release").join(binary);
+    // Fail before replacing an earlier package if the requested build is absent.
+    let binary_hash = sha256(&source)?;
+    let distribution = root.join("target/dist");
+    let package = distribution.join(format!("mammoth-{target}"));
+    if package.exists() {
+        std::fs::remove_dir_all(&package)?;
+    }
+    std::fs::create_dir_all(&package)?;
+    std::fs::copy(source, package.join(binary))?;
+    for name in ["LICENSE-APACHE", "LICENSE-MIT"] {
+        std::fs::copy(root.join(name), package.join(name))?;
+    }
+    std::fs::copy(root.join("deploy/RELEASE-README.md"), package.join("README.md"))?;
+    for name in ["IMPLEMENTATION-STATUS.md", "OPERATIONS.md", "RELEASE-READINESS.md"] {
+        let text = std::fs::read_to_string(root.join("docs").join(name))?;
+        // These notes are also read from source. Make their relative links work
+        // in the compact binary archive without shipping an entire source tree.
+        std::fs::write(package.join(name), repository_links(&text))?;
+    }
+    std::fs::copy(root.join("deploy/mammoth.toml"), package.join("mammoth.toml"))?;
+    let revision = git_output(root, &["rev-parse", "HEAD"])?;
+    let dirty = !git_output(root, &["status", "--porcelain"])?.is_empty();
+    let info = serde_json::json!({
+        "version": env!("CARGO_PKG_VERSION"), "target": target,
+        "source_revision": revision, "source_dirty": dirty,
+        "rustc": version.trim(), "binary_sha256": binary_hash,
+        "scope": "local preview; see RELEASE-READINESS.md"
+    });
+    std::fs::write(
+        package.join("BUILD-INFO.json"),
+        format!("{}\n", serde_json::to_string_pretty(&info)?),
+    )?;
+    let archive = distribution.join(format!("mammoth-{target}.tar.gz"));
+    let status = Command::new("tar")
+        // macOS otherwise adds AppleDouble resource-fork files to portable archives.
+        .env("COPYFILE_DISABLE", "1")
+        .arg("-czf")
+        .arg(&archive)
+        .arg("-C")
+        .arg(&package)
+        .arg(".")
+        .status()?;
+    if !status.success() {
+        return Err("archive creation failed".into());
+    }
+    std::fs::write(
+        archive.with_extension("gz.sha256"),
+        format!("{}  {}\n", sha256(&archive)?, archive.file_name().unwrap().to_string_lossy()),
+    )?;
+    println!("{}", archive.display());
+    Ok(())
+}
+
+fn repository_links(text: &str) -> String {
+    let prefix = "https://github.com/ProjectOrcha/Mammoth/blob/AI_coded/";
+    let mut output = text.to_owned();
+    for path in [
+        "RELEASE-READINESS.md",
+        "OPERATIONS.md",
+        "STORAGE-ENGINE.md",
+        "MEMORY-ENGINE.md",
+        "BENCHMARKS.md",
+        "BENCHMARKS-LEGACY.md",
+        "guide/BRANCHES.md",
+    ] {
+        output = output.replace(&format!("]({path})"), &format!("]({prefix}docs/{path})"));
+    }
+    for path in ["deploy/compose/docker-compose.yml", "deploy/systemd/mammoth.service"] {
+        output = output.replace(&format!("](../{path})"), &format!("]({prefix}{path})"));
+    }
+    output
+}
+
+fn git_output(root: &Path, args: &[&str]) -> Result<String, Box<dyn std::error::Error>> {
+    let result = Command::new("git").args(args).current_dir(root).output()?;
+    if !result.status.success() {
+        return Err("could not record package source revision".into());
+    }
+    Ok(String::from_utf8(result.stdout)?.trim().to_owned())
+}
+
+fn sha256(path: &Path) -> std::io::Result<String> {
+    let mut file = std::fs::File::open(path)?;
+    let mut digest = Sha256::new();
+    let mut buffer = [0u8; 65536];
+    loop {
+        let count = file.read(&mut buffer)?;
+        if count == 0 {
+            break;
+        }
+        digest.update(&buffer[..count]);
+    }
+    Ok(format!("{:x}", digest.finalize()))
 }
 
 fn command(dir: &Path, program: &str, args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {

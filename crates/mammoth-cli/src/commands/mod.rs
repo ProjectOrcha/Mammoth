@@ -5,16 +5,32 @@ use crate::{
 };
 use mammoth_core::{Backend, Result};
 
-pub async fn job(be: &dyn Backend, command: JobCommand, fmt: OutputFormat) -> Result<()> {
-    let (input, output_path, kind) = match command {
-        JobCommand::Wordcount { input, output_path } => {
-            (input, output_path, mammoth_compute::JobKind::Wordcount)
+pub async fn job(
+    be: &dyn Backend,
+    command: JobCommand,
+    config: &mammoth_core::config::Compute,
+    fmt: OutputFormat,
+) -> Result<()> {
+    let (input, output_path, kind, overwrite) = match command {
+        JobCommand::Wordcount { input, output_path, overwrite } => {
+            (input, output_path, mammoth_compute::JobKind::Wordcount, overwrite)
         }
-        JobCommand::Sort { input, output_path } => {
-            (input, output_path, mammoth_compute::JobKind::Sort)
+        JobCommand::Sort { input, output_path, overwrite } => {
+            (input, output_path, mammoth_compute::JobKind::Sort, overwrite)
         }
     };
-    output::emit(&mammoth_compute::run_local(be, input, output_path, kind).await?, fmt)
+    output::emit(
+        &mammoth_compute::run_with_output_policy(
+            be,
+            input,
+            output_path,
+            kind,
+            mammoth_compute::Options::from_config(config)?,
+            overwrite,
+        )
+        .await?,
+        fmt,
+    )
 }
 
 pub async fn migrate(be: &dyn Backend, command: MigrateCommand, fmt: OutputFormat) -> Result<()> {

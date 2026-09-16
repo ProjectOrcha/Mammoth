@@ -1,4 +1,5 @@
 //! The Mammoth CLI. All filesystem operations use the shared Backend boundary.
+mod benchmark;
 mod cli;
 mod commands;
 mod output;
@@ -126,20 +127,62 @@ async fn run(cli: Cli) -> Result<()> {
     if let Command::Config { command } = &cli.command {
         return match command {
             ConfigCommand::Show => output::emit(&config, fmt),
-            ConfigCommand::Validate => output::emit(&json!({"valid":true}), fmt),
+            ConfigCommand::Validate => {
+                config.validate_local_service()?;
+                output::emit(&json!({"valid":true,"scope":"local service"}), fmt)
+            }
             ConfigCommand::Template => {
-                println!(
-                    "{}",
-                    toml::to_string_pretty(&Config::default())
-                        .map_err(|e| Error::Config(e.to_string()))?
-                );
+                print!("{}", include_str!("../../../deploy/mammoth.toml"));
                 Ok(())
             }
         };
     }
+    if let Command::Bench {
+        workload,
+        size,
+        files,
+        concurrency,
+        ops,
+        iterations,
+        warmups,
+        replication,
+        block_size,
+        read_cache,
+        compute_memory,
+        seed,
+        report,
+    } = &cli.command
+    {
+        if !cli.masters.is_empty() {
+            return Err(Error::InvalidInput("bench measures isolated local storage; run it on the target host or use the dashboard Benchmarks page".into()));
+        }
+        let options = mammoth_bench::Options {
+            workload: match workload {
+                BenchWorkload::Suite => mammoth_bench::Workload::Suite,
+                BenchWorkload::Dfsio => mammoth_bench::Workload::Dfsio,
+                BenchWorkload::Metadata => mammoth_bench::Workload::Metadata,
+                BenchWorkload::Compute => mammoth_bench::Workload::Compute,
+            },
+            file_size: parse_size(size)?,
+            files: *files,
+            concurrency: *concurrency,
+            operations: *ops,
+            iterations: *iterations,
+            warmups: *warmups,
+            replications: replication.clone(),
+            block_size: parse_size(block_size)?,
+            read_cache_size: parse_size(read_cache)?,
+            compute_memory_budget: parse_size(compute_memory)?,
+            seed: *seed,
+        };
+        return benchmark::run(&root, options, report.as_deref(), fmt).await;
+    }
     if let Command::Ui = cli.command {
         let url = format!("http://{}", config.gateway.ui_listen.replace("0.0.0.0", "127.0.0.1"));
         return output::emit(&json!({"url":url,"start":"mammoth quickstart"}), fmt);
+    }
+    if matches!(cli.command, Command::Serve { .. } | Command::Quickstart { .. }) {
+        config.validate_local_service()?;
     }
     let mut replication = config.storage.replication;
     let mut block_size = parse_size(&config.storage.block_size)?;
@@ -161,6 +204,7 @@ async fn run(cli: Cli) -> Result<()> {
         Arc::new(
             be.with_block_size(block_size)
                 .with_inline_threshold(parse_size(&config.storage.inline_threshold)?)
+                .with_cache_size(parse_size(&config.read.cache_size)?)
                 .with_replication(replication),
         )
     };
@@ -180,22 +224,20 @@ async fn run(cli: Cli) -> Result<()> {
             if !no_sample {
                 seed(be).await?;
             }
-            service.run(backend, fmt).await
+            service.run(backend, config, fmt).await
         }
         Command::Serve { role, ui_listen, s3_listen, allow_remote } => {
             if role == "master" || role == "worker" {
                 return Err(Error::NotImplemented("separate distributed master/worker roles; run serve --role all for the local service"));
             }
-            let ui = ui_listen
-                .unwrap_or_else(|| config.gateway.ui_listen.replace("0.0.0.0", "127.0.0.1"));
-            let s3 = s3_listen
-                .unwrap_or_else(|| config.gateway.s3_listen.replace("0.0.0.0", "127.0.0.1"));
+            let ui = ui_listen.unwrap_or_else(|| config.gateway.ui_listen.clone());
+            let s3 = s3_listen.unwrap_or_else(|| config.gateway.s3_listen.clone());
             local_listeners(&ui, &s3, allow_remote)?;
-            service::Service::bind(&root, &ui, &s3).await?.run(backend, fmt).await
+            service::Service::bind(&root, &ui, &s3).await?.run(backend, config, fmt).await
         }
         Command::Ls { path } => output::files(&be.list(&path).await?, fmt),
         Command::Stat { path } => output::emit(&be.stat(&path).await?, fmt),
-        Command::Put { src, dst, replication, .. } => {
+        Command::Put { src, dst, replication, allow_empty, .. } => {
             if let Some(n) = replication {
                 let available = be.cluster_report().await?.nodes.len().min(u8::MAX as usize) as u8;
                 if n == 0 {
@@ -205,7 +247,29 @@ async fn run(cli: Cli) -> Result<()> {
                     return Err(Error::NotEnoughWorkers { wanted: n, available });
                 }
             }
-            be.write(&dst, input(&src).await?).await?;
+            let mut data = input(&src).await?;
+            if !allow_empty {
+                // Read before starting the write so an empty file or stdin cannot
+                // silently replace an existing destination. Retain the first bytes.
+                let first = loop {
+                    match data.next().await {
+                        Some(chunk) => {
+                            let chunk = chunk?;
+                            if !chunk.is_empty() {
+                                break chunk;
+                            }
+                        }
+                        None => {
+                            return Err(Error::InvalidInput(format!(
+                                "source {} is empty (0 bytes). Select a complete local file, or use --allow-empty to upload an empty file intentionally; the destination was not changed",
+                                src.display()
+                            )));
+                        }
+                    }
+                };
+                data = Box::pin(futures_util::stream::once(async { Ok(first) }).chain(data));
+            }
+            be.write(&dst, data).await?;
             if !cli.masters.is_empty() {
                 if let Some(n) = replication {
                     be.set_replication(&dst, n).await?;
@@ -351,42 +415,8 @@ async fn run(cli: Cli) -> Result<()> {
             }
             Ok(())
         }
-        Command::Bench { size } => {
-            let n = parse_size(&size)?;
-            if n > 256 * 1024 * 1024 {
-                return Err(Error::InvalidInput(
-                    "local benchmark size is limited to 256 MiB".into(),
-                ));
-            }
-            let p = PathBuf::from(format!(
-                "/.bench-{}-{}",
-                std::process::id(),
-                std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_nanos()
-            ));
-            let start = std::time::Instant::now();
-            be.write(&p, mammoth_local::body(vec![0x5a; n as usize])).await?;
-            let write_s = start.elapsed().as_secs_f64();
-            let start = std::time::Instant::now();
-            let mut s = be.read(&p, 0..u64::MAX).await?;
-            let mut total = 0;
-            while let Some(c) = s.next().await {
-                let c = c?;
-                if c.iter().any(|v| *v != 0x5a) {
-                    return Err(Error::InvalidInput("benchmark checksum failed".into()));
-                }
-                total += c.len();
-            }
-            let read_s = start.elapsed().as_secs_f64();
-            be.remove(&p, false).await?;
-            output::emit(
-                &json!({"bytes":total,"write_seconds":write_s,"read_seconds":read_s,"write_mib_s":n as f64/1048576.0/write_s,"read_mib_s":n as f64/1048576.0/read_s,"scope":"local staged I/O"}),
-                fmt,
-            )
-        }
-        Command::Job { command } => commands::job(be, command, fmt).await,
+        Command::Bench { .. } => unreachable!("bench handled before opening the live store"),
+        Command::Job { command } => commands::job(be, command, &config.compute, fmt).await,
         Command::Migrate { command } => commands::migrate(be, command, fmt).await,
         Command::Compat { args } => {
             let args: Vec<_> = args

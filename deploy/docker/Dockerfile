@@ -19,4 +19,4 @@ ENV MAMMOTH_LOCAL_ROOT=/data
 EXPOSE 8080 9000
 VOLUME ["/data"]
 ENTRYPOINT ["/usr/local/bin/mammoth"]
-CMD ["quickstart", "--ui-listen", "0.0.0.0:8080", "--s3-listen", "0.0.0.0:9000", "--allow-remote"]
+CMD ["serve", "--role", "all", "--ui-listen", "0.0.0.0:8080", "--s3-listen", "0.0.0.0:9000", "--allow-remote"]

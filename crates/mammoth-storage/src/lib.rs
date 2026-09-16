@@ -5,7 +5,8 @@ use mammoth_core::{Error, Result};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{self, File},
-    io::{Read, Write},
+    io::{Read, Seek, SeekFrom, Write},
+    ops::Range,
     path::{Path, PathBuf},
 };
 
@@ -18,6 +19,45 @@ struct Header {
     version: u32,
     len: u64,
     checksums: Vec<u32>,
+}
+
+/// One immutable block generation, checked as data is requested. Only checksum
+/// chunks overlapping the requested range are read; unverified bytes never escape.
+pub struct BlockReader {
+    file: File,
+    header: Header,
+    path: PathBuf,
+}
+impl BlockReader {
+    pub fn len(&self) -> u64 {
+        self.header.len
+    }
+    pub fn is_empty(&self) -> bool {
+        self.header.len == 0
+    }
+    pub fn read_range(&mut self, range: Range<u64>) -> Result<Vec<u8>> {
+        if range.start > range.end || range.end > self.header.len {
+            return Err(Error::InvalidInput("invalid block range".into()));
+        }
+        if range.is_empty() {
+            return Ok(vec![]);
+        }
+        let start = range.start / 4096 * 4096;
+        let end = range.end.div_ceil(4096).saturating_mul(4096).min(self.header.len);
+        let mut bytes = vec![0; (end - start) as usize];
+        self.file.seek(SeekFrom::Start(start))?;
+        self.file.read_exact(&mut bytes)?;
+        for (index, chunk) in bytes.chunks(4096).enumerate() {
+            if crc32c::crc32c(chunk) != self.header.checksums[start as usize / 4096 + index] {
+                return Err(Error::ChecksumMismatch {
+                    path: self.path.clone(),
+                    expected: "recorded CRC32C chunk".into(),
+                    actual: "mismatched chunk".into(),
+                });
+            }
+        }
+        Ok(bytes[(range.start - start) as usize..(range.end - start) as usize].to_vec())
+    }
 }
 
 /// Sync directory entries after publication on platforms supporting directory fsync.
@@ -74,10 +114,11 @@ impl BlockStore {
             len: data.len() as u64,
             checksums: data.chunks(4096).map(crc32c::crc32c).collect(),
         };
-        atomic_write(
-            &temp.path().join("meta.json"),
-            &serde_json::to_vec(&header).map_err(invalid_data)?,
-        )?;
+        // This directory is unpublished. The header needs a durable write, but
+        // does not need its own atomic rename and extra directory sync.
+        let mut meta = File::create(temp.path().join("meta.json"))?;
+        meta.write_all(&serde_json::to_vec(&header).map_err(invalid_data)?)?;
+        meta.sync_all()?;
         sync_dir(temp.path())?;
         let parent = dst.parent().expect("block parent");
         fs::create_dir_all(parent)?;
@@ -88,6 +129,10 @@ impl BlockStore {
         sync_dir(parent)
     }
     pub fn read(&self, id: u64) -> Result<Vec<u8>> {
+        let mut reader = self.open_reader(id)?;
+        reader.read_range(0..reader.len())
+    }
+    pub fn open_reader(&self, id: u64) -> Result<BlockReader> {
         let dir = self.path(id);
         let header: Header =
             serde_json::from_slice(&fs::read(dir.join("meta.json"))?).map_err(invalid_data)?;
@@ -100,17 +145,15 @@ impl BlockStore {
                 "invalid block header",
             )));
         }
-        let mut data = Vec::new();
-        File::open(dir.join("data"))?.take(header.len.saturating_add(1)).read_to_end(&mut data)?;
-        let checksums: Vec<_> = data.chunks(4096).map(crc32c::crc32c).collect();
-        if header.version != 1 || header.len != data.len() as u64 || header.checksums != checksums {
+        let file = File::open(dir.join("data"))?;
+        if file.metadata()?.len() != header.len {
             return Err(Error::ChecksumMismatch {
                 path: dir,
                 expected: format!("{} bytes with recorded CRC32C chunks", header.len),
-                actual: format!("{} bytes or mismatched chunks", data.len()),
+                actual: "incorrect block length".into(),
             });
         }
-        Ok(data)
+        Ok(BlockReader { file, header, path: dir })
     }
     pub fn remove(&self, id: u64) -> Result<()> {
         match fs::remove_dir_all(self.path(id)) {

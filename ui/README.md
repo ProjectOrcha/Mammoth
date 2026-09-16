@@ -110,7 +110,7 @@ known advisories for the reviewed UI lockfile; keep reviewing dependency updates
 
 Dashboard jobs are limited to two running operations and 100 recent submissions.
 History lasts for the current service session; output files persist, and CLI jobs
-are not included. Inputs must be UTF-8 files up to 64 MiB.
+are not included. Inputs must be UTF-8. Parallel jobs spill larger inputs to disk; Configure sets memory targets and the scratch directory. Completed jobs show cache-independent compute and spill metrics.
 
 Local distribution history samples metadata every ten seconds for up to thirty
 minutes. It stays in this tab’s memory and clears on reload. It is separate from

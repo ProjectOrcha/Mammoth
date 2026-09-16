@@ -33,7 +33,8 @@ If the wait expires, the stop request stays pending. Repeating `stop` is safe.
 the process ID and actual listener addresses. One service can run per local root.
 These commands act on the local store and reject `--masters`.
 
-Restart with the same root to retain your files.
+Restart with the same root to retain your files. For complete backup, restore,
+security and release limits, see [operating the local service](/ops/local-service/).
 
 ```bash
 mammoth --local-root .mammoth serve --role all
@@ -73,8 +74,9 @@ mammoth job wordcount /sample/words.txt /sample/counts.txt
 mammoth job sort /sample/words.txt /sample/sorted.txt
 ```
 
-Jobs accept UTF-8 input up to 64 MiB and write their results to Mammoth. The
-output must differ from the input. CLI jobs replace existing output files.
+Jobs stream UTF-8 input, process batches across CPU threads, and spill larger jobs to disk. There is no total input-size cap. Configure `compute.memory_budget` (default 128 MiB) and `compute.spill_directory`; individual lines are limited to the smaller of 16 MiB and one eighth of the memory target. Jobs write durable results to Mammoth and report memory mode, threads and spill statistics. The
+output must differ from the input. Existing output is preserved unless you pass
+`--overwrite`. The check also protects a file created while the job is running.
 
 The **Jobs** dashboard also runs word-count and line-sort jobs. It requires an
 explicit choice before replacing an existing output file. It shows running,
@@ -99,15 +101,18 @@ native HDFS migration, resumable journals, or cluster cutover.
 ## Benchmark and configuration
 
 ```bash
-mammoth bench --size 8MiB
+mammoth bench suite --size 8MiB --files 8 --replication 1,3 --report bench.json
 mammoth config show
 mammoth config validate
 mammoth config template
 mammoth completions zsh
 ```
 
-The benchmark writes, verifies, and removes a temporary file, with a maximum
-size of 256 MiB. It measures staged local I/O, not distributed throughput.
+The benchmark measures concurrent writes, separate fresh-cache and repeated reads, metadata operations, and exact-validated sort/word count
+in isolated temporary stores. It reports repeated measurements, latency percentiles,
+replication comparisons, cache/spill statistics and full JSON results. Use `--read-cache` and `--compute-memory` for benchmark memory settings. These are local, warm-cache
+measurements. See [benchmarks and measured results](/ops/benchmarks/) for methodology
+and limits. The dashboard has Benchmarks and Configure sections.
 Configuration is edited in a TOML file; `config set` is not an implemented command.
 
 See the [generated reference](/cli/reference/) for all supported options.

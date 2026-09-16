@@ -46,3 +46,7 @@ target/distrib/
 # Local frontend settings (never commit credentials)
 .env.local
 .env.*.local
+
+# Python benchmark tooling
+__pycache__/
+*.pyc

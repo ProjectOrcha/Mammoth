@@ -106,6 +106,16 @@ impl Backend for ClusterBackend {
         self.request(Method::PUT, "fs/data", &[("path", path(p)?)], Some(data)).await?;
         Ok(())
     }
+    async fn create(&self, p: &Path, data: ByteStream) -> Result<()> {
+        self.request(
+            Method::PUT,
+            "fs/data",
+            &[("path", path(p)?), ("create", "true".into())],
+            Some(data),
+        )
+        .await?;
+        Ok(())
+    }
     async fn remove(&self, p: &Path, recursive: bool) -> Result<()> {
         self.modify(
             Method::DELETE,

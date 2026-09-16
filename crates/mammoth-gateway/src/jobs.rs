@@ -1,6 +1,6 @@
 //! Bounded text jobs submitted by the dashboard. History lasts for this service session.
 use crate::{now_ms, Gateway};
-use mammoth_compute::{run_local, JobKind};
+use mammoth_compute::{run_with_output_policy, JobKind};
 use mammoth_core::{Error, Result};
 use serde_json::{json, Value};
 use std::{collections::VecDeque, path::PathBuf, sync::Arc};
@@ -59,14 +59,15 @@ pub async fn submit(
         return Err(Error::InvalidInput("job output must differ from input".into()));
     }
     let source = state.backend.stat(&input).await?;
-    if source.is_dir || source.len > 64 * 1024 * 1024 {
-        return Err(Error::InvalidInput("select a UTF-8 file up to 64 MiB".into()));
+    if source.is_dir {
+        return Err(Error::InvalidInput("select a UTF-8 file".into()));
     }
     match state.backend.stat(&output).await {
         Ok(target) if target.is_dir || !overwrite => return Err(Error::AlreadyExists(output)),
         Ok(_) | Err(Error::NotFound(_)) => {}
         Err(error) => return Err(error),
     }
+    let options = state.dashboard.compute_options()?;
     let mut jobs = state.jobs.0.lock().await;
     if jobs.iter().filter(|job| job["state"] == "running").count() >= 2 {
         return Err(Error::InvalidInput(
@@ -96,7 +97,9 @@ pub async fn submit(
     let state = state.clone();
     tokio::spawn(async move {
         let started = std::time::Instant::now();
-        let result = run_local(state.backend.as_ref(), input, output, kind).await;
+        let result =
+            run_with_output_policy(state.backend.as_ref(), input, output, kind, options, overwrite)
+                .await;
         let mut jobs = state.jobs.0.lock().await;
         if let Some(job) = jobs.iter_mut().find(|job| job["id"] == id) {
             job["elapsed_s"] = json!(started.elapsed().as_secs_f64());
@@ -105,8 +108,9 @@ pub async fn submit(
             job["stages"][0]["done"] = json!(if result.is_ok() { 1 } else { 0 });
             job["tasks"][0]["state"] = json!(if result.is_ok() { "done" } else { "failed" });
             job["tasks"][0]["dur_s"] = json!(started.elapsed().as_secs_f64());
-            if let Err(error) = result {
-                job["error"] = json!(error.to_string());
+            match result {
+                Ok(result) => job["metrics"] = json!(result.metrics),
+                Err(error) => job["error"] = json!(error.to_string()),
             }
         }
     });

@@ -15,6 +15,7 @@ path = "src/main.rs"
 [dependencies]
 mammoth-core  = { workspace = true }
 mammoth-local = { workspace = true }
+mammoth-bench = { workspace = true }
 mammoth-viz   = { workspace = true }
 
 clap        = { workspace = true }
