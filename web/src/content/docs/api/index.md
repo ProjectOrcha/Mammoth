@@ -3,6 +3,9 @@ title: HTTP API
 description: The endpoints the CLI and the Web UI both consume.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 The CLI is just another client of this API. Anything the UI can show, a script
 can fetch — which is what stops the two from drifting apart.
 

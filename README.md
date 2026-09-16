@@ -1,410 +1,107 @@
-<p align="center">
-  <img src="assets/logo/mammoth-logo.svg" alt="Mammoth" width="360">
-</p>
+<p align="center"><img src="assets/logo/mammoth-logo.svg" alt="Mammoth" width="360"></p>
 
-<h1 align="center">Mammoth</h1>
+# Mammoth
 
-<p align="center">
-  <strong>A Hadoop-class distributed storage engine in Rust.</strong><br>
-  The elephant, but faster, and without the JVM.
-</p>
+**Durable context memory for coding agents.** New session. Same memory.
 
-<p align="center">
-  <a href="https://github.com/ProjectOrcha/Mammoth/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/ProjectOrcha/Mammoth/ci.yml?branch=main&label=ci"></a>
-  <a href="#licence"><img alt="Licence" src="https://img.shields.io/badge/licence-Apache--2.0%20OR%20MIT-blue"></a>
-  <img alt="Rust" src="https://img.shields.io/badge/rust-1.85%2B-orange">
-  <img alt="Status" src="https://img.shields.io/badge/status-pre--release-yellow">
-</p>
+Keep project decisions, conventions, verified notes, and handoffs available across
+coding sessions. Mammoth stores context locally, recalls relevant entries with
+full-text search, and exposes the same memory through a CLI and an MCP server.
 
----
+- **Persistent:** SQLite WAL transactions with FULL synchronous commits.
+- **Project-scoped:** one project per MCP connection; no tool-level project override.
+- **Revision-aware:** retained history and conflict checks for concurrent agents.
+- **Bounded recall:** relevance-ranked lexical search with a configurable byte budget.
+- **Local:** no hosted service, model, embedding API, or account required.
 
-> [!WARNING]
-> **Mammoth is pre-release and does not work yet.** This repository is a
-> scaffold: the architecture, the command surface and the documentation are
-> real, most of the implementation is not. See the [roadmap](docs/ROADMAP.md)
-> for what exists and what does not. The first usable release is **M5**.
+The memory workflow is implemented on **both `main` and `AI_coded`**. This is a
+local preview; see [durability and boundaries](docs/AGENT-MEMORY.md).
 
-**New runnable learning demo:** `cargo run -p mammoth-local --example gfs-demo`
-models GFS chunk replication, heartbeat repair, primary write ordering and
-standby takeover in memory. Read the [walkthrough](docs/guide/13-gfs-reliability.md)
-and [item-by-item GFS coverage audit](docs/guide/GFS-COVERAGE.md). This is a
-separate teaching model; the storage service and `LocalBackend` remain unfinished.
+## Start in the terminal
 
-## What it is
-
-**This is the manual build track (`main`).** Use the [team branch guide](docs/guide/BRANCHES.md).
-The separate `AI_coded` branch contains a working local reference; its features
-and benchmark scores are not claims about this scaffold.
-
-You have a 10 TB file. No single machine has 10 TB of fast disk, and reading it
-at 200 MB/s would take 14 hours. So you chop it into pieces, put the pieces on
-100 machines, and read all 100 at once. Now it takes 8 minutes.
-
-That is the whole idea. Everything else is bookkeeping — an index of where each
-piece went, redundant copies so machine death is survivable, and a scheduler to
-run code next to the data instead of shipping the data to the code.
-
-HDFS does that job. The planned Mammoth architecture aims to provide it as **one binary** with **one TOML file**,
-with no garbage collector pauses, no ZooKeeper, no JournalNodes, no XML, and an
-**S3 API** so the tools you already use work unchanged.
-
-New to any of this? Read
-**[Hadoop architecture in 10 minutes](web/src/content/docs/intro/hadoop-primer.md)** first.
-
-## Planned design choices
-
-| Hadoop's problem | What it costs you | Mammoth's answer |
-| --- | --- | --- |
-| JVM garbage collection | a 200 GB-heap NameNode pauses for *seconds* | no GC; Rust |
-| One global namespace lock | one slow `listStatus` blocks thousands of clients | immutable namespace behind `ArcSwap` — readers never block |
-| Metadata in RAM only | namespace capped by one machine's RAM | Raft-backed metadata store |
-| The small-file problem | 1M tiny files kill a cluster | files under 1 MiB skip the block layer entirely |
-| Two-step reads | a master round trip before every open, and again every 10 blocks | placement is computed, not looked up — **0–1 round trip** |
-| Chain-replicated writes | 3 serial hops out, 3 acks back; one slow disk stalls the write | erasure-coded fragments **scattered in parallel**, quorum-acked |
-| Chain-replicated repair | rebuilding a dead 160 TB node takes hours | **every node repairs at once**; LRC halves the traffic |
-| 30-minute startup | the block map is rebuilt from reports, read-only meanwhile | the map is **memory-mapped back**; a 32-byte Merkle root per worker |
-| 6+ XML files, 1000+ properties | nobody knows what is actually set | one `mammoth.toml`, env-overridable |
-| ZooKeeper + JournalNodes + ZKFC | three extra distributed systems to fail over one process | Raft, built in |
-| Full block reports | multi-second metadata stalls | rolling `xxhash3` digests, full report only on mismatch |
-| Four CLI scripts, Hadoop verbs | `hdfs dfs -ls /data` | `mammoth ls /data` |
-
-Full vocabulary mapping in
-[What is Mammoth?](web/src/content/docs/intro/what.md).
-
-## Try what works today
-
-New contributors: start with [Your first hour](docs/guide/START-HERE.md),
-[the code map](docs/guide/CODE-MAP.md), and the
-[four-person team plan](docs/guide/TEAM-PLAN.md). Contributors outside the core
-team have a separate [fork-to-PR guide](docs/guide/EXTERNAL-CONTRIBUTORS.md).
-
+Requires **Rust 1.88+** and a C compiler for bundled SQLite. Node is not needed for
+agent memory. From either branch:
 
 ```bash
-git clone --branch main https://github.com/ProjectOrcha/Mammoth
-cd Mammoth
-cargo build --release -p mammoth-cli
-./target/release/mammoth --help
-./target/release/mammoth --version
-cargo run -p mammoth-parts --example 13-block-matrix
-cargo run -p mammoth-local --example gfs-demo
+cargo build --release --locked -p mammoth-cli -p mammoth-mcp
+./target/release/mammoth memory --project my-app remember pagination \
+  --title "API pagination" --kind decision \
+  --content "Use cursor pagination for the event log." \
+  --tag api --source src/events.rs
+./target/release/mammoth memory --project my-app recall "pagination"
 ```
 
-The standalone dashboard works with simulated data: run `npm ci` and
-`npm run dev` in `ui/` using Node 22.x, then open <http://localhost:5173>.
+The entry survives process restarts. The default store is
+`~/.mammoth/local/agent-memory.sqlite3`. Set `--local-root /absolute/store/path`
+before `memory` or use `MAMMOTH_LOCAL_ROOT` to choose another root.
 
-**The `quickstart` output below illustrates the planned product.** It does not
-run a cluster in this checkout; command execution currently returns `E0002`.
+## Connect your coding agent
 
+Build the standalone server above and add it to your MCP client's configuration:
 
-```console
-$ mammoth quickstart
-
-  Mammoth v0.1.0
-
-  ✔ config written        ~/.mammoth/mammoth.toml
-  ✔ started master        127.0.0.1:7000
-  ✔ started 3 workers     w1 w2 w3  (simulated, single machine)
-  ✔ started gateway       S3 :9000 · UI :8080
-  ✔ sample data loaded    /sample/nyc-taxi.parquet (120 MB)
-
-  Web UI  →  http://localhost:8080
-```
-
-Distribution packages, installer scripts, Homebrew and container releases remain
-future work. Use the source build above; `cargo xtask dist` deliberately reports
-that this scaffold has no release packager.
-
-## You can see your data
-
-Hadoop's web UI shows you tables of numbers. Mammoth shows you where your data
-actually is — from the terminal, over SSH, with no browser.
-
-```console
-$ mammoth viz blocks /data/sales-2026.csv
-
-  /data/sales-2026.csv   350 MB · 3 blocks · replication 3
-
-           w1    w2    w3    w4    w5    w6
-  blk 1    ●     ●     ●     ·     ·     ·
-  blk 2    ·     ●     ●     ●     ·     ·
-  blk 3    ●     ·     ●     ·     ●     ·
-
-  ● primary   ◐ replica   ✕ corrupt   · absent
-
-  racks:   w1 w2 ∈ rack-a    w3 w4 ∈ rack-b    w5 w6 ∈ rack-c
-  ⚠ blk 1 has all 3 replicas in racks a,b — rack-c unused
-    this file survives a rack failure, but placement is unbalanced
-    fix: mammoth admin balancer start --scope /data/sales-2026.csv
-```
-
-```console
-$ mammoth viz skew /warehouse/events
-
-  PARTITION SIZE DISTRIBUTION           1,024 files · 4.2 TB
-
-    dt=2026-08-01  ██                    1.2 GB
-    dt=2026-08-03  ████████████████████ 89.0 GB  ⚠ 68× median
-    dt=2026-08-04  ██                    1.1 GB
-    ... 1,019 more
-
-  ⚠ severe skew — one task will process 89 GB while 1,023 process ~1 GB.
-    your job's runtime is set by that one task.
-```
-
-Also `viz cluster`, `viz topology`, `viz treemap`, `viz health --live`,
-`viz flow`, and `mammoth top` — a live TUI dashboard that works over SSH.
-Every one of them has a `--json` form.
-
-Full gallery: [Data distribution visualization](web/src/content/docs/concepts/visualization.md).
-
-## It speaks S3
-
-The single most important decision in the project. The moment the gateway
-implements the S3 API, every tool in the modern data ecosystem works against
-your cluster on day one — Spark, DuckDB, Polars, Trino, ClickHouse, pandas,
-Iceberg, Delta Lake — with a one-line config change and zero integration work.
-
-```python
-import duckdb
-duckdb.sql("SET s3_endpoint='localhost:9000'")
-duckdb.sql("SELECT count(*) FROM 's3://warehouse/sales/*.parquet'")
-# ↑ this runs against your cluster
-```
-
-## Errors that teach
-
-Never a stack trace. What broke, why, and the next command to run.
-
-```console
-$ mammoth put ./big.bin /data/big.bin
-
-  error[E0301]: not enough healthy workers for replication 3
-
-    only 2 workers are available, but this file requires 3 replicas
-
-  what you can do:
-    · lower replication:   mammoth put ./big.bin /data/big.bin --replication 2
-    · check node health:   mammoth node list
-    · why is a node down:  mammoth doctor --node w3
-
-  docs: https://projectorcha.github.io/Mammoth/errors/E0301
-```
-
-## Architecture
-
-This is the planned distributed architecture. The initial M5 service has one
-master; three-master HA requires M6. The local GFS example models a two-master
-takeover separately and does not implement Raft.
-
-```mermaid
-flowchart TB
-    clients["clients<br/>CLI · SDK · any S3 tool"]
-    gw["gateway<br/>S3 :9000 · Web UI :8080"]
-    masters["masters ×3 · Raft — the index<br/>1 leader, 2 followers<br/>namespace · block map<br/>leases · scheduler<br/>HA by default"]
-    workers["workers ×N — the shelves,<br/>and the muscle<br/>block storage<br/>task execution · shuffle"]
-
-    clients --> gw
-    gw -->|"open — once per lease,<br/>not once per read"| masters
-    masters -->|"namespace, streamed to<br/>read-only learners"| workers
-    gw ==>|"data — never touches the master<br/>reads resolve at the worker<br/>writes disperse in parallel"| workers
-    workers -.->|"heartbeats every 3s<br/>+ 32-byte Merkle root"| masters
-```
-
-ONE binary: `mammoth serve --role master|worker|gateway|all`
-
-Everything above hides behind one trait, so the CLI and the UI never learn
-whether they are talking to a simulation or a real cluster:
-
-```rust
-#[async_trait]
-pub trait Backend: Send + Sync {
-    async fn list(&self, path: &Path) -> Result<Vec<FileStatus>>;
-    async fn stat(&self, path: &Path) -> Result<FileStatus>;
-    async fn read(&self, path: &Path, range: Range<u64>) -> Result<ByteStream>;
-    async fn write(&self, path: &Path, data: ByteStream) -> Result<()>;
-    async fn remove(&self, path: &Path, recursive: bool) -> Result<()>;
-    async fn block_layout(&self, path: &Path) -> Result<Vec<BlockPlacement>>;
-    async fn cluster_report(&self) -> Result<ClusterReport>;
+```json
+{
+  "mcpServers": {
+    "mammoth": {
+      "command": "/absolute/path/to/Mammoth/target/release/mammoth-mcp",
+      "args": ["--local-root", "/absolute/path/to/memory-store", "--project", "my-app"]
+    }
+  }
 }
 ```
 
-`LocalBackend` fakes six workers as six directories on one disk.
-`ClusterBackend` talks to real masters over gRPC. Same trait, same callers.
-Why: [ADR 0002](docs/adr/0002-backend-trait.md).
+Replace the absolute paths. Client configuration locations vary. The server uses
+stdio, so your agent launches it; no background service or network port is needed.
+`mammoth --local-root /absolute/store/path mcp --project my-app` is equivalent.
+Add `--read-only` for recall, get, and history without mutation tools.
 
-## The four fast paths
+**Tools:** `memory_remember`, `memory_recall`, `memory_get`, `memory_history`, and
+`memory_forget`. See the [MCP guide](docs/MCP.md) for arguments and verification.
 
-Four operations decide how a cluster feels, and HDFS's answers to all four were
-designed for 1 Gb networks and spinning disks.
+## Work across sessions
 
-| | Hadoop | Mammoth |
-| --- | --- | --- |
-| **Open + read** | 2 round trips, every time | **0–1 round trip** — placement is computed from the block ID, and `open` returns a lease for the whole file |
-| **Write a block** | 3 serial hops, serial acks | **1 parallel hop** — erasure-coded fragments scattered at once, acked on a quorum |
-| **Rebuild a dead node** | one source, one sink, chained | **every node at once** — repair is declustered, and LRC repairs one loss from 3 fragments instead of 6 |
-| **Master restart** | 30+ min rebuilding the block map | **seconds** — the map is `mmap`ed back, and each worker confirms millions of blocks with one 32-byte Merkle root |
-
-All four rest on one change: **placement is computed, not remembered.** Given a
-block ID and the topology, every party derives the same replica set in ~200 ns
-with no lookup — which is what lets a read skip the master, a repair run
-everywhere at once, and a restart skip the rebuild entirely.
-
-Design, cost models and build steps:
-[The four fast paths](web/src/content/docs/concepts/fast-paths.md).
-These are design targets, not benchmarks — Mammoth is pre-release.
-
-## Repository layout
-
-```
-mammoth/
-├── crates/            the Rust workspace
-│   ├── mammoth-core/       ★ traits, types, errors, config   ← start here
-│   ├── mammoth-cli/        ★ the `mammoth` binary
-│   ├── mammoth-viz/        ★ terminal charts, heatmaps, TUI dashboard
-│   ├── mammoth-local/      ★ LocalBackend — single-machine simulation
-│   ├── mammoth-gateway/    ★ web server, REST/SSE, S3 API, embedded UI
-│   ├── mammoth-proto/        protobuf + tonic build
-│   ├── mammoth-rpc/          transport, connection pool, auth
-│   ├── mammoth-storage/      block files, checksums, volumes, scrubber
-│   ├── mammoth-meta/         inode tree, block map, leases, Raft state machine
-│   ├── mammoth-master/       master role
-│   ├── mammoth-worker/       worker role
-│   ├── mammoth-client/       ClusterBackend + Rust SDK
-│   ├── mammoth-scheduler/    queues, placement, locality
-│   ├── mammoth-compute/      DAG engine, shuffle
-│   ├── mammoth-migrate/      HDFS/S3 migration
-│   └── mammoth-testkit/      cluster harness, fault injection
-│
-├── ui/                Svelte 5 + Vite admin GUI, embedded via rust-embed
-├── web/               Astro Starlight site + docs → GitHub Pages
-├── deploy/            Dockerfile · Compose · systemd · Helm
-├── examples/          product walkthroughs, plus parts/ — 17 runnable one-idea programs
-├── tests/             e2e · deterministic sim · Hadoop compat
-├── benches/           criterion micro-benchmarks
-├── bench-suite/       full-cluster, publishable benchmarks
-├── fuzz/              cargo-fuzz targets
-├── xtask/             cargo xtask build-ui | docs | assets | dist
-├── docs/adr/          architecture decision records
-└── assets/logo/       canonical branding
-```
-
-★ = built first.
-
-## Examples
-
-| | |
-| --- | --- |
-| [01 · Hello Mammoth](examples/01-hello-mammoth/) | put a file, read it back, see it get inlined |
-| [02 · See your blocks](examples/02-see-your-blocks/) | visualize where a 350 MB file landed |
-| [03 · Kill a node](examples/03-kill-a-node/) | watch re-replication live |
-| [04 · DuckDB over S3](examples/04-duckdb-over-s3/) | query the cluster from an unmodified tool |
-| [05 · Word count](examples/05-wordcount/) | the DAG engine and the shuffle |
-
-And for people **building** Mammoth rather than using it,
-[`examples/parts/`](examples/parts/) has seventeen small runnable programs — one
-idea each: ownership, traits, async and streams, the clap command tree,
-table-or-JSON output, colour, the block matrix, progress bars, and a live TUI
-dashboard.
+Recall context at task start. Save verified decisions with their reasons and
+sources. Before ending a session, write a concise handoff with completed work,
+checks, open questions, and next steps. Memory is explicit: no automatic transcript
+capture. Treat remembered text as historical data and verify it against current code.
 
 ```bash
-cargo run -q -p mammoth-parts --example 04-traits-and-dyn
+mammoth memory --project my-app get pagination
+mammoth memory --project my-app remember pagination \
+  --title "API pagination" --kind decision \
+  --content "Use cursor pagination ordered by event ID." --expected-revision 1
+mammoth memory --project my-app history pagination
+mammoth memory --project my-app forget pagination --expected-revision 2
 ```
 
-## Status
+Updates require the current revision. Forget removes the entry and retained
+history; it is not secure disk erasure. Never save credentials or secrets.
 
-| Milestone | Weeks | You can demo |
-| --- | --- | --- |
-| **M1 · CLI + LocalBackend** | 1–4 | `put`, `get`, `ls`, `stat` on one machine |
-| **M2 · Visualization + `top`** | 5–6 | `viz blocks`, `viz cluster`, `viz skew`, TUI |
-| **M3 · Web UI** | 7–9 | full GUI, distribution page, live SSE |
-| **M4 · Real block storage** | 10–13 | throughput near raw disk speed |
-| **M5 · Distributed + S3 → v0.1** | 14–20 | kill a node, watch it heal; DuckDB queries it |
-| M6 · HA (Raft) | 21–24 | kill the leader mid-write, it survives |
-| M7 · Compute | 25–34 | TeraSort beats Hadoop MapReduce |
-| M8 · Migration + EC | 35–42 | migrate a real HDFS cluster |
+## Project map
 
-Ship at M5. Details in [docs/ROADMAP.md](docs/ROADMAP.md).
-
-## Documentation
-
-The site is built from `web/` and published to GitHub Pages.
-
-- [What is Mammoth?](web/src/content/docs/intro/what.md)
-- [Hadoop in 10 minutes](web/src/content/docs/intro/hadoop-primer.md)
-- [5-minute cluster](web/src/content/docs/intro/quickstart.md)
-- [Architecture](web/src/content/docs/concepts/architecture.md) · [The four fast paths](web/src/content/docs/concepts/fast-paths.md) · [Performance](web/src/content/docs/concepts/performance.md) · [Visualization](web/src/content/docs/concepts/visualization.md)
-- [Data guide](web/src/content/docs/data/index.md) — block size, replication, formats, partitioning, skew
-- [Configuration](web/src/content/docs/ops/configuration.md) · [Operations](web/src/content/docs/ops/index.md)
-- [HTTP and S3 API](web/src/content/docs/api/index.md) · [Migration](web/src/content/docs/migration/index.md)
-
-## Building it yourself
-
-New to Rust, or to distributed systems? **[The Mammoth build guide](docs/guide/)**
-takes you from an empty machine to a working filesystem with block
-visualization, through numbered chapters and runnable examples. Validate each implementation
-with the chapter’s acceptance tests.
-It assumes no Rust and no Hadoop, and it is written for a team of four.
-
-| | |
+| Location | Purpose |
 | --- | --- |
-| [**Distributed storage, from zero**](docs/guide/CONCEPTS.md) | 40 minutes, no code — read this first |
-| [**The four-person plan**](docs/guide/TEAM-PLAN.md) | who does what, and the four handoffs |
-| [0 · Set up your machine](docs/guide/00-setup.md) | Rust, Git, Node, first build |
-| [1 · The Rust you actually need](docs/guide/01-rust-you-need.md) | 30 minutes, not a course |
-| [2 · Your first change](docs/guide/02-first-change.md) | a real command, end to end |
-| [3 · How the team works together](docs/guide/03-team-workflow.md) | branches, reviews, who does what |
-| [4 · Understanding the Backend trait](docs/guide/04-the-backend-trait.md) | the idea everything hangs off |
-| [5](docs/guide/05-localbackend-part-1.md) · [6 · LocalBackend](docs/guide/06-localbackend-part-2.md) | blocks, replicas, rack-aware placement |
-| [7 · Wiring up the CLI](docs/guide/07-wiring-the-cli.md) | `ls`, `put`, `cat`, `stat` |
-| [8 · `viz blocks`](docs/guide/08-viz-blocks.md) | seeing where your data went |
-| [8a · Colour, done properly](docs/guide/08a-colour-in-the-terminal.md) | one palette for the CLI, the TUI and the web |
-| [8b · `mammoth top`](docs/guide/08b-the-live-tui.md) | the live dashboard, in ratatui |
-| [9 · The web UI](docs/guide/09-web-ui.md) | REST API and embedded dashboard |
-| [10 · GitHub Pages](docs/guide/10-github-pages.md) | publish the docs site |
-| [11 · Where to go next](docs/guide/11-what-next.md) | M4 and beyond |
-| [12 · The four fast paths](docs/guide/12-the-fast-paths.md) | the design for the distributed half |
-| [13 · GFS reliability](docs/guide/13-gfs-reliability.md) | runnable replication, repair, write ordering and master takeover |
+| `crates/mammoth-memory` | Durable context, revisions, project isolation, full-text recall |
+| `crates/mammoth-mcp` | Official Rust MCP SDK server and shared memory CLI commands |
+| `crates/mammoth-cli` | `mammoth memory` and `mammoth mcp` entry points |
+| `web` | Product website and agent-memory documentation |
+| `docs/AGENT-MEMORY.md` | Data model, durability, search, and limits |
+| `docs/MCP.md` | Coding-agent connection guide |
 
-[GFS video coverage and remaining gaps](docs/guide/GFS-COVERAGE.md) maps each
-supplied video topic to the implementation, tests and production work still needed.
+The earlier storage engine, dashboard, benchmarks, and distributed-systems lessons
+remain available as legacy engineering material. They are independent of the
+agent-memory database. `AI_coded` retains the working local storage reference;
+`main` retains its storage teaching scaffold. See [branch guidance](docs/guide/BRANCHES.md).
 
-Plus three references you come back to rather than read through:
-[the Rust reference](docs/guide/RUST-REFERENCE.md) (including a decoder for
-every compiler error this codebase produces),
-[the glossary](docs/guide/GLOSSARY.md), and
-[the checklists](docs/guide/CHECKLISTS.md).
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). The short version:
+## Develop
 
 ```bash
-cargo fmt --all
-cargo clippy --workspace --all-targets -- -D warnings
-cargo nextest run --workspace
+cargo test --locked -p mammoth-memory -p mammoth-mcp
+cargo test --locked -p mammoth-cli
+cargo fmt --all --check
+npm --prefix web ci
+npm --prefix web run build
 ```
 
-Architectural decisions get an ADR in [`docs/adr/`](docs/adr/), written *before*
-the code. Anything involving more than one node gets a deterministic simulation
-test, so the bug reproduces from a seed.
-
-## Prior art worth studying
-
-[Apache Ozone](https://ozone.apache.org/) (post-HDFS metadata) ·
-[SeaweedFS](https://github.com/seaweedfs/seaweedfs) (small-file packing) ·
-[JuiceFS](https://juicefs.com/) (pluggable metadata) ·
-[MinIO](https://min.io/) (S3 surface, erasure coding) ·
-[TigerBeetle](https://tigerbeetle.com/) (deterministic simulation testing) ·
-[DataFusion](https://datafusion.apache.org/) (the query layer we adopt rather than rebuild)
-
-## Licence
-
-Dual-licensed under either of
-
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-- MIT licence ([LICENSE-MIT](LICENSE-MIT))
-
-at your option. Contributions are dual-licensed on the same terms.
-
-After local integration, follow [readiness and benchmarking](docs/guide/14-readiness-and-benchmarks.md)
-and run [atomic publication example 17](examples/parts/examples/17-atomic-publication.rs).
+The website requires Node 22.12+ (22.x). See [the roadmap](docs/ROADMAP.md) and
+[contributing](CONTRIBUTING.md). Licensed under MIT or Apache-2.0.

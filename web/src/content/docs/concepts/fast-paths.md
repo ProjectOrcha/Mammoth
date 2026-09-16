@@ -3,6 +3,9 @@ title: The four fast paths
 description: One-shot reads, fan-out dispersal writes, declustered parallel repair and warm start — the four places Hadoop's design costs the most, and what Mammoth does instead.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 Four operations dominate how a cluster *feels*: opening a file, writing one,
 rebuilding redundancy after a machine dies, and starting the master back up.
 Hadoop's answers to all four were designed for 1 Gb networks and spinning disks,

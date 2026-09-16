@@ -1,62 +1,53 @@
 ---
-title: 5-minute cluster
-description: One command to a running cluster with sample data and an open browser.
-sidebar:
-  order: 4
+title: Your first durable memory
+description: Save a decision, close the process, and recall it in a new session.
 ---
 
-:::caution[Planned walkthrough]
-The commands and output below describe the intended product. `quickstart` and
-`serve` do not run a cluster in this scaffold. To try working code today, follow
-[contributor setup](/contributing/) and run the standalone demo dashboard.
-:::
+[Install Mammoth](/intro/install/), then choose a stable project name:
 
-```console
-$ mammoth quickstart
-
-  Mammoth v0.1.0
-
-  ✔ config written        ~/.mammoth/mammoth.toml
-  ✔ data dir created      ~/.mammoth/data
-  ✔ started master        127.0.0.1:7000
-  ✔ started 3 workers     w1 w2 w3  (simulated, single machine)
-  ✔ started gateway       S3 :9000 · UI :8080
-  ✔ sample data loaded    /sample/nyc-taxi.parquet (120 MB)
-
-  Web UI  →  http://localhost:8080
-  Try     →  mammoth ls /sample
-             mammoth viz blocks /sample/nyc-taxi.parquet
-
-  Stop with: mammoth serve stop
+```bash
+mammoth memory --project my-app remember pagination \
+  --title "API pagination" --kind decision \
+  --content "Use cursor pagination for the event log." \
+  --tag api --source src/events.rs
 ```
 
-## Put a file and look at where it went
+The response includes `revision: 1`. That process can exit; the entry is on disk.
+In another terminal or session, recall it from the same local root:
 
-```console
-$ mammoth put ./sales-2026.csv /data/sales-2026.csv
-  uploading  ████████████████████████  350 MB / 350 MB  ·  412 MB/s  ·  0s
-  ✔ /data/sales-2026.csv   350 MB · 3 blocks · replication 3
-
-$ mammoth viz blocks /data/sales-2026.csv
-
-  /data/sales-2026.csv   350 MB · 3 blocks · replication 3
-
-           w1    w2    w3
-  blk 1    ●     ●     ●
-  blk 2    ·     ●     ●
-  blk 3    ●     ·     ●
+```bash
+mammoth memory --project my-app recall "pagination"
+mammoth memory --project my-app get pagination
 ```
 
-## Point DuckDB at it
+Save a handoff when you finish working:
 
-```python
-import duckdb
-duckdb.sql("SET s3_endpoint='localhost:9000'")
-duckdb.sql("SELECT count(*) FROM 's3://sample/*.parquet'")
+```bash
+mammoth memory --project my-app remember current-handoff \
+  --title "Next session" --kind handoff \
+  --content "Pagination decision saved. Next: implement cursor validation and tests."
 ```
 
-Every command has `--json`, so the same session scripts cleanly:
+[Connect your coding agent through MCP](/memory/mcp/) to use the same store.
+The agent must call remember and recall; Mammoth does not automatically capture
+conversations. Read the [workflow](/memory/workflow/) for suggested instructions.
 
-```console
-$ mammoth stat /data/sales-2026.csv --json | jq '.blocks[].replicas'
+To revise an entry, first get its revision and pass `--expected-revision` when
+remembering it again. This prevents two agents overwriting one another's work.
+See the [CLI guide](/memory/cli/) for history and deletion.
+
+## Optional memory dashboard
+
+On `AI_coded`, build the UI before the CLI, then start the local service using
+the same root as your MCP connection:
+
+```bash
+npm --prefix ui ci
+npm --prefix ui run build
+cargo build --locked -p mammoth-cli
+./target/debug/mammoth --local-root /absolute/path/to/memory-store quickstart --no-sample
 ```
+
+Open [localhost:8080](http://localhost:8080) to save, search, read, and edit project
+memories. The dashboard never substitutes simulated memories. The HTTP adapter is
+on AI_coded; CLI and MCP memory work on both branches without the dashboard.

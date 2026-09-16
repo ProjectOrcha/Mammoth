@@ -46,3 +46,8 @@ target/distrib/
 # Local frontend settings (never commit credentials)
 .env.local
 .env.*.local
+
+# Durable agent context is local data, never source
+agent-memory.sqlite3
+agent-memory.sqlite3-wal
+agent-memory.sqlite3-shm

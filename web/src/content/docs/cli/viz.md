@@ -5,6 +5,9 @@ sidebar:
   order: 3
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 Seven commands that answer seven questions, all in the terminal, all over SSH,
 none of them needing a browser.
 

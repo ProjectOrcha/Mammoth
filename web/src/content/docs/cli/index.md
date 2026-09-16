@@ -5,6 +5,9 @@ sidebar:
   order: 1
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 If you know `ls`, `cp` and `df`, you already know most of this CLI. The verbs
 are the POSIX ones, they take the flags you expect, and everything prints a
 table on a terminal and JSON in a pipe.

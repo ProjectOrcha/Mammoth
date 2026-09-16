@@ -3,6 +3,9 @@ title: Operations
 description: Running a Mammoth cluster.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 - [Configuration](/ops/configuration/) — the single `mammoth.toml`
 - `mammoth doctor` — config, ports, disks, clock skew, ulimits
 - `mammoth admin fsck` — block-level integrity

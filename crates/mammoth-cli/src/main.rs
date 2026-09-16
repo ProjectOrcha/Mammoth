@@ -16,9 +16,10 @@ mod output;
 
 use clap::Parser;
 
-fn main() -> std::process::ExitCode {
+#[tokio::main]
+async fn main() -> std::process::ExitCode {
     let cli = cli::Cli::parse();
-    match run(cli) {
+    match run(cli).await {
         Ok(()) => std::process::ExitCode::SUCCESS,
         Err(e) => {
             output::print_error(&e);
@@ -27,11 +28,37 @@ fn main() -> std::process::ExitCode {
     }
 }
 
-fn run(_cli: cli::Cli) -> mammoth_core::Result<()> {
-    // M1: wire each subcommand to a `Backend` (LocalBackend first).
-    // Every command takes `&dyn Backend`, so none of them change when
-    // `ClusterBackend` lands in M5.
-    Err(mammoth_core::Error::NotImplemented(
-        "command execution — see docs/ROADMAP.md, milestone M1",
-    ))
+async fn run(cli: cli::Cli) -> mammoth_core::Result<()> {
+    let root = cli.local_root.unwrap_or_else(mammoth_mcp::default_root);
+    match cli.command {
+        cli::Command::Memory(args) => {
+            if !cli.masters.is_empty() {
+                return Err(mammoth_core::Error::Config(
+                    "memory uses --local-root, not --masters".into(),
+                ));
+            }
+            let value = mammoth_mcp::run_memory(root, args)
+                .await
+                .map_err(|e| mammoth_core::Error::Config(e.to_string()))?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&value)
+                    .map_err(|e| mammoth_core::Error::Config(e.to_string()))?
+            );
+            Ok(())
+        }
+        cli::Command::Mcp(args) => {
+            if !cli.masters.is_empty() {
+                return Err(mammoth_core::Error::Config(
+                    "MCP uses --local-root, not --masters".into(),
+                ));
+            }
+            mammoth_mcp::serve(root, args)
+                .await
+                .map_err(|e| mammoth_core::Error::Config(e.to_string()))
+        }
+        _ => Err(mammoth_core::Error::NotImplemented(
+            "legacy storage command execution — use mammoth memory for agent context",
+        )),
+    }
 }

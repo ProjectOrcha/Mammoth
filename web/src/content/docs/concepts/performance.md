@@ -3,6 +3,9 @@ title: Performance
 description: Lock-free metadata reads, short-circuit reads, zero-copy, io_uring, hardware CRC32C, quorum acks, hedged reads.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 Explained so you know _why_, not just _what_. Ordered by impact.
 
 ### 0 · The four fast paths — read this first

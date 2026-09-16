@@ -1,44 +1,28 @@
 ---
 title: Mammoth
-description: Explore Mammoth, an open-source distributed storage project in Rust. Try the demo dashboard, learn the essentials, and build with us.
+description: Durable context memory for coding agents. Save project decisions, conventions, and handoffs locally, then recall them across sessions through MCP.
 template: splash
 hero:
-    tagline: Big data. A clearer view.
+  tagline: New session. Same memory.
 ---
-
-import { Tabs, TabItem } from '@astrojs/starlight/components';
 import Homepage from '../../components/Homepage.astro';
 
 <Homepage>
-  <Tabs>
-    <TabItem label="Dashboard demo">
-      Requires **Node.js 22.12+ (22.x)** and Git.
 
-      ```bash
-      git clone https://github.com/ProjectOrcha/Mammoth.git
-      cd Mammoth/ui
-      npm ci
-      npm run dev
-      ```
+```bash
+cargo build --release --locked -p mammoth-cli -p mammoth-mcp
 
-      Open the local URL printed in your terminal (usually
-      [localhost:5173](http://localhost:5173)). Look for **Demo workspace**;
-      all values are simulated. No Rust build is needed for this step.
-    </TabItem>
-    <TabItem label="First Rust example">
-      Requires **stable Rust (1.85+)** and Git.
+./target/release/mammoth memory --project my-app remember pagination \
+  --title "API pagination" --kind decision \
+  --content "Use cursor pagination for the event log."
 
-      ```bash
-      git clone https://github.com/ProjectOrcha/Mammoth.git
-      cd Mammoth
-      cargo run -p mammoth-parts --example 01-ownership
-      cargo run -p mammoth-cli -- --help
-      ```
+./target/release/mammoth memory --project my-app recall "pagination"
+```
 
-      Already cloned the project? Start from your existing `Mammoth` folder
-      and run the two `cargo` commands. The example introduces ownership;
-      `--help` shows the planned command tree.
-    </TabItem>
+Requires **Rust 1.88+**. Run from a clone of either branch. Entries persist in
+`~/.mammoth/local/agent-memory.sqlite3`. Use `--local-root /absolute/store/path`
+before the command to choose another store.
 
-  </Tabs>
+[Connect the same memory to your coding agent →](/memory/mcp/)
+
 </Homepage>

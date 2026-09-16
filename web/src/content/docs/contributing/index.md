@@ -1,44 +1,25 @@
 ---
-title: Start contributing
-description: Beginner setup, code structure and separate team and external workflows.
+title: Contributing
+description: Build durable coding-agent memory with Mammoth.
 ---
 
-Mammoth is a learning scaffold. The Rust command tree, core types and teaching
-examples exist; storage and gateway serving remain to be built. The Svelte
-dashboard runs with clearly labelled simulated data.
+Mammoth focuses on durable context memory for coding agents. Good starting points
+include memory curation, retrieval evaluation, provenance, MCP interoperability,
+and clear setup documentation. Read the [memory model](/memory/) before changing
+persistence or retrieval behavior.
 
-## First steps
-
-Use stable Rust (minimum 1.85) and Node 22.x. From your checkout root:
-
-```bash
-cargo build --workspace --locked
-cargo run -p mammoth-cli -- --help
-cargo run -p mammoth-parts --example 01-ownership
-```
-
-To run the dashboard, open another terminal in `ui/`:
+Use Rust 1.88+ and Node 22.x for frontends. Both main and AI_coded implement memory.
 
 ```bash
-npm ci
-npm run dev
+cargo test --locked -p mammoth-memory -p mammoth-mcp -p mammoth-cli
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 ```
 
-Open http://localhost:5173 and look for the Demo workspace banner. These are example
-values, not a real storage cluster.
+The memory crate owns persistence and revisions. The MCP crate owns protocol
+integration and shared CLI commands. The public website lives in web/; the local
+memory dashboard on AI_coded lives in ui/. Keep both branches' homepage and memory
+experience aligned while preserving their different legacy storage implementations.
 
-## Guides for your next step
-
-| Need | Repository guide |
-| --- | --- |
-| Install tools, understand commands, run small examples | [Your first hour](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/guide/START-HERE.md) |
-| Understand the Rust and frontend folder structure | [Code map](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/guide/CODE-MAP.md) |
-| Coordinate four members, assign tasks and reviews | [Four-person team plan](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/guide/TEAM-PLAN.md) |
-| Contribute from outside the core team | [Fork-to-PR workflow](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/guide/EXTERNAL-CONTRIBUTORS.md) |
-| Learn Svelte and fix frontend bugs | [Frontend chapter](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/guide/09-web-ui.md) |
-| Connect a future gateway | [API contract](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/guide/API-CONTRACT.md) |
-| Check a PR before review | [Contributing](https://github.com/ProjectOrcha/Mammoth/blob/main/CONTRIBUTING.md) |
-
-The guides live in the repository so contributors can improve them alongside
-the code. Follow the appropriate guide for team membership or external access;
-you do not need core-team permissions to submit a contribution.
+See [contributor guidance](https://github.com/ProjectOrcha/Mammoth/blob/main/CONTRIBUTING.md)
+and the [roadmap](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/ROADMAP.md).

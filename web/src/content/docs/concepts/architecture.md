@@ -3,6 +3,9 @@ title: Architecture
 description: Masters, workers, gateway — and the one trait everything hangs off.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 This diagram describes the planned distributed service. The initial M5 target
 uses one master; three-master HA requires M6. For executable behavior today,
 see [the GFS local demonstration](/concepts/gfs/), which is a separate in-memory

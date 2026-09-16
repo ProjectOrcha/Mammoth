@@ -12,7 +12,7 @@ pub const BANNER: &str = include_str!("../assets/banner.txt");
 #[command(
     name = "mammoth",
     version,
-    about = "Distributed storage that doesn't need a JVM",
+    about = "Durable context memory for coding agents, with a local MCP server",
     long_about = None,
 )]
 pub struct Cli {
@@ -23,6 +23,10 @@ pub struct Cli {
     /// Master addresses, comma separated.
     #[arg(long, env = "MAMMOTH_MASTERS", global = true, value_delimiter = ',')]
     pub masters: Vec<String>,
+
+    /// Local memory store directory. Defaults to ~/.mammoth/local.
+    #[arg(long, env = "MAMMOTH_LOCAL_ROOT", global = true)]
+    pub local_root: Option<PathBuf>,
 
     /// Output format.
     #[arg(long, global = true, value_enum, default_value = "auto")]
@@ -71,6 +75,10 @@ impl Cli {
 
 #[derive(Subcommand)]
 pub enum Command {
+    /// Save, recall, and manage durable project context (JSON output).
+    Memory(mammoth_mcp::MemoryArgs),
+    /// Serve project-scoped memory tools over MCP stdio.
+    Mcp(mammoth_mcp::McpArgs),
     // --- lifecycle ---
     /// Create a new cluster: config, IDs, certs.
     Init,

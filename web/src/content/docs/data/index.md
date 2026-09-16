@@ -3,6 +3,9 @@ title: Data guide
 description: Block size, replication, the small-file problem, file formats, partitioning, skew, tiers and integrity.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 Practical guidance that most Hadoop beginners learn the painful way.
 
 Practical guidance that belongs in your docs, and that most Hadoop beginners learn the painful way.

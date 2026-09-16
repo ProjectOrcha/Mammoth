@@ -3,6 +3,9 @@ title: GFS reliability and project coverage
 description: Run the local GFS model and distinguish tested behavior from planned distributed storage.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 Mammoth now has a runnable **in-memory GFS teaching model**. The real filesystem,
 worker services and master failover remain under development.
 

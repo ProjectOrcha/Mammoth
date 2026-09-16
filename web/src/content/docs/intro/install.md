@@ -1,34 +1,39 @@
 ---
-title: Install
-description: Four ways in, all under 30 seconds.
-sidebar:
-  order: 3
+title: Install Mammoth
+description: Build the CLI and MCP server for durable coding-agent memory.
 ---
 
-:::caution[Pre-release]
-Mammoth has not cut its first release yet. Only the build-from-source path below
-works today for CLI help and teaching examples. Storage and gateway commands
-remain unimplemented; `quickstart` returns `E0002`. The others land with `v0.1.0` — see the [roadmap](https://github.com/ProjectOrcha/Mammoth/blob/main/docs/ROADMAP.md).
-:::
-
-## From source
+Requires **Rust 1.88+**, Cargo, Git, and a C compiler for bundled SQLite.
+Node is only needed for building the website or legacy dashboard.
 
 ```bash
-git clone https://github.com/ProjectOrcha/Mammoth
+git clone https://github.com/ProjectOrcha/Mammoth.git
 cd Mammoth
-cargo build --release -p mammoth-cli
-./target/release/mammoth --help
-./target/release/mammoth --version
+cargo build --release --locked -p mammoth-cli -p mammoth-mcp
+./target/release/mammoth memory --help
+./target/release/mammoth-mcp --help
 ```
 
-## Planned, at v0.1.0
+The same commands work on `AI_coded`. On Windows, use the `.exe` binaries in
+`target/release`. Build from source for this memory preview; older downloaded
+releases may predate these commands.
+
+## Use Mammoth from any folder
+
+Install both binaries from the checkout:
 
 ```bash
-curl -fsSL https://projectorcha.github.io/Mammoth/install.sh | sh
-cargo install mammoth-cli --locked
-brew install ProjectOrcha/tap/mammoth
-docker run -p 8080:8080 -p 9000:9000 ghcr.io/projectorcha/mammoth quickstart
+cargo install --locked --path crates/mammoth-cli
+cargo install --locked --path crates/mammoth-mcp
 ```
 
-Linux binaries are static `musl` builds — no glibc version hell, and they run on
-any kernel back to 3.2.
+Ensure Cargo's binary directory is on your PATH. MCP clients should use an absolute
+binary path because their environment may differ from your terminal.
+
+Memory defaults to `~/.mammoth/local/agent-memory.sqlite3`. To select a store:
+
+```bash
+mammoth --local-root /absolute/path/to/memory-store memory --project my-app recall
+```
+
+Use the same absolute root in your [MCP configuration](/memory/mcp/).

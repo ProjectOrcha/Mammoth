@@ -1,5 +1,8 @@
 # The Mammoth build guide
 
+> **Storage archive.** Mammoth now focuses on [durable coding-agent memory](../AGENT-MEMORY.md).
+> The material below describes the earlier storage track. Current memory builds require Rust 1.88+.
+
 **Manual build track: `main`.** Follow the [branch guide](BRANCHES.md) to keep
 your implementation separate from the working `AI_coded` reference.
 

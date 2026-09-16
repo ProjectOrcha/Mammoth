@@ -3,6 +3,9 @@ title: Configuration
 description: One file, sane defaults. No XML, no six files.
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 `/etc/mammoth/mammoth.toml` — the whole thing. No XML, no six files.
 
 ## The short version

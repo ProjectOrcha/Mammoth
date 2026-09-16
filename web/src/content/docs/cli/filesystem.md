@@ -5,6 +5,9 @@ sidebar:
   order: 2
 ---
 
+> **Storage archive.** Mammoth now focuses on [durable context memory for coding agents](/memory/). This page describes the earlier storage project.
+
+
 The file verbs are POSIX. If a flag exists in coreutils and means something
 here, it has the same name and the same behaviour: `-l`, `-h`, `-r`,
 `--recursive`, `-n`.

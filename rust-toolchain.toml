@@ -1,4 +1,4 @@
-# Pinned to stable; the MSRV floor is `rust-version = "1.85"` in the workspace
+# Pinned to stable; the MSRV floor is `rust-version = "1.88"` in the workspace
 # Cargo.toml and is enforced by the `msrv` job in .github/workflows/ci.yml.
 [toolchain]
 channel    = "stable"

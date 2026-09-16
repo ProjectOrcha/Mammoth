@@ -8,4 +8,5 @@ license.workspace      = true
 publish      = false
 
 [dependencies]
+mammoth-mcp = { path = "../crates/mammoth-mcp" }
 clap.workspace = true

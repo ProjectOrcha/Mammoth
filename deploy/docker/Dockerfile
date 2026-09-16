@@ -1,4 +1,4 @@
-FROM rust:1.82-bookworm AS builder
+FROM rust:1.88-bookworm AS builder
 WORKDIR /build
 RUN apt-get update && apt-get install -y --no-install-recommends \
       clang cmake protobuf-compiler nodejs npm && rm -rf /var/lib/apt/lists/*

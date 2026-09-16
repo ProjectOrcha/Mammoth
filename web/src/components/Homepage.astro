@@ -1,175 +1,30 @@
 ---
 import { withBase } from '../lib/links';
-const repository = 'https://github.com/ProjectOrcha/Mammoth';
-const paths = [
-    {
-        number: '01',
-        tag: 'Start here',
-        title: 'Learn the essentials',
-        text: 'Go from “what is a block?” to your first small Rust change, with examples and a map of the code.',
-        action: 'Open the beginner guides',
-        href: withBase('/contributing/'),
-    },
-    {
-        number: '02',
-        tag: 'Your team of four',
-        title: 'Build together',
-        text: 'Divide the work, keep branches in sync, and review each other’s changes with a shared workflow.',
-        action: 'See the team playbook',
-        href: `${repository}/blob/main/docs/guide/TEAM-PLAN.md`,
-    },
-    {
-        number: '03',
-        tag: 'Everyone is welcome',
-        title: 'Make a contribution',
-        text: 'Find a task, fork the repository, and open a pull request. You can start with documentation or UI.',
-        action: 'Read the contributor steps',
-        href: `${repository}/blob/main/docs/guide/EXTERNAL-CONTRIBUTORS.md`,
-    },
+const memories = [
+  { number:'01', tag:'Decisions', title:'Keep the why.', text:'Record the tradeoff behind an implementation, along with its source. Give the next agent more than the final diff.' },
+  { number:'02', tag:'Conventions', title:'Keep the way.', text:'Save project rules, test commands, and repository patterns so each session starts with the same working knowledge.' },
+  { number:'03', tag:'Handoffs', title:'Keep the next step.', text:'Leave a concise record of completed work, open questions, and the next action before a session ends.' },
 ];
 ---
-
 <div class="mm-homepage">
-    <aside class="mm-development not-content" aria-label="Project availability">
-        <span class="mm-development-badge">In development</span>
-        <p>
-            <strong>Explore what works today.</strong> The demo dashboard, Rust examples,
-            and guides are ready. The storage engine and gateway are still being
-            built.
-        </p>
-        <a href={`${repository}/blob/main/docs/ROADMAP.md`}
-            >Roadmap <span aria-hidden="true">↗</span></a
-        >
-    </aside>
-
-    <section
-        class="mm-home-section not-content"
-        aria-labelledby="find-your-way"
-    >
-        <div class="mm-section-heading">
-            <div>
-                <p class="mm-label">A place to start</p><h2 id="find-your-way">
-                    Find your way in.
-                </h2>
-            </div><p>
-                You don’t need to understand the whole system to make your first
-                contribution.
-            </p>
-        </div>
-        <div class="mm-paths">
-            {
-                paths.map((path) => (
-                    <a class="mm-path" href={path.href}>
-                        <>
-                            <div class="mm-path-top">
-                                <>
-                                    <span class="mm-path-number">
-                                        {path.number}
-                                    </span>
-                                    <span class="mm-label">{path.tag}</span>
-                                </>
-                            </div>
-                            <h3>{path.title}</h3>
-                            <p>{path.text}</p>
-                            <span class="mm-path-action">
-                                {path.action} <span aria-hidden="true">↗</span>
-                            </span>
-                        </>
-                    </a>
-                ))
-            }
-        </div>
-    </section>
-
-    <section
-        class="mm-home-section mm-try-section"
-        id="try-it"
-        aria-labelledby="try-it-title"
-    >
-        <div class="mm-try-copy not-content">
-            <p class="mm-label">From reading to exploring</p><h2
-                id="try-it-title"
-            >
-                Make it real.<br /><span>Run it locally.</span>
-            </h2><p>
-                The dashboard is the quickest way to explore Mammoth. Browse
-                files, inspect workers, and watch a simulated repair.
-            </p><ul>
-                <li>No cluster setup for the demo</li><li>
-                    Example data included
-                </li><li>Dark and light themes</li>
-            </ul><a href={withBase('/intro/install/')}
-                >Full setup instructions <span aria-hidden="true">→</span></a>
-        </div>
-        <div class="mm-quickstart"><slot /></div>
-    </section>
-
-    <section class="mm-home-section not-content" aria-labelledby="how-it-fits">
-        <div class="mm-section-heading">
-            <div>
-                <p class="mm-label">The idea, in three parts</p><h2
-                    id="how-it-fits"
-                >
-                    A system you can follow.
-                </h2>
-            </div><a href={withBase('/concepts/architecture/')}
-                >Explore the architecture <span aria-hidden="true">→</span></a>
-        </div>
-        <p class="mm-design-note">
-            The planned architecture separates requests, metadata, and file
-            contents. These backend roles are still under development.
-        </p>
-        <ol class="mm-architecture">
-            <li>
-                <span class="mm-role-icon" aria-hidden="true">↗</span><span
-                    class="mm-label">01 / Gateway</span
-                ><h3>The front door</h3><p>
-                    Accepts requests from the CLI, dashboard, and a planned
-                    S3-compatible API.
-                </p><span class="mm-role-detail">“Read this file.”</span>
-            </li>
-            <li>
-                <span class="mm-role-icon" aria-hidden="true">◇</span><span
-                    class="mm-label">02 / Masters</span
-                ><h3>The index</h3><p>
-                    Tracks names, permissions, and where the pieces of each file
-                    belong.
-                </p><span class="mm-role-detail"
-                    >“Here’s where to find it.”</span>
-            </li>
-            <li>
-                <span class="mm-role-icon" aria-hidden="true">▦</span><span
-                    class="mm-label">03 / Workers</span
-                ><h3>The shelves</h3><p>
-                    Store file fragments and help rebuild them when another
-                    worker is unavailable.
-                </p><span class="mm-role-detail">“Here are your bytes.”</span>
-            </li>
-        </ol>
-        <div class="mm-deeper">
-            <p>Curious about the performance design?</p><a
-                href={withBase('/concepts/fast-paths/')}
-                >Read about the four fast paths <span aria-hidden="true">→</span
-                ></a>
-        </div>
-    </section>
-
-    <section class="mm-invitation not-content" aria-labelledby="build-with-us">
-        <div>
-            <p class="mm-label">Built in the open</p><h2 id="build-with-us">
-                Small contributions.<br />A shared Mammoth.
-            </h2><p>
-                A clearer explanation, a better screen, your first Rust
-                function.<br />There’s room for all of it.
-            </p>
-        </div><a class="mm-button mm-button-primary" href={repository}
-            >Explore the source <span aria-hidden="true">↗</span></a>
-    </section>
-    <footer class="mm-home-footer not-content">
-        <span>Mammoth · Distributed storage, in Rust.</span><a
-            href={withBase('/intro/hadoop-primer/')}
-            >New to distributed systems? Start here <span aria-hidden="true"
-                >→</span
-            ></a>
-    </footer>
+  <aside class="mm-development not-content" aria-label="Project availability">
+    <span class="mm-development-badge">Local preview</span>
+    <p><strong>Memory you can run today.</strong> Durable writes, full-text recall, revision history, and a project-scoped MCP server are implemented on both main and AI_coded.</p>
+    <a href={withBase('/memory/')}>How memory works ↗</a>
+  </aside>
+  <section class="mm-home-section not-content" aria-labelledby="keep-context">
+    <div class="mm-section-heading"><div><p class="mm-label">Less rediscovery. More continuity.</p><h2 id="keep-context">The context worth keeping.</h2></div><p>Save concise, verified knowledge your agent can use again.</p></div>
+    <div class="mm-paths">{memories.map(m => <article class="mm-path"><div class="mm-path-top"><span class="mm-path-number">{m.number}</span><span class="mm-label">{m.tag}</span></div><h3>{m.title}</h3><p>{m.text}</p></article>)}</div>
+  </section>
+  <section class="mm-home-section mm-try-section" id="try-it" aria-labelledby="try-it-title">
+    <div class="mm-try-copy not-content"><p class="mm-label">A small start. A lasting memory.</p><h2 id="try-it-title">Save once.<br /><span>Recall next session.</span></h2><p>Build Mammoth, choose a project, and save your first decision. Connect the same local store to an MCP-capable coding agent.</p><ul><li>No account or hosted database</li><li>No model or embedding service required</li><li>The same memory through CLI and MCP</li></ul><a href={withBase('/intro/install/')}>Installation guide →</a></div>
+    <div class="mm-quickstart"><slot /></div>
+  </section>
+  <section class="mm-home-section not-content" aria-labelledby="memory-loop">
+    <div class="mm-section-heading"><div><p class="mm-label">One project. Many sessions.</p><h2 id="memory-loop">A simple memory loop.</h2></div><a href={withBase('/memory/workflow/')}>Read the agent workflow →</a></div>
+    <ol class="mm-architecture"><li><span class="mm-role-icon" aria-hidden="true">↓</span><span class="mm-label">01 / Recall</span><h3>Start with context</h3><p>Search the project’s memory for the task at hand. Bound the response size to keep the context window useful.</p></li><li><span class="mm-role-icon" aria-hidden="true">◇</span><span class="mm-label">02 / Work</span><h3>Verify and build</h3><p>Use remembered decisions as background. Check the current code and sources before acting on an old assumption.</p></li><li><span class="mm-role-icon" aria-hidden="true">↗</span><span class="mm-label">03 / Remember</span><h3>Leave a clear handoff</h3><p>Commit useful context to disk. Revision checks prevent a second agent from silently replacing a newer entry.</p></li></ol>
+    <div class="mm-deeper"><p>Local SQLite commits with a write-ahead log. Literal full-text search. No automatic capture.</p><a href={withBase('/memory/#durability-and-boundaries')}>Storage and limits →</a></div>
+  </section>
+  <section class="mm-invitation not-content" aria-labelledby="connect-agent"><div><p class="mm-label">Your tools. A shared memory.</p><h2 id="connect-agent">Connect your coding agent.</h2><p>Five focused MCP tools to remember, recall, read, inspect history, and forget.<br />Choose one project per connection, with an optional read-only mode.</p></div><a class="mm-button mm-button-primary" href={withBase('/memory/mcp/')}>Set up MCP ↗</a></section>
+  <footer class="mm-home-footer not-content"><span>Mammoth · Durable context memory for coding agents.</span><a href="https://github.com/ProjectOrcha/Mammoth">Explore the source ↗</a></footer>
 </div>
