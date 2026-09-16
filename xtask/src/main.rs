@@ -202,7 +202,10 @@ fn command(dir: &Path, program: &str, args: &[&str]) -> Result<(), Box<dyn std::
 }
 
 fn render_help(mut command: clap::Command, name: &str, output: &mut String) {
-    command = command.bin_name(name).color(clap::ColorChoice::Never);
+    command = command
+        .bin_name(name)
+        .color(clap::ColorChoice::Never)
+        .mut_args(|arg| arg.hide_env_values(true));
     // Build first so child commands inherit global flags just like the CLI.
     command.build();
     output.push_str(&format!(

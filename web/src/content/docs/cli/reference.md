@@ -100,17 +100,17 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -188,7 +188,7 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --project <PROJECT>
           Stable project namespace shared across sessions
@@ -196,12 +196,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -236,7 +236,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --title <TITLE>
 
@@ -247,7 +247,7 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --kind <KIND>
           [default: note]
@@ -256,7 +256,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -300,7 +300,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --limit <LIMIT>
           [default: 10]
@@ -308,7 +308,7 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --max-bytes <MAX_BYTES>
           [default: 16000]
@@ -316,7 +316,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -351,17 +351,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -396,7 +396,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --limit <LIMIT>
           [default: 10]
@@ -404,12 +404,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -444,7 +444,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --expected-revision <EXPECTED_REVISION>
 
@@ -452,12 +452,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -488,7 +488,7 @@ Usage: mammoth mcp [OPTIONS] --project <PROJECT>
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --project <PROJECT>
           Fixed project namespace. Tool calls cannot choose another project
@@ -496,7 +496,7 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --read-only
           Expose only recall, get, and history tools
@@ -504,7 +504,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -535,17 +535,17 @@ Usage: mammoth version [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -576,17 +576,17 @@ Usage: mammoth logo [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -617,17 +617,17 @@ Usage: mammoth commands [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -658,17 +658,17 @@ Usage: mammoth init [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -699,7 +699,7 @@ Usage: mammoth quickstart [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --ui-listen <UI_LISTEN>
           [default: 127.0.0.1:8080]
@@ -707,7 +707,7 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --s3-listen <S3_LISTEN>
           [default: 127.0.0.1:9000]
@@ -715,7 +715,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --no-sample
 
@@ -752,7 +752,7 @@ Usage: mammoth serve [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --role <ROLE>
           [default: all]
@@ -761,7 +761,7 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --ui-listen <UI_LISTEN>
 
@@ -769,7 +769,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --s3-listen <S3_LISTEN>
 
@@ -806,17 +806,17 @@ Usage: mammoth status [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -847,7 +847,7 @@ Usage: mammoth stop [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --timeout <TIMEOUT>
           Seconds to wait for active requests and jobs to finish
@@ -857,12 +857,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -893,17 +893,17 @@ Usage: mammoth ui [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -934,7 +934,7 @@ Usage: mammoth doctor [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --fix
 
@@ -942,7 +942,7 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --node <NODE>
 
@@ -950,7 +950,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -985,17 +985,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1033,7 +1033,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --replication <REPLICATION>
 
@@ -1044,7 +1044,7 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --allow-empty
           Allow a source containing 0 bytes; otherwise leave the destination unchanged
@@ -1052,7 +1052,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1090,7 +1090,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --force
 
@@ -1098,12 +1098,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1138,17 +1138,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1183,7 +1183,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
   -n, --lines <LINES>
           [default: 10]
@@ -1191,12 +1191,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1231,7 +1231,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
   -n, --lines <LINES>
           [default: 10]
@@ -1239,12 +1239,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1279,7 +1279,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
   -p, --parents
 
@@ -1287,12 +1287,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1327,7 +1327,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
   -r, --recursive
 
@@ -1335,12 +1335,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1378,17 +1378,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1426,7 +1426,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
   -r, --recursive
 
@@ -1434,12 +1434,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1474,17 +1474,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1519,17 +1519,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1560,17 +1560,17 @@ Usage: mammoth df [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1605,7 +1605,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --name <NAME>
 
@@ -1613,12 +1613,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1656,17 +1656,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1704,17 +1704,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1752,17 +1752,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1797,17 +1797,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1848,17 +1848,17 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1893,17 +1893,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1934,17 +1934,17 @@ Usage: mammoth viz cluster [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -1975,17 +1975,17 @@ Usage: mammoth viz topology [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2023,17 +2023,17 @@ Options:
 
 
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2068,7 +2068,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --depth <DEPTH>
           [default: 2]
@@ -2076,12 +2076,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2112,7 +2112,7 @@ Usage: mammoth viz health [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --live
 
@@ -2120,12 +2120,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2156,17 +2156,17 @@ Usage: mammoth viz flow [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2197,7 +2197,7 @@ Usage: mammoth top [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --once
 
@@ -2205,12 +2205,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2247,17 +2247,17 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2288,17 +2288,17 @@ Usage: mammoth node list [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2333,17 +2333,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2374,17 +2374,17 @@ Usage: mammoth node repair [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2419,17 +2419,17 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2460,17 +2460,17 @@ Usage: mammoth cluster status [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2508,17 +2508,17 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2549,17 +2549,17 @@ Usage: mammoth admin report [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2590,17 +2590,17 @@ Usage: mammoth admin repair [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2631,17 +2631,17 @@ Usage: mammoth admin gc [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2672,17 +2672,17 @@ Usage: mammoth admin safemode [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2718,17 +2718,17 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2766,7 +2766,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --overwrite
           Replace an existing result. Otherwise publication fails if the path exists
@@ -2774,12 +2774,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2817,7 +2817,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --overwrite
           Replace an existing result. Otherwise publication fails if the path exists
@@ -2825,12 +2825,12 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2866,17 +2866,17 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2914,17 +2914,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -2962,17 +2962,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -3010,7 +3010,7 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --size <SIZE>
           Bytes per I/O file. Inline storage is disabled for this benchmark
@@ -3023,7 +3023,7 @@ Options:
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --concurrency <CONCURRENCY>
           [default: 4]
@@ -3031,7 +3031,7 @@ Options:
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --ops <OPS>
           Files per metadata phase: create, stat, rename and delete
@@ -3103,17 +3103,17 @@ Commands:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -3144,17 +3144,17 @@ Usage: mammoth config show [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -3185,17 +3185,17 @@ Usage: mammoth config validate [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -3226,17 +3226,17 @@ Usage: mammoth config template [OPTIONS]
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -3271,17 +3271,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
@@ -3316,17 +3316,17 @@ Arguments:
 
 Options:
   -c, --config <CONFIG>
-          [env: MAMMOTH_CONFIG=]
+          [env: MAMMOTH_CONFIG]
 
       --masters <MASTERS>
           HTTP gateway address for remote filesystem access
 
-          [env: MAMMOTH_MASTERS=]
+          [env: MAMMOTH_MASTERS]
 
       --local-root <LOCAL_ROOT>
           Local store directory. Defaults to ~/.mammoth/local
 
-          [env: MAMMOTH_LOCAL_ROOT=/Users/sakibdalal/Projects/Mammoth/.mammoth]
+          [env: MAMMOTH_LOCAL_ROOT]
 
       --output <OUTPUT>
           [default: auto]
